@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788129469522,
+      "tag": "0000_docflow_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788129498128,
+      "tag": "0001_documents_storage_policies",
+      "breakpoints": true
+    }
+  ]
+}
