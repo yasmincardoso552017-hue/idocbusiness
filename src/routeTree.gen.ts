@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppEmpresasIndexRouteImport } from './routes/_authenticated/app.empresas.index'
+import { Route as AuthenticatedAppEmpresasCompanyIdRouteImport } from './routes/_authenticated/app.empresas.$companyId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -27,27 +29,51 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/app/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppEmpresasIndexRoute =
+  AuthenticatedAppEmpresasIndexRouteImport.update({
+    id: '/app/empresas/',
+    path: '/app/empresas/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppEmpresasCompanyIdRoute =
+  AuthenticatedAppEmpresasCompanyIdRouteImport.update({
+    id: '/app/empresas/$companyId',
+    path: '/app/empresas/$companyId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app/': typeof AuthenticatedAppIndexRoute
+  '/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
+  '/app/empresas/': typeof AuthenticatedAppEmpresasIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AuthenticatedAppIndexRoute
+  '/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
+  '/app/empresas': typeof AuthenticatedAppEmpresasIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
+  '/_authenticated/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
+  '/_authenticated/app/empresas/': typeof AuthenticatedAppEmpresasIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app/'
+  fullPaths: '/' | '/app/' | '/app/empresas/$companyId' | '/app/empresas/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app'
-  id: '__root__' | '/' | '/_authenticated' | '/_authenticated/app/'
+  to: '/' | '/app' | '/app/empresas/$companyId' | '/app/empresas'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/_authenticated/app/'
+    | '/_authenticated/app/empresas/$companyId'
+    | '/_authenticated/app/empresas/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -78,15 +104,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/empresas/': {
+      id: '/_authenticated/app/empresas/'
+      path: '/app/empresas'
+      fullPath: '/app/empresas/'
+      preLoaderRoute: typeof AuthenticatedAppEmpresasIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/empresas/$companyId': {
+      id: '/_authenticated/app/empresas/$companyId'
+      path: '/app/empresas/$companyId'
+      fullPath: '/app/empresas/$companyId'
+      preLoaderRoute: typeof AuthenticatedAppEmpresasCompanyIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
+  AuthenticatedAppEmpresasCompanyIdRoute: typeof AuthenticatedAppEmpresasCompanyIdRoute
+  AuthenticatedAppEmpresasIndexRoute: typeof AuthenticatedAppEmpresasIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
+  AuthenticatedAppEmpresasCompanyIdRoute:
+    AuthenticatedAppEmpresasCompanyIdRoute,
+  AuthenticatedAppEmpresasIndexRoute: AuthenticatedAppEmpresasIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
