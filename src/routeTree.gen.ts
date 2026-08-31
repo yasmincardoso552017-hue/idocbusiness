@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAssinaturasRouteImport } from './routes/_authenticated/app.assinaturas'
 import { Route as AuthenticatedAppContratosRouteImport } from './routes/_authenticated/app.contratos'
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app.documentos'
 import { Route as AuthenticatedAppEmpresasIndexRouteImport } from './routes/_authenticated/app.empresas.index'
@@ -38,6 +39,12 @@ const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   path: '/app/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppAssinaturasRoute =
+  AuthenticatedAppAssinaturasRouteImport.update({
+    id: '/app/assinaturas',
+    path: '/app/assinaturas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppContratosRoute =
   AuthenticatedAppContratosRouteImport.update({
     id: '/app/contratos',
@@ -72,6 +79,7 @@ const AuthenticatedAppPrepararRequestIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -82,6 +90,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -94,6 +103,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/_authenticated/app/contratos': typeof AuthenticatedAppContratosRoute
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/app/assinaturas'
     | '/app/contratos'
     | '/app/documentos'
     | '/app/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/app/assinaturas'
     | '/app/contratos'
     | '/app/documentos'
     | '/app'
@@ -127,6 +139,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/app/assinaturas'
     | '/_authenticated/app/contratos'
     | '/_authenticated/app/documentos'
     | '/_authenticated/app/'
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/assinaturas': {
+      id: '/_authenticated/app/assinaturas'
+      path: '/app/assinaturas'
+      fullPath: '/app/assinaturas'
+      preLoaderRoute: typeof AuthenticatedAppAssinaturasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/contratos': {
       id: '/_authenticated/app/contratos'
       path: '/app/contratos'
@@ -210,6 +230,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppAssinaturasRoute: typeof AuthenticatedAppAssinaturasRoute
   AuthenticatedAppContratosRoute: typeof AuthenticatedAppContratosRoute
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
@@ -219,6 +240,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppAssinaturasRoute: AuthenticatedAppAssinaturasRoute,
   AuthenticatedAppContratosRoute: AuthenticatedAppContratosRoute,
   AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
