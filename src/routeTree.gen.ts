@@ -16,6 +16,7 @@ import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app.documentos'
 import { Route as AuthenticatedAppEmpresasIndexRouteImport } from './routes/_authenticated/app.empresas.index'
 import { Route as AuthenticatedAppEmpresasCompanyIdRouteImport } from './routes/_authenticated/app.empresas.$companyId'
+import { Route as AuthenticatedAppPrepararRequestIdRouteImport } from './routes/_authenticated/app.preparar.$requestId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -54,6 +55,12 @@ const AuthenticatedAppEmpresasCompanyIdRoute =
     path: '/app/empresas/$companyId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppPrepararRequestIdRoute =
+  AuthenticatedAppPrepararRequestIdRouteImport.update({
+    id: '/app/preparar/$requestId',
+    path: '/app/preparar/$requestId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
+  '/app/preparar/$requestId': typeof AuthenticatedAppPrepararRequestIdRoute
   '/app/empresas/': typeof AuthenticatedAppEmpresasIndexRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +77,7 @@ export interface FileRoutesByTo {
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
+  '/app/preparar/$requestId': typeof AuthenticatedAppPrepararRequestIdRoute
   '/app/empresas': typeof AuthenticatedAppEmpresasIndexRoute
 }
 export interface FileRoutesById {
@@ -79,6 +88,7 @@ export interface FileRoutesById {
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
+  '/_authenticated/app/preparar/$requestId': typeof AuthenticatedAppPrepararRequestIdRoute
   '/_authenticated/app/empresas/': typeof AuthenticatedAppEmpresasIndexRoute
 }
 export interface FileRouteTypes {
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/app/documentos'
     | '/app/'
     | '/app/empresas/$companyId'
+    | '/app/preparar/$requestId'
     | '/app/empresas/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/app/documentos'
     | '/app'
     | '/app/empresas/$companyId'
+    | '/app/preparar/$requestId'
     | '/app/empresas'
   id:
     | '__root__'
@@ -106,6 +118,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documentos'
     | '/_authenticated/app/'
     | '/_authenticated/app/empresas/$companyId'
+    | '/_authenticated/app/preparar/$requestId'
     | '/_authenticated/app/empresas/'
   fileRoutesById: FileRoutesById
 }
@@ -166,6 +179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppEmpresasCompanyIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/preparar/$requestId': {
+      id: '/_authenticated/app/preparar/$requestId'
+      path: '/app/preparar/$requestId'
+      fullPath: '/app/preparar/$requestId'
+      preLoaderRoute: typeof AuthenticatedAppPrepararRequestIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -173,6 +193,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppEmpresasCompanyIdRoute: typeof AuthenticatedAppEmpresasCompanyIdRoute
+  AuthenticatedAppPrepararRequestIdRoute: typeof AuthenticatedAppPrepararRequestIdRoute
   AuthenticatedAppEmpresasIndexRoute: typeof AuthenticatedAppEmpresasIndexRoute
 }
 
@@ -181,6 +202,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppEmpresasCompanyIdRoute:
     AuthenticatedAppEmpresasCompanyIdRoute,
+  AuthenticatedAppPrepararRequestIdRoute:
+    AuthenticatedAppPrepararRequestIdRoute,
   AuthenticatedAppEmpresasIndexRoute: AuthenticatedAppEmpresasIndexRoute,
 }
 
