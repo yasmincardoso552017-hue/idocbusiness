@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAssinaturasRouteImport } from './routes/_authenticated/app.assinaturas'
+import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app.configuracoes'
 import { Route as AuthenticatedAppContratosRouteImport } from './routes/_authenticated/app.contratos'
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app.documentos'
 import { Route as AuthenticatedAppFerramentasRouteImport } from './routes/_authenticated/app.ferramentas'
@@ -45,6 +46,12 @@ const AuthenticatedAppAssinaturasRoute =
   AuthenticatedAppAssinaturasRouteImport.update({
     id: '/app/assinaturas',
     path: '/app/assinaturas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppConfiguracoesRoute =
+  AuthenticatedAppConfiguracoesRouteImport.update({
+    id: '/app/configuracoes',
+    path: '/app/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAppContratosRoute =
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
+  '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
@@ -106,6 +114,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
+  '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
@@ -121,6 +130,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
+  '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/contratos': typeof AuthenticatedAppContratosRoute
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/app/assinaturas'
+    | '/app/configuracoes'
     | '/app/contratos'
     | '/app/documentos'
     | '/app/ferramentas'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/app/assinaturas'
+    | '/app/configuracoes'
     | '/app/contratos'
     | '/app/documentos'
     | '/app/ferramentas'
@@ -163,6 +175,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/app/assinaturas'
+    | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/contratos'
     | '/_authenticated/app/documentos'
     | '/_authenticated/app/ferramentas'
@@ -214,6 +227,13 @@ declare module '@tanstack/react-router' {
       path: '/app/assinaturas'
       fullPath: '/app/assinaturas'
       preLoaderRoute: typeof AuthenticatedAppAssinaturasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/configuracoes': {
+      id: '/_authenticated/app/configuracoes'
+      path: '/app/configuracoes'
+      fullPath: '/app/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAppConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/contratos': {
@@ -270,6 +290,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAssinaturasRoute: typeof AuthenticatedAppAssinaturasRoute
+  AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppContratosRoute: typeof AuthenticatedAppContratosRoute
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppFerramentasRoute: typeof AuthenticatedAppFerramentasRoute
@@ -282,6 +303,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAssinaturasRoute: AuthenticatedAppAssinaturasRoute,
+  AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppContratosRoute: AuthenticatedAppContratosRoute,
   AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
   AuthenticatedAppFerramentasRoute: AuthenticatedAppFerramentasRoute,
