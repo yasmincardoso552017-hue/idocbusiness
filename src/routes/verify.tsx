@@ -9,9 +9,10 @@ import { verifyDocument } from "@/lib/signing.functions";
 import { fmtDateTime } from "@/lib/format";
 
 export const Route = createFileRoute("/verify")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    code: typeof s["code"] === "string" ? (s["code"] as string) : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>) =>
+    ({
+      code: typeof s["code"] === "string" ? (s["code"] as string) : undefined,
+    }) as { code?: string },
   head: () => ({
     meta: [
       { title: "Verificar documento assinado — DocFlow" },
