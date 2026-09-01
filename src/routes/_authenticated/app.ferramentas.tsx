@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { PdfWorkbench } from "@/components/PdfWorkbench";
 
 export const Route = createFileRoute("/_authenticated/app/ferramentas")({
   head: () => ({
@@ -36,15 +37,6 @@ export const Route = createFileRoute("/_authenticated/app/ferramentas")({
   component: Tools,
 });
 
-function save(bytes: Uint8Array, name: string) {
-  const blob = new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-}
 
 function parseRange(spec: string, total: number) {
   const idx = new Set<number>();
@@ -122,13 +114,20 @@ function Tools() {
   const [text, setText] = useState("CONFIDENCIAL");
   const [busy, setBusy] = useState(false);
   const [pageInfo, setPageInfo] = useState<string | null>(null);
+  const [result, setResult] = useState<{ bytes: Uint8Array; name: string; format: "pdf" | "pdf-zip" } | null>(
+    null,
+  );
+
+  function open(bytes: Uint8Array, name: string, format: "pdf" | "pdf-zip" = "pdf") {
+    setResult({ bytes, name, format });
+  }
 
   async function run(fn: () => Promise<string>) {
     if (busy) return;
     setBusy(true);
     try {
       const msg = await fn();
-      toast.success(msg);
+      toast.success(`${msg} — revise e escolha o formato antes de baixar`);
     } catch (e) {
       toast.error((e as Error).message || "Falha ao processar o PDF");
     } finally {
@@ -146,7 +145,7 @@ function Tools() {
         const pages = await out.copyPages(src, src.getPageIndices());
         pages.forEach((p) => out.addPage(p));
       }
-      save(await out.save(), "docflow-unido.pdf");
+      open(await out.save(), "idoc-unido");
       return `PDF unido com ${out.getPageCount()} páginas`;
     });
 
@@ -160,7 +159,7 @@ function Tools() {
       const out = await PDFDocument.create();
       const pages = await out.copyPages(src, idx);
       pages.forEach((p) => out.addPage(p));
-      save(await out.save(), "docflow-paginas.pdf");
+      open(await out.save(), "idoc-paginas");
       return `${idx.length} página(s) extraída(s)`;
     });
 
@@ -169,16 +168,11 @@ function Tools() {
       const f = burstRef.current?.files?.[0];
       if (!f) throw new Error("Selecione um PDF");
       const src = await loadPdf(f);
-      const total = src.getPageCount();
-      if (total > 60) throw new Error("Limite de 60 páginas para separar em arquivos");
-      for (let i = 0; i < total; i++) {
-        const out = await PDFDocument.create();
-        const [page] = await out.copyPages(src, [i]);
-        out.addPage(page);
-        save(await out.save(), `docflow-pagina-${String(i + 1).padStart(2, "0")}.pdf`);
-        await new Promise((r) => setTimeout(r, 120));
-      }
-      return `${total} arquivo(s) gerado(s)`;
+      const out = await PDFDocument.create();
+      const pages = await out.copyPages(src, src.getPageIndices());
+      pages.forEach((p) => out.addPage(p));
+      open(await out.save(), "idoc-dividido", "pdf-zip");
+      return `${out.getPageCount()} página(s) prontas para dividir`;
     });
 
   const removePages = () =>
@@ -193,7 +187,7 @@ function Tools() {
       const out = await PDFDocument.create();
       const pages = await out.copyPages(src, keep);
       pages.forEach((p) => out.addPage(p));
-      save(await out.save(), "docflow-sem-paginas.pdf");
+      open(await out.save(), "idoc-sem-paginas");
       return `${drop.size} página(s) removida(s)`;
     });
 
@@ -207,7 +201,7 @@ function Tools() {
       pdf.getPages().forEach((p) =>
         p.setRotation(degrees(((p.getRotation().angle + step) % 360 + 360) % 360)),
       );
-      save(await pdf.save(), "docflow-rotacionado.pdf");
+      open(await pdf.save(), "idoc-rotacionado");
       return "Páginas rotacionadas";
     });
 
@@ -234,7 +228,7 @@ function Tools() {
           rotate: degrees(35),
         });
       }
-      save(await pdf.save(), "docflow-marca-dagua.pdf");
+      open(await pdf.save(), "idoc-marca-dagua");
       return "Marca d'água aplicada";
     });
 
@@ -257,7 +251,7 @@ function Tools() {
           color: rgb(0.4, 0.45, 0.53),
         });
       });
-      save(await pdf.save(), "docflow-numerado.pdf");
+      open(await pdf.save(), "idoc-numerado");
       return `${pages.length} página(s) numerada(s)`;
     });
 
@@ -278,7 +272,7 @@ function Tools() {
         const page = out.addPage([maxW, maxH]);
         page.drawImage(img, { x: (maxW - w) / 2, y: (maxH - h) / 2, width: w, height: h });
       }
-      save(await out.save(), "docflow-imagens.pdf");
+      open(await out.save(), "idoc-imagens");
       return `PDF criado com ${files.length} imagem(ns)`;
     });
 
@@ -299,8 +293,8 @@ function Tools() {
         <div className="mb-3 flex items-start gap-2">
           <Wrench className="mt-0.5 size-4 shrink-0 text-primary" />
           <p className="text-xs text-muted-foreground">
-            Tudo é processado no seu dispositivo — os arquivos não são enviados ao servidor. O
-            resultado é baixado automaticamente.
+            Tudo é processado no seu dispositivo — os arquivos não são enviados ao servidor. Você
+            visualiza, escolhe as páginas, o nome e o formato antes de baixar.
           </p>
         </div>
 
@@ -389,6 +383,16 @@ function Tools() {
             </Button>
           </TabsContent>
         </Tabs>
+
+        {result && (
+          <PdfWorkbench
+            key={result.name + result.bytes.byteLength}
+            bytes={result.bytes}
+            defaultName={result.name}
+            defaultFormat={result.format}
+            onClose={() => setResult(null)}
+          />
+        )}
       </div>
     </AppShell>
   );
