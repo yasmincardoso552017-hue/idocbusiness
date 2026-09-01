@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { ensureProfile } from "@/hooks/useAuth";
+
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -68,12 +70,16 @@ function Auth() {
   }
 
   async function google() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/app` },
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
-    if (error) toast.error(error.message);
+    if (result.error) { toast.error(result.error.message); return; }
+    if (result.redirected) return;
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user) await ensureProfile(data.session.user);
+    navigate({ to: "/app", replace: true });
   }
+
 
   async function reset() {
     if (!email) { toast.error("Informe o e-mail"); return; }
