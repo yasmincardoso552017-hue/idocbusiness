@@ -77,6 +77,7 @@ function Landing() {
             >
               Começar agora <ArrowRight className="size-4" />
             </Link>
+            <InstallAppButton className="px-5 py-3" />
             <Link
               to="/verify"
               className="inline-flex items-center gap-2 rounded-xl border border-input px-5 py-3 text-sm font-semibold"
