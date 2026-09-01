@@ -1,4 +1,5 @@
 import { Brand } from "@/components/Brand";
+import { InstallAppButton } from "@/components/InstallAppButton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   FileSignature,
