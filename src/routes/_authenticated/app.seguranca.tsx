@@ -8,7 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDateTime } from "@/lib/format";
+import { fmtDateTime } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/seguranca")({
   head: () => ({
@@ -127,7 +127,7 @@ function SecurityPage() {
                 <li key={e.id} className="py-2">
                   <p className="text-xs font-semibold">{e.action}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    {formatDateTime(e.created_at)}
+                    {fmtDateTime(e.created_at)}
                     {e.actor ? ` • ${e.actor}` : ""}
                     {e.ip ? ` • IP ${e.ip}` : ""}
                   </p>
