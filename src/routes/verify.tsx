@@ -10,7 +10,7 @@ import { fmtDateTime } from "@/lib/format";
 
 export const Route = createFileRoute("/verify")({
   validateSearch: (s: Record<string, unknown>) => ({
-    code: typeof s.code === "string" ? s.code : undefined,
+    code: typeof s["code"] === "string" ? (s["code"] as string) : undefined,
   }),
   head: () => ({
     meta: [
