@@ -5,14 +5,14 @@ import { PublicPage } from "@/components/PublicPage";
 export const Route = createFileRoute("/termos")({
   head: () => ({
     meta: [
-      { title: "Termos de Uso — DocFlow" },
+      { title: "Termos de Uso — IDOC BUSINESS" },
       {
         name: "description",
         content:
-          "Condições de uso do DocFlow para gestão de documentos, contratos e assinaturas eletrônicas.",
+          "Condições de uso do IDOC BUSINESS para gestão de documentos, contratos e assinaturas eletrônicas.",
       },
-      { property: "og:title", content: "Termos de Uso — DocFlow" },
-      { property: "og:description", content: "Condições de uso da plataforma DocFlow." },
+      { property: "og:title", content: "Termos de Uso — IDOC BUSINESS" },
+      { property: "og:description", content: "Condições de uso da plataforma IDOC BUSINESS." },
     ],
   }),
   component: () => (
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/termos")({
 
       <h2>1. Objeto</h2>
       <p>
-        O DocFlow oferece plataforma para armazenamento, organização e assinatura eletrônica de documentos e
+        O IDOC BUSINESS oferece plataforma para armazenamento, organização e assinatura eletrônica de documentos e
         contratos, com registro de evidências e trilha de auditoria.
       </p>
 
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/termos")({
 
       <h2>7. Limitação de responsabilidade</h2>
       <p>
-        O DocFlow não responde por decisões negociais, pelo conteúdo dos contratos ou por perdas indiretas
+        O IDOC BUSINESS não responde por decisões negociais, pelo conteúdo dos contratos ou por perdas indiretas
         decorrentes do uso da plataforma.
       </p>
 

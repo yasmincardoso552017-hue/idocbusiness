@@ -371,7 +371,7 @@ function Documents() {
                   label="Enviar cópia"
                   onClick={() => {
                     window.location.href = `mailto:?subject=${encodeURIComponent(d.name)}&body=${encodeURIComponent(
-                      "Documento disponível no DocFlow.",
+                      "Documento disponível no IDOC BUSINESS.",
                     )}`;
                   }}
                 />

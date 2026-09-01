@@ -5,14 +5,14 @@ import { PublicPage } from "@/components/PublicPage";
 export const Route = createFileRoute("/privacidade")({
   head: () => ({
     meta: [
-      { title: "Política de Privacidade — DocFlow" },
+      { title: "Política de Privacidade — IDOC BUSINESS" },
       {
         name: "description",
         content:
-          "Como o DocFlow trata dados pessoais na assinatura eletrônica, em conformidade com a LGPD.",
+          "Como o IDOC BUSINESS trata dados pessoais na assinatura eletrônica, em conformidade com a LGPD.",
       },
-      { property: "og:title", content: "Política de Privacidade — DocFlow" },
-      { property: "og:description", content: "Tratamento de dados pessoais e LGPD no DocFlow." },
+      { property: "og:title", content: "Política de Privacidade — IDOC BUSINESS" },
+      { property: "og:description", content: "Tratamento de dados pessoais e LGPD no IDOC BUSINESS." },
     ],
   }),
   component: () => (
@@ -21,8 +21,8 @@ export const Route = createFileRoute("/privacidade")({
 
       <h2>1. Papéis</h2>
       <p>
-        O cliente que envia documentos é o <strong>controlador</strong> dos dados neles contidos; o DocFlow atua
-        como <strong>operador</strong>. Para os dados de cadastro da conta, o DocFlow é controlador.
+        O cliente que envia documentos é o <strong>controlador</strong> dos dados neles contidos; o IDOC BUSINESS atua
+        como <strong>operador</strong>. Para os dados de cadastro da conta, o IDOC BUSINESS é controlador.
       </p>
 
       <h2>2. Dados tratados</h2>

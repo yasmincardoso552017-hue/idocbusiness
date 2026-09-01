@@ -17,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/app/integracoes")({
 
 function Integrations() {
   const qc = useQueryClient();
-  const [root, setRoot] = useState("/DocFlow");
+  const [root, setRoot] = useState("/IDOC BUSINESS");
 
   const { data } = useQuery({
     queryKey: ["integrations"],

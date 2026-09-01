@@ -78,14 +78,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "DocFlow — Documentos, Contratos e Assinaturas Eletrônicas" },
+      { title: "IDOC BUSINESS — Documentos, Contratos e Assinaturas Eletrônicas" },
       {
         name: "description",
         content:
           "Plataforma empresarial para organizar documentos, gerir contratos e assinar eletronicamente com evidências e auditoria.",
       },
-      { name: "author", content: "DocFlow" },
-      { property: "og:title", content: "DocFlow — Assinatura eletrônica com evidências" },
+      { name: "author", content: "IDOC BUSINESS" },
+      { property: "og:title", content: "IDOC BUSINESS — Assinatura eletrônica com evidências" },
       {
         property: "og:description",
         content:
@@ -105,7 +105,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
     ],
   }),
   shellComponent: RootShell,

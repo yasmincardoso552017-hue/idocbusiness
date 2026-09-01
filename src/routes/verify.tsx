@@ -1,3 +1,4 @@
+import { Brand } from "@/components/Brand";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -15,16 +16,16 @@ export const Route = createFileRoute("/verify")({
     }) as { code?: string },
   head: () => ({
     meta: [
-      { title: "Verificar documento assinado — DocFlow" },
+      { title: "Verificar documento assinado — IDOC BUSINESS" },
       {
         name: "description",
         content:
-          "Confira a autenticidade de um documento assinado no DocFlow informando o código de verificação.",
+          "Confira a autenticidade de um documento assinado no IDOC BUSINESS informando o código de verificação.",
       },
-      { property: "og:title", content: "Verificar documento assinado — DocFlow" },
+      { property: "og:title", content: "Verificar documento assinado — IDOC BUSINESS" },
       {
         property: "og:description",
-        content: "Validação pública de documentos assinados eletronicamente no DocFlow.",
+        content: "Validação pública de documentos assinados eletronicamente no IDOC BUSINESS.",
       },
     ],
   }),
@@ -50,10 +51,7 @@ function VerifyPage() {
       <header className="border-b border-border bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-2xl items-center gap-2 px-4">
           <Link to="/" className="flex items-center gap-2">
-            <span className="gradient-brand flex size-8 items-center justify-center rounded-lg">
-              <FileSignature className="size-4 text-primary-foreground" />
-            </span>
-            <span className="text-sm font-extrabold tracking-tight">DocFlow</span>
+            <Brand className="h-7" />
           </Link>
         </div>
       </header>

@@ -280,7 +280,7 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
   y -= 8;
   line("Verifique a autenticidade em: " + verifyUrl, 8, font, rgb(0.2, 0.3, 0.55));
   line(
-    "A DocFlow registra evidencias tecnicas para maximizar a forca probatoria e a integridade documental.",
+    "A IDOC BUSINESS registra evidencias tecnicas para maximizar a forca probatoria e a integridade documental.",
     7,
     font,
     rgb(0.45, 0.45, 0.5),
@@ -290,7 +290,7 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
 
   // Rodapé de evidências em todas as páginas
   const shortHash = (doc.hash ?? "").slice(0, 8);
-  const footer = `DocFlow • ID: ${doc.id.slice(0, 8).toUpperCase()} • Cod: ${code} • Hash: ${shortHash}... • Assinado em ${new Date().toLocaleDateString("pt-BR")}`;
+  const footer = `IDOC BUSINESS • ID: ${doc.id.slice(0, 8).toUpperCase()} • Cod: ${code} • Hash: ${shortHash}... • Assinado em ${new Date().toLocaleDateString("pt-BR")}`;
   for (const p of pdf.getPages()) {
     const { width } = p.getSize();
     p.drawRectangle({ x: 0, y: 0, width, height: 16, color: rgb(1, 1, 1), opacity: 0.85 });

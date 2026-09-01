@@ -1,3 +1,4 @@
+import { Brand } from "@/components/Brand";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   FileSignature,
@@ -13,13 +14,13 @@ import {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "DocFlow — Gestão de Documentos, Contratos e Assinaturas" },
+      { title: "IDOC BUSINESS — Gestão de Documentos, Contratos e Assinaturas" },
       {
         name: "description",
         content:
           "Organize documentos, gerencie contratos e colete assinaturas eletrônicas com evidências, auditoria e verificação pública.",
       },
-      { property: "og:title", content: "DocFlow — Documentos, Contratos e Assinaturas" },
+      { property: "og:title", content: "IDOC BUSINESS — Documentos, Contratos e Assinaturas" },
       {
         property: "og:description",
         content:
@@ -44,10 +45,7 @@ function Landing() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
-          <span className="gradient-brand flex size-8 items-center justify-center rounded-lg">
-            <FileSignature className="size-4 text-primary-foreground" />
-          </span>
-          <span className="flex-1 text-sm font-extrabold tracking-tight">DocFlow</span>
+          <Brand className="h-7 flex-1" />
           <Link to="/verify" className="text-xs font-medium text-muted-foreground">
             Verificar
           </Link>
@@ -69,7 +67,7 @@ function Landing() {
             Documentos, contratos e assinaturas eletrônicas em um só lugar
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
-            O DocFlow centraliza os documentos das suas empresas, controla vencimentos de contratos e
+            O IDOC BUSINESS centraliza os documentos das suas empresas, controla vencimentos de contratos e
             coleta assinaturas eletrônicas com evidências completas e PDF final verificável.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -121,7 +119,7 @@ function Landing() {
 
       <footer className="border-t border-border px-4 py-6">
         <div className="mx-auto flex max-w-5xl flex-wrap gap-4 text-xs text-muted-foreground">
-          <span className="font-semibold text-foreground">DocFlow</span>
+          <span className="font-semibold text-foreground">IDOC BUSINESS</span>
           <Link to="/termos">Termos</Link>
           <Link to="/privacidade">Privacidade</Link>
           <Link to="/ajuda">Ajuda</Link>

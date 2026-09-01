@@ -242,12 +242,14 @@ export const verifyDocument = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ code: z.string().min(4) }).parse(d))
   .handler(async ({ data }) => {
     const db = await admin();
-    const code = data.code.trim().toUpperCase();
-    const { data: ev } = await db
-      .from("document_evidence")
-      .select("*, documents(name, status, created_at)")
-      .or(`verification_code.eq.${code},document_id.eq.${code.toLowerCase()}`)
-      .maybeSingle();
+    const raw = data.code.trim();
+    const code = raw.toUpperCase();
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(raw);
+    const query = db.from("document_evidence").select("*, documents(name, status, created_at)");
+    const res = isUuid
+      ? await query.eq("document_id", raw.toLowerCase()).maybeSingle()
+      : await query.eq("verification_code", code).maybeSingle();
+    const ev = res.data;
     if (!ev) return { valid: false as const };
     const doc = ev.documents as unknown as { name: string; status: string };
     const evidence = ev.evidence as { signers?: Array<{ name: string; email: string; signed_at: string }> };
