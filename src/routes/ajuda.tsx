@@ -28,7 +28,7 @@ export const Route = createFileRoute("/ajuda")({
       </p>
 
       <h2>Quais formatos são aceitos?</h2>
-      <p>PDF, DOCX, XLSX e imagens até 25 MB. A assinatura com posicionamento de campos usa arquivos PDF.</p>
+      <p>PDF, Word, Excel, PowerPoint, imagens, TXT/CSV e ZIP com até 2 GB por arquivo. A assinatura com posicionamento de campos usa arquivos PDF.</p>
 
       <h2>Assinatura sequencial ou paralela?</h2>
       <p>
