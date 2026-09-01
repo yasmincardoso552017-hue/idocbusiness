@@ -124,20 +124,21 @@ function Documents() {
     if (!u.user) return;
     for (const file of Array.from(files)) {
       if (file.size > MAX) {
-        toast.error(`${file.name}: limite de 25 MB excedido`);
+        toast.error(`${file.name}: limite de ${MAX_LABEL} excedido`);
         continue;
       }
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-      if (!["pdf", "docx", "xlsx", "png", "jpg", "jpeg", "webp"].includes(ext)) {
+      if (!(ALLOWED as readonly string[]).includes(ext)) {
         toast.error(`${file.name}: tipo não permitido`);
         continue;
       }
-      const buf = await file.arrayBuffer();
-      const hash = await sha256File(buf);
+      const hash = await sha256File(file);
       let pages = 1;
-      if (ext === "pdf") {
+      if (ext === "pdf" && file.size <= HASH_LIMIT) {
         try {
-          pages = (await PDFDocument.load(buf, { ignoreEncryption: true })).getPageCount();
+          pages = (
+            await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true })
+          ).getPageCount();
         } catch {
           pages = 1;
         }
