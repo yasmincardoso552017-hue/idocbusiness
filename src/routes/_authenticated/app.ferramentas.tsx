@@ -221,11 +221,12 @@ function Tools() {
       const label = text.trim();
       for (const p of pdf.getPages()) {
         const { width, height } = p.getSize();
-        const size = Math.max(18, Math.min(64, (width * 0.9) / Math.max(6, label.length) * 1.6));
+        let size = Math.max(18, Math.min(64, (width * 1.1) / Math.max(6, label.length)));
+        while (font.widthOfTextAtSize(label, size) * 0.82 > width * 0.86 && size > 10) size -= 1;
         const w = font.widthOfTextAtSize(label, size);
         p.drawText(label, {
-          x: Math.max(12, (width - w * 0.82) / 2),
-          y: height * 0.42,
+          x: Math.max(12, (width - w * 0.819) / 2),
+          y: Math.max(12, (height - w * 0.574) / 2),
           size,
           font,
           color: rgb(0.45, 0.5, 0.58),
