@@ -45,10 +45,12 @@ function download(blob: Blob, name: string) {
 export function PdfWorkbench({
   bytes,
   defaultName,
+  defaultFormat = "pdf",
   onClose,
 }: {
   bytes: Uint8Array;
   defaultName: string;
+  defaultFormat?: (typeof FORMATS)[number]["value"];
   onClose: () => void;
 }) {
   const [thumbs, setThumbs] = useState<RenderedPage[]>([]);
@@ -56,7 +58,7 @@ export function PdfWorkbench({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState(defaultName);
-  const [format, setFormat] = useState<(typeof FORMATS)[number]["value"]>("pdf");
+  const [format, setFormat] = useState<(typeof FORMATS)[number]["value"]>(defaultFormat);
   const [range, setRange] = useState("");
 
   useEffect(() => {
