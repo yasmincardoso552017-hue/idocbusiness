@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
@@ -46,6 +47,11 @@ const AjudaRoute = AjudaRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermosRoute = TermosRouteImport.update({
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
   '/sign/$token': typeof SignTokenRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
   '/sign/$token': typeof SignTokenRoute
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
   '/sign/$token': typeof SignTokenRoute
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ajuda'
     | '/auth'
+    | '/privacidade'
     | '/termos'
     | '/verify'
     | '/sign/$token'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ajuda'
     | '/auth'
+    | '/privacidade'
     | '/termos'
     | '/verify'
     | '/sign/$token'
@@ -243,6 +254,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/ajuda'
     | '/auth'
+    | '/privacidade'
     | '/termos'
     | '/verify'
     | '/sign/$token'
@@ -265,6 +277,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AjudaRoute: typeof AjudaRoute
   AuthRoute: typeof AuthRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
   TermosRoute: typeof TermosRoute
   VerifyRoute: typeof VerifyRoute
   SignTokenRoute: typeof SignTokenRoute
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/termos': {
@@ -448,6 +468,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AjudaRoute: AjudaRoute,
   AuthRoute: AuthRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,
   VerifyRoute: VerifyRoute,
   SignTokenRoute: SignTokenRoute,
