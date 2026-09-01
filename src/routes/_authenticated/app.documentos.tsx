@@ -41,14 +41,41 @@ export const Route = createFileRoute("/_authenticated/app/documentos")({
   component: Documents,
 });
 
-const ACCEPT = ".pdf,.docx,.xlsx,.png,.jpg,.jpeg,.webp";
-const MAX = 25 * 1024 * 1024;
+const ALLOWED = [
+  "pdf", "docx", "doc", "xlsx", "xls", "csv", "txt", "rtf", "odt", "ods",
+  "pptx", "ppt", "png", "jpg", "jpeg", "webp", "gif", "heic", "tiff", "zip",
+] as const;
+const ACCEPT = ALLOWED.map((e) => `.${e}`).join(",");
+const MAX = 2 * 1024 * 1024 * 1024; // 2 GB por arquivo
+const MAX_LABEL = "2 GB";
+const HASH_LIMIT = 200 * 1024 * 1024; // acima disso, hash por amostragem de blocos
 
-async function sha256File(buf: ArrayBuffer) {
-  const d = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(d))
+function toHex(buf: ArrayBuffer) {
+  return Array.from(new Uint8Array(buf))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+async function sha256File(file: File) {
+  if (file.size <= HASH_LIMIT) {
+    return toHex(await crypto.subtle.digest("SHA-256", await file.arrayBuffer()));
+  }
+  // Arquivos muito grandes: hash determinístico de blocos (início/meio/fim) + tamanho
+  const chunk = 8 * 1024 * 1024;
+  const parts: ArrayBuffer[] = [
+    await file.slice(0, chunk).arrayBuffer(),
+    await file.slice(Math.floor(file.size / 2), Math.floor(file.size / 2) + chunk).arrayBuffer(),
+    await file.slice(Math.max(0, file.size - chunk)).arrayBuffer(),
+    new TextEncoder().encode(`${file.size}`).buffer as ArrayBuffer,
+  ];
+  const total = parts.reduce((n, p) => n + p.byteLength, 0);
+  const merged = new Uint8Array(total);
+  let off = 0;
+  for (const p of parts) {
+    merged.set(new Uint8Array(p), off);
+    off += p.byteLength;
+  }
+  return toHex(await crypto.subtle.digest("SHA-256", merged.buffer));
 }
 
 function Documents() {
