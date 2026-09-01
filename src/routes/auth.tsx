@@ -1,3 +1,4 @@
+import { Brand } from "@/components/Brand";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { FileSignature } from "lucide-react";
@@ -16,10 +17,10 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Entrar no DocFlow" },
-      { name: "description", content: "Acesse sua conta DocFlow para gerenciar documentos, contratos e assinaturas." },
-      { property: "og:title", content: "Entrar no DocFlow" },
-      { property: "og:description", content: "Acesse sua conta DocFlow." },
+      { title: "Entrar no IDOC BUSINESS" },
+      { name: "description", content: "Acesse sua conta IDOC BUSINESS para gerenciar documentos, contratos e assinaturas." },
+      { property: "og:title", content: "Entrar no IDOC BUSINESS" },
+      { property: "og:description", content: "Acesse sua conta IDOC BUSINESS." },
     ],
   }),
   component: Auth,
@@ -94,10 +95,7 @@ function Auth() {
     <div className="flex min-h-screen flex-col bg-background px-4 py-8">
       <div className="mx-auto w-full max-w-md">
         <Link to="/" className="mb-6 flex items-center justify-center gap-2">
-          <span className="gradient-brand flex size-9 items-center justify-center rounded-xl">
-            <FileSignature className="size-5 text-primary-foreground" />
-          </span>
-          <span className="text-lg font-extrabold tracking-tight">DocFlow</span>
+          <Brand className="h-9" />
         </Link>
 
         <div className="card-soft p-5">

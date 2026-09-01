@@ -1,3 +1,4 @@
+import { Brand } from "@/components/Brand";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -14,12 +15,12 @@ export const Route = createFileRoute("/sign/$token")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Assinar documento — DocFlow" },
+      { title: "Assinar documento — IDOC BUSINESS" },
       {
         name: "description",
         content: "Assine eletronicamente seu documento com registro de evidências e auditoria.",
       },
-      { property: "og:title", content: "Assinar documento — DocFlow" },
+      { property: "og:title", content: "Assinar documento — IDOC BUSINESS" },
       {
         property: "og:description",
         content: "Assinatura eletrônica segura com evidências e verificação pública.",
@@ -176,10 +177,7 @@ function SignPage() {
     <div className="min-h-screen bg-muted/40 pb-10">
       <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-2xl items-center gap-2 px-4">
-          <span className="gradient-brand flex size-8 items-center justify-center rounded-lg">
-            <FileSignature className="size-4 text-primary-foreground" />
-          </span>
-          <span className="text-sm font-extrabold tracking-tight">DocFlow</span>
+          <Brand className="h-7" />
           <span className="ml-auto text-xs text-muted-foreground">Assinatura eletrônica</span>
         </div>
       </header>
@@ -294,7 +292,7 @@ function Centered({ title, text, icon }: { title: string; text: string; icon?: b
         <h1 className="text-base font-bold">{title}</h1>
         <p className="text-xs text-muted-foreground">{text}</p>
         <Link to="/" className="inline-block pt-2 text-xs font-semibold text-primary">
-          Ir para o DocFlow
+          Ir para o IDOC BUSINESS
         </Link>
       </div>
     </div>

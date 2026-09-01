@@ -13,16 +13,16 @@ import { fmtDateTime } from "@/lib/format";
 export const Route = createFileRoute("/_authenticated/app/seguranca")({
   head: () => ({
     meta: [
-      { title: "Segurança e LGPD — DocFlow" },
+      { title: "Segurança e LGPD — IDOC BUSINESS" },
       {
         name: "description",
         content:
-          "Auditoria imutável, evidências de assinatura e controles de privacidade (LGPD) da sua conta DocFlow.",
+          "Auditoria imutável, evidências de assinatura e controles de privacidade (LGPD) da sua conta IDOC BUSINESS.",
       },
-      { property: "og:title", content: "Segurança e LGPD — DocFlow" },
+      { property: "og:title", content: "Segurança e LGPD — IDOC BUSINESS" },
       {
         property: "og:description",
-        content: "Trilha de auditoria imutável e controles de privacidade no DocFlow.",
+        content: "Trilha de auditoria imutável e controles de privacidade no IDOC BUSINESS.",
       },
     ],
   }),
@@ -96,7 +96,7 @@ function SecurityPage() {
           </div>
           <p className="text-xs text-muted-foreground">
             Tratamos dados pessoais para execução do contrato de assinatura eletrônica e cumprimento de
-            obrigação legal de comprovação. Você é o controlador dos documentos enviados; o DocFlow atua como
+            obrigação legal de comprovação. Você é o controlador dos documentos enviados; o IDOC BUSINESS atua como
             operador. Titulares podem solicitar acesso, correção ou eliminação — exceto dados necessários à
             validade jurídica das assinaturas já concluídas, retidos pelo prazo legal.
           </p>

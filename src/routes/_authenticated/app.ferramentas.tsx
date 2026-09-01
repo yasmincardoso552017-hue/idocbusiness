@@ -23,14 +23,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 export const Route = createFileRoute("/_authenticated/app/ferramentas")({
   head: () => ({
     meta: [
-      { title: "Ferramentas PDF — DocFlow" },
+      { title: "Ferramentas PDF — IDOC BUSINESS" },
       {
         name: "description",
         content:
           "Una, divida, rotacione, numere e marque PDFs direto no navegador, sem enviar arquivos ao servidor.",
       },
-      { property: "og:title", content: "Ferramentas PDF — DocFlow" },
-      { property: "og:description", content: "Editor de PDF local do DocFlow." },
+      { property: "og:title", content: "Ferramentas PDF — IDOC BUSINESS" },
+      { property: "og:description", content: "Editor de PDF local do IDOC BUSINESS." },
     ],
   }),
   component: Tools,

@@ -5,16 +5,16 @@ import { PublicPage } from "@/components/PublicPage";
 export const Route = createFileRoute("/ajuda")({
   head: () => ({
     meta: [
-      { title: "Central de ajuda — DocFlow" },
+      { title: "Central de ajuda — IDOC BUSINESS" },
       {
         name: "description",
         content:
-          "Dúvidas frequentes sobre envio de documentos, assinatura eletrônica, evidências e verificação no DocFlow.",
+          "Dúvidas frequentes sobre envio de documentos, assinatura eletrônica, evidências e verificação no IDOC BUSINESS.",
       },
-      { property: "og:title", content: "Central de ajuda — DocFlow" },
+      { property: "og:title", content: "Central de ajuda — IDOC BUSINESS" },
       {
         property: "og:description",
-        content: "Guia rápido do fluxo de documentos, contratos e assinaturas no DocFlow.",
+        content: "Guia rápido do fluxo de documentos, contratos e assinaturas no IDOC BUSINESS.",
       },
     ],
   }),

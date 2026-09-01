@@ -1,3 +1,4 @@
+import { Brand } from "@/components/Brand";
 import { Link } from "@tanstack/react-router";
 import { FileSignature } from "lucide-react";
 import type { ReactNode } from "react";
@@ -8,10 +9,7 @@ export function PublicPage({ title, children }: { title: string; children: React
       <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-4">
           <Link to="/" className="flex items-center gap-2">
-            <span className="gradient-brand flex size-8 items-center justify-center rounded-lg">
-              <FileSignature className="size-4 text-primary-foreground" />
-            </span>
-            <span className="text-sm font-extrabold tracking-tight">DocFlow</span>
+            <Brand className="h-7" />
           </Link>
           <nav className="ml-auto flex gap-3 text-xs font-medium text-muted-foreground">
             <Link to="/verify">Verificar</Link>
@@ -31,7 +29,7 @@ export function PublicPage({ title, children }: { title: string; children: React
             <Link to="/privacidade">Privacidade</Link>
             <Link to="/ajuda">Ajuda</Link>
           </div>
-          <p className="mt-2">© {new Date().getFullYear()} DocFlow</p>
+          <p className="mt-2">© {new Date().getFullYear()} IDOC BUSINESS</p>
         </footer>
       </main>
     </div>

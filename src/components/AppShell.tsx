@@ -1,3 +1,4 @@
+import { Brand } from "@/components/Brand";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   Home,
@@ -48,10 +49,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
       <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
           <Link to="/app" className="flex items-center gap-2">
-            <span className="gradient-brand flex size-8 items-center justify-center rounded-lg">
-              <FileSignature className="size-4 text-primary-foreground" />
-            </span>
-            <span className="text-sm font-extrabold tracking-tight">DocFlow</span>
+            <Brand className="h-7" />
           </Link>
           <h1 className="ml-1 flex-1 truncate text-sm font-semibold text-muted-foreground">{title}</h1>
           <Sheet>
