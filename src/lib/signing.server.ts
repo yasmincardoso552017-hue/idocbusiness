@@ -74,7 +74,9 @@ export async function logEvent(
     meta?: Record<string, unknown>;
   },
 ) {
-  await db.from("audit_events").insert({ ...row, meta: row.meta ?? {} });
+  await db
+    .from("audit_events")
+    .insert({ ...row, meta: JSON.parse(JSON.stringify(row.meta ?? {})) });
 }
 
 async function drawQr(pdf: PDFDocument, page: import("pdf-lib").PDFPage, text: string, x: number, y: number, size: number) {

@@ -36,7 +36,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime, fmtSize, statusClass, STATUS_LABEL } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/documentos")({
-  validateSearch: (s: Record<string, unknown>) => ({ doc: (s.doc as string) ?? undefined }),
+  validateSearch: (s: Record<string, unknown>) =>
+    ({ doc: (s["doc"] as string) ?? undefined }) as { doc?: string },
   component: Documents,
 });
 
@@ -141,7 +142,7 @@ function Documents() {
   };
 
   const openFile = async (path: string | null, download = false) => {
-    if (!path) return toast.error("Arquivo indisponível");
+    if (!path) { toast.error("Arquivo indisponível"); return; }
     const { data: signed } = await supabase.storage.from("documents").createSignedUrl(path, 300, {
       download,
     });
@@ -164,7 +165,7 @@ function Documents() {
         .insert({ document_id: docId, owner_id: u.user.id, mode: "sequential", status: "draft" })
         .select("id")
         .single();
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       requestId = data.id;
     }
     navigate({ to: "/app/preparar/$requestId", params: { requestId } });
@@ -307,7 +308,7 @@ function Documents() {
                   icon={FolderInput}
                   label="Mover"
                   onClick={async () => {
-                    if (folderId === "none") return toast.error("Selecione uma pasta no topo");
+                    if (folderId === "none") { toast.error("Selecione uma pasta no topo"); return; }
                     await supabase.from("documents").update({ folder_id: folderId }).eq("id", d.id);
                     toast.success("Documento movido");
                     refresh();

@@ -46,7 +46,7 @@ function Signatures() {
 
   async function download(path: string, name: string) {
     const { data: file, error } = await supabase.storage.from("documents").download(path);
-    if (error || !file) return toast.error("Não foi possível baixar o arquivo");
+    if (error || !file) { toast.error("Não foi possível baixar o arquivo"); return; }
     const url = URL.createObjectURL(file);
     const a = document.createElement("a");
     a.href = url;

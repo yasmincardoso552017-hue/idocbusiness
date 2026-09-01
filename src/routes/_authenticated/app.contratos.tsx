@@ -90,7 +90,7 @@ function Contracts() {
   }).length;
 
   async function save() {
-    if (!form.name.trim()) return toast.error("Informe o nome do contrato");
+    if (!form.name.trim()) { toast.error("Informe o nome do contrato"); return; }
     const { data: auth } = await supabase.auth.getUser();
     const payload = {
       owner_id: auth.user!.id,
@@ -110,7 +110,7 @@ function Contracts() {
     const res = form.id
       ? await supabase.from("contracts").update(payload).eq("id", form.id)
       : await supabase.from("contracts").insert(payload);
-    if (res.error) return toast.error(res.error.message);
+    if (res.error) { toast.error(res.error.message); return; }
     toast.success(form.id ? "Contrato atualizado" : "Contrato criado");
     setOpen(false);
     setForm(empty);

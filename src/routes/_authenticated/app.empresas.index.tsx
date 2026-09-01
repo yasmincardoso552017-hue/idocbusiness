@@ -56,10 +56,10 @@ function Companies() {
     mutationFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Sessão expirada");
-      if (!form.razao_social) throw new Error("Informe a razão social");
+      if (!form["razao_social"]) throw new Error("Informe a razão social");
       const { data, error } = await supabase
         .from("companies")
-        .insert({ ...form, owner_id: u.user.id, razao_social: form.razao_social })
+        .insert({ ...form, owner_id: u.user.id, razao_social: form["razao_social"] })
         .select()
         .single();
       if (error) throw error;
@@ -123,7 +123,7 @@ function Companies() {
                 </Label>
                 <Textarea
                   id="obs"
-                  value={form.observacoes ?? ""}
+                  value={form["observacoes"] ?? ""}
                   onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
                 />
               </div>

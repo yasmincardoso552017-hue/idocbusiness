@@ -44,7 +44,7 @@ function Integrations() {
     const res = dropbox
       ? await supabase.from("integrations").update(payload).eq("id", dropbox.id)
       : await supabase.from("integrations").insert(payload);
-    if (res.error) return toast.error(res.error.message);
+    if (res.error) { toast.error(res.error.message); return; }
     qc.invalidateQueries({ queryKey: ["integrations"] });
   }
 

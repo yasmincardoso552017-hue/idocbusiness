@@ -41,13 +41,13 @@ function Auth() {
     setLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (data.user) await ensureProfile(data.user);
     navigate({ to: "/app", replace: true });
   }
 
   async function signUp() {
-    if (password.length < 6) return toast.error("A senha precisa ter ao menos 6 caracteres");
+    if (password.length < 6) { toast.error("A senha precisa ter ao menos 6 caracteres"); return; }
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -58,7 +58,7 @@ function Auth() {
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (data.session && data.user) {
       await ensureProfile(data.user);
       navigate({ to: "/app", replace: true });
@@ -76,11 +76,11 @@ function Auth() {
   }
 
   async function reset() {
-    if (!email) return toast.error("Informe o e-mail");
+    if (!email) { toast.error("Informe o e-mail"); return; }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth`,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Enviamos o link de redefinição por e-mail.");
   }
 
