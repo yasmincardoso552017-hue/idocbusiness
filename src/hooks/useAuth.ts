@@ -23,7 +23,7 @@ export async function ensureProfile(user: User) {
   await supabase.from("profiles").upsert({
     id: user.id,
     email: user.email ?? null,
-    full_name: (user.user_metadata?.full_name as string) ?? null,
-    phone: (user.user_metadata?.phone as string) ?? null,
+    full_name: (user.user_metadata?.["full_name"] as string) ?? null,
+    phone: (user.user_metadata?.["phone"] as string) ?? null,
   });
 }
