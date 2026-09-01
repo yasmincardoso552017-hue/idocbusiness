@@ -214,7 +214,7 @@ function SignPage() {
             {textFields.map((f) => (
               <div key={f.id} className="space-y-1">
                 <Label htmlFor={f.id} className="text-xs">
-                  {f.label || (f.type === "cpf" ? "CPF" : "Texto")}
+                  {f.type === "cpf" ? "CPF" : "Texto"}
                 </Label>
                 <Input
                   id={f.id}
