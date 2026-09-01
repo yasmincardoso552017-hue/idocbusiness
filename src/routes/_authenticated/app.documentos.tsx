@@ -253,7 +253,7 @@ function Documents() {
           onChange={(e) => upload(e.target.files)}
         />
         <Button className="w-full" onClick={() => fileRef.current?.click()}>
-          <Upload className="mr-2 size-4" /> Enviar arquivos (PDF, DOCX, XLSX, imagens)
+          <Upload className="mr-2 size-4" /> Enviar arquivos (PDF, Office, imagens, ZIP)
         </Button>
         <p className="text-[10px] text-muted-foreground">
           Até 25 MB por arquivo. Cada upload gera hash SHA-256 e trilha de auditoria.
