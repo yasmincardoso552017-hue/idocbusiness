@@ -74,7 +74,7 @@ function Prepare() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["prepare", requestId] });
 
   async function addSigner() {
-    if (!form.name.trim() || !form.email.trim()) return toast.error("Informe nome e e-mail");
+    if (!form.name.trim() || !form.email.trim()) { toast.error("Informe nome e e-mail"); return; }
     const { data: auth } = await supabase.auth.getUser();
     const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().slice(0, 8);
     const { error } = await supabase.from("signers").insert({
@@ -87,7 +87,7 @@ function Prepare() {
       order_index: signers.length + 1,
       token,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setForm({ name: "", email: "", phone: "", cpf: "" });
     refresh();
   }
@@ -99,7 +99,7 @@ function Prepare() {
   }
 
   async function addFieldAt(xRatio: number, yRatio: number) {
-    if (!currentSigner) return toast.error("Adicione um signatário primeiro");
+    if (!currentSigner) { toast.error("Adicione um signatário primeiro"); return; }
     const { data: auth } = await supabase.auth.getUser();
     const { error } = await supabase.from("signature_fields").insert({
       request_id: requestId,
@@ -112,7 +112,7 @@ function Prepare() {
       h: activeType === "signature" ? 0.07 : 0.04,
       type: activeType,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     refresh();
   }
 

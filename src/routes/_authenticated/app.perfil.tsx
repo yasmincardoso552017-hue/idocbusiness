@@ -50,15 +50,15 @@ function Profile() {
       phone: form.phone || null,
       email: form.email || null,
     });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Perfil atualizado");
     qc.invalidateQueries({ queryKey: ["profile"] });
   }
 
   async function changePassword() {
-    if (pwd.length < 6) return toast.error("A senha precisa ter ao menos 6 caracteres");
+    if (pwd.length < 6) { toast.error("A senha precisa ter ao menos 6 caracteres"); return; }
     const { error } = await supabase.auth.updateUser({ password: pwd });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     setPwd("");
     toast.success("Senha alterada");
   }
