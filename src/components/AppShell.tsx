@@ -1,4 +1,5 @@
 import { Brand } from "@/components/Brand";
+import { InstallAppButton } from "@/components/InstallAppButton";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   Home,
@@ -62,6 +63,9 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
               <SheetHeader>
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
+              <div className="mt-3 px-3">
+                <InstallAppButton className="w-full justify-center" />
+              </div>
               <nav className="mt-2 flex flex-col gap-1 px-2">
                 {menu.map((m) => (
                   <Link
