@@ -256,7 +256,8 @@ function Documents() {
           <Upload className="mr-2 size-4" /> Enviar arquivos (PDF, Office, imagens, ZIP)
         </Button>
         <p className="text-[10px] text-muted-foreground">
-          Até 25 MB por arquivo. Cada upload gera hash SHA-256 e trilha de auditoria.
+          Até {MAX_LABEL} por arquivo, envios múltiplos. Cada upload gera hash SHA-256 e trilha de
+          auditoria.
         </p>
       </div>
 
