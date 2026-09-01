@@ -83,7 +83,7 @@ export function PdfWorkbench({
 
   const setAll = (selected: boolean) => setPages((prev) => prev.map((p) => ({ ...p, selected })));
 
-  const applyRange = () => {
+  const applyRange = (): void => {
     const wanted = new Set<number>();
     for (const part of range.split(",")) {
       const piece = part.trim();
@@ -93,7 +93,10 @@ export function PdfWorkbench({
       const end = b && !Number.isNaN(b) ? b : a;
       for (let i = a; i <= end; i++) wanted.add(i - 1);
     }
-    if (!wanted.size) return toast.error("Informe páginas válidas, ex.: 1-3,7");
+    if (!wanted.size) {
+      toast.error("Informe páginas válidas, ex.: 1-3,7");
+      return;
+    }
     setPages((prev) => prev.map((p, i) => ({ ...p, selected: wanted.has(i) })));
   };
 
@@ -110,7 +113,10 @@ export function PdfWorkbench({
       const j = i + dir;
       if (j < 0 || j >= prev.length) return prev;
       const next = [...prev];
-      [next[i], next[j]] = [next[j], next[i]];
+      const a = next[i]!;
+      const b = next[j]!;
+      next[i] = b;
+      next[j] = a;
       return next;
     });
 
@@ -122,16 +128,19 @@ export function PdfWorkbench({
       indexes.map((p) => p.src),
     );
     copied.forEach((page, k) => {
-      const rot = indexes[k].rotation;
+      const rot = indexes[k]?.rotation ?? 0;
       if (rot) page.setRotation(degrees(((page.getRotation().angle + rot) % 360 + 360) % 360));
       out.addPage(page);
     });
     return await out.save();
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<void> {
     const chosen = pages.filter((p) => p.selected);
-    if (!chosen.length) return toast.error("Selecione ao menos uma página");
+    if (!chosen.length) {
+      toast.error("Selecione ao menos uma página");
+      return;
+    }
     const base = (name.trim() || defaultName).replace(/\.[a-z0-9]+$/i, "") || "documento";
     setSaving(true);
     try {
@@ -144,7 +153,7 @@ export function PdfWorkbench({
         const JSZip = (await import("jszip")).default;
         const zip = new JSZip();
         for (let i = 0; i < chosen.length; i++) {
-          zip.file(`${base}-${String(i + 1).padStart(3, "0")}.pdf`, await buildPdf([chosen[i]]));
+          zip.file(`${base}-${String(i + 1).padStart(3, "0")}.pdf`, await buildPdf([chosen[i]!]));
         }
         download(await zip.generateAsync({ type: "blob" }), `${base}.zip`);
       } else {
@@ -157,7 +166,7 @@ export function PdfWorkbench({
           mime,
         );
         if (imgs.length === 1) {
-          download(imgs[0].blob, `${base}.${format}`);
+          download(imgs[0]!.blob, `${base}.${format}`);
         } else {
           const JSZip = (await import("jszip")).default;
           const zip = new JSZip();
@@ -217,7 +226,8 @@ export function PdfWorkbench({
 
           <div className="grid max-h-[60vh] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-3 md:grid-cols-4">
             {pages.map((p, i) => {
-              const thumb = thumbs.find((t) => t.index === p.src)!;
+              const thumb = thumbs.find((t) => t.index === p.src);
+              if (!thumb) return null;
               return (
                 <div
                   key={`${p.src}-${i}`}

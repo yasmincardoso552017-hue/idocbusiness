@@ -43,7 +43,7 @@ export async function renderPdfPages(bytes: Uint8Array, targetWidth = 260): Prom
       url: await canvasToUrl(canvas, "image/png"),
     });
   }
-  await doc.destroy();
+  doc.cleanup();
   return out;
 }
 
@@ -72,6 +72,6 @@ export async function rasterizePages(
     );
     out.push({ index: p, blob });
   }
-  await doc.destroy();
+  doc.cleanup();
   return out;
 }
