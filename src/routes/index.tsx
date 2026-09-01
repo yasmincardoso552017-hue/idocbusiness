@@ -1,6 +1,8 @@
 import { Brand } from "@/components/Brand";
 import { InstallAppButton } from "@/components/InstallAppButton";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   FileSignature,
   ShieldCheck,
@@ -42,6 +44,22 @@ const features = [
 ];
 
 function Landing() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (active && data.session) navigate({ to: "/app", replace: true });
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session) navigate({ to: "/app", replace: true });
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
