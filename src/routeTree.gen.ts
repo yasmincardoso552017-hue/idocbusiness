@@ -11,7 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as TermosRouteImport } from './routes/termos'
+import { Route as VerifyRouteImport } from './routes/verify'
+import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAssinaturasRouteImport } from './routes/_authenticated/app.assinaturas'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app.configuracoes'
@@ -20,6 +25,7 @@ import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authen
 import { Route as AuthenticatedAppFerramentasRouteImport } from './routes/_authenticated/app.ferramentas'
 import { Route as AuthenticatedAppIntegracoesRouteImport } from './routes/_authenticated/app.integracoes'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
+import { Route as AuthenticatedAppSegurancaRouteImport } from './routes/_authenticated/app.seguranca'
 import { Route as AuthenticatedAppEmpresasIndexRouteImport } from './routes/_authenticated/app.empresas.index'
 import { Route as AuthenticatedAppEmpresasCompanyIdRouteImport } from './routes/_authenticated/app.empresas.$companyId'
 import { Route as AuthenticatedAppPrepararRequestIdRouteImport } from './routes/_authenticated/app.preparar.$requestId'
@@ -33,9 +39,34 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AjudaRoute = AjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifyRoute = VerifyRouteImport.update({
+  id: '/verify',
+  path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignTokenRoute = SignTokenRouteImport.update({
+  id: '/sign/$token',
+  path: '/sign/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
@@ -84,6 +115,12 @@ const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   path: '/app/perfil',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAppSegurancaRoute =
+  AuthenticatedAppSegurancaRouteImport.update({
+    id: '/app/seguranca',
+    path: '/app/seguranca',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppEmpresasIndexRoute =
   AuthenticatedAppEmpresasIndexRouteImport.update({
     id: '/app/empresas/',
@@ -105,7 +142,12 @@ const AuthenticatedAppPrepararRequestIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
+  '/verify': typeof VerifyRoute
+  '/sign/$token': typeof SignTokenRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
@@ -113,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
+  '/app/seguranca': typeof AuthenticatedAppSegurancaRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
   '/app/preparar/$requestId': typeof AuthenticatedAppPrepararRequestIdRoute
@@ -120,7 +163,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
+  '/verify': typeof VerifyRoute
+  '/sign/$token': typeof SignTokenRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
@@ -128,6 +176,7 @@ export interface FileRoutesByTo {
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
+  '/app/seguranca': typeof AuthenticatedAppSegurancaRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
   '/app/preparar/$requestId': typeof AuthenticatedAppPrepararRequestIdRoute
@@ -137,7 +186,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
+  '/privacidade': typeof PrivacidadeRoute
+  '/termos': typeof TermosRoute
+  '/verify': typeof VerifyRoute
+  '/sign/$token': typeof SignTokenRoute
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/contratos': typeof AuthenticatedAppContratosRoute
@@ -145,6 +199,7 @@ export interface FileRoutesById {
   '/_authenticated/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/_authenticated/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
+  '/_authenticated/app/seguranca': typeof AuthenticatedAppSegurancaRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
   '/_authenticated/app/preparar/$requestId': typeof AuthenticatedAppPrepararRequestIdRoute
@@ -154,7 +209,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/ajuda'
     | '/auth'
+    | '/privacidade'
+    | '/termos'
+    | '/verify'
+    | '/sign/$token'
     | '/app/assinaturas'
     | '/app/configuracoes'
     | '/app/contratos'
@@ -162,6 +222,7 @@ export interface FileRouteTypes {
     | '/app/ferramentas'
     | '/app/integracoes'
     | '/app/perfil'
+    | '/app/seguranca'
     | '/app/'
     | '/app/empresas/$companyId'
     | '/app/preparar/$requestId'
@@ -169,7 +230,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/ajuda'
     | '/auth'
+    | '/privacidade'
+    | '/termos'
+    | '/verify'
+    | '/sign/$token'
     | '/app/assinaturas'
     | '/app/configuracoes'
     | '/app/contratos'
@@ -177,6 +243,7 @@ export interface FileRouteTypes {
     | '/app/ferramentas'
     | '/app/integracoes'
     | '/app/perfil'
+    | '/app/seguranca'
     | '/app'
     | '/app/empresas/$companyId'
     | '/app/preparar/$requestId'
@@ -185,7 +252,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/ajuda'
     | '/auth'
+    | '/privacidade'
+    | '/termos'
+    | '/verify'
+    | '/sign/$token'
     | '/_authenticated/app/assinaturas'
     | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/contratos'
@@ -193,6 +265,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/ferramentas'
     | '/_authenticated/app/integracoes'
     | '/_authenticated/app/perfil'
+    | '/_authenticated/app/seguranca'
     | '/_authenticated/app/'
     | '/_authenticated/app/empresas/$companyId'
     | '/_authenticated/app/preparar/$requestId'
@@ -202,7 +275,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AjudaRoute: typeof AjudaRoute
   AuthRoute: typeof AuthRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
+  TermosRoute: typeof TermosRoute
+  VerifyRoute: typeof VerifyRoute
+  SignTokenRoute: typeof SignTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -221,11 +299,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ajuda': {
+      id: '/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AjudaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify': {
+      id: '/verify'
+      path: '/verify'
+      fullPath: '/verify'
+      preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign/$token': {
+      id: '/sign/$token'
+      path: '/sign/$token'
+      fullPath: '/sign/$token'
+      preLoaderRoute: typeof SignTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/': {
@@ -284,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPerfilRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/seguranca': {
+      id: '/_authenticated/app/seguranca'
+      path: '/app/seguranca'
+      fullPath: '/app/seguranca'
+      preLoaderRoute: typeof AuthenticatedAppSegurancaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/empresas/': {
       id: '/_authenticated/app/empresas/'
       path: '/app/empresas'
@@ -316,6 +436,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppFerramentasRoute: typeof AuthenticatedAppFerramentasRoute
   AuthenticatedAppIntegracoesRoute: typeof AuthenticatedAppIntegracoesRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
+  AuthenticatedAppSegurancaRoute: typeof AuthenticatedAppSegurancaRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
   AuthenticatedAppEmpresasCompanyIdRoute: typeof AuthenticatedAppEmpresasCompanyIdRoute
   AuthenticatedAppPrepararRequestIdRoute: typeof AuthenticatedAppPrepararRequestIdRoute
@@ -330,6 +451,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppFerramentasRoute: AuthenticatedAppFerramentasRoute,
   AuthenticatedAppIntegracoesRoute: AuthenticatedAppIntegracoesRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
+  AuthenticatedAppSegurancaRoute: AuthenticatedAppSegurancaRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
   AuthenticatedAppEmpresasCompanyIdRoute:
     AuthenticatedAppEmpresasCompanyIdRoute,
@@ -344,7 +466,12 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AjudaRoute: AjudaRoute,
   AuthRoute: AuthRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
+  TermosRoute: TermosRoute,
+  VerifyRoute: VerifyRoute,
+  SignTokenRoute: SignTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
