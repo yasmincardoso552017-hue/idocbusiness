@@ -36,7 +36,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime, fmtSize, statusClass, STATUS_LABEL } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/documentos")({
-  validateSearch: (s: Record<string, unknown>) => ({ doc: (s.doc as string) ?? undefined }),
+  validateSearch: (s: Record<string, unknown>) =>
+    ({ doc: (s["doc"] as string) ?? undefined }) as { doc?: string },
   component: Documents,
 });
 
