@@ -59,6 +59,7 @@ export type Database = {
           cidade: string | null
           cnpj: string | null
           contato: string | null
+          cpf: string | null
           created_at: string
           email: string | null
           endereco: string | null
@@ -70,12 +71,14 @@ export type Database = {
           owner_id: string
           razao_social: string
           telefone: string | null
+          tipo: string
         }
         Insert: {
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
           contato?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
@@ -87,12 +90,14 @@ export type Database = {
           owner_id: string
           razao_social: string
           telefone?: string | null
+          tipo?: string
         }
         Update: {
           cep?: string | null
           cidade?: string | null
           cnpj?: string | null
           contato?: string | null
+          cpf?: string | null
           created_at?: string
           email?: string | null
           endereco?: string | null
@@ -104,8 +109,57 @@ export type Database = {
           owner_id?: string
           razao_social?: string
           telefone?: string | null
+          tipo?: string
         }
         Relationships: []
+      }
+      contract_audits: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          document_id: string | null
+          file_name: string
+          id: string
+          owner_id: string
+          result: Json
+          summary: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          file_name: string
+          id?: string
+          owner_id: string
+          result?: Json
+          summary?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          file_name?: string
+          id?: string
+          owner_id?: string
+          result?: Json
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_audits_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_audits_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       contracts: {
         Row: {
@@ -304,6 +358,8 @@ export type Database = {
           name: string
           owner_id: string
           parent_id: string | null
+          public_shared_at: string | null
+          public_token: string | null
         }
         Insert: {
           company_id: string
@@ -312,6 +368,8 @@ export type Database = {
           name: string
           owner_id: string
           parent_id?: string | null
+          public_shared_at?: string | null
+          public_token?: string | null
         }
         Update: {
           company_id?: string
@@ -320,6 +378,8 @@ export type Database = {
           name?: string
           owner_id?: string
           parent_id?: string | null
+          public_shared_at?: string | null
+          public_token?: string | null
         }
         Relationships: [
           {
@@ -551,9 +611,11 @@ export type Database = {
           order_index: number
           owner_id: string
           phone: string | null
+          photo_id_path: string | null
           request_id: string
           required: boolean
           revoked: boolean
+          selfie_path: string | null
           signed_at: string | null
           status: string
           token: string
@@ -574,9 +636,11 @@ export type Database = {
           order_index?: number
           owner_id: string
           phone?: string | null
+          photo_id_path?: string | null
           request_id: string
           required?: boolean
           revoked?: boolean
+          selfie_path?: string | null
           signed_at?: string | null
           status?: string
           token: string
@@ -597,9 +661,11 @@ export type Database = {
           order_index?: number
           owner_id?: string
           phone?: string | null
+          photo_id_path?: string | null
           request_id?: string
           required?: boolean
           revoked?: boolean
+          selfie_path?: string | null
           signed_at?: string | null
           status?: string
           token?: string
@@ -626,6 +692,9 @@ export type Database = {
           message: string | null
           mode: string
           owner_id: string
+          require_geo: boolean
+          require_photo_id: boolean
+          require_selfie: boolean
           status: string
         }
         Insert: {
@@ -637,6 +706,9 @@ export type Database = {
           message?: string | null
           mode?: string
           owner_id: string
+          require_geo?: boolean
+          require_photo_id?: boolean
+          require_selfie?: boolean
           status?: string
         }
         Update: {
@@ -648,6 +720,9 @@ export type Database = {
           message?: string | null
           mode?: string
           owner_id?: string
+          require_geo?: boolean
+          require_photo_id?: boolean
+          require_selfie?: boolean
           status?: string
         }
         Relationships: [
