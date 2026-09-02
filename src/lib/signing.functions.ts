@@ -29,6 +29,9 @@ export const getSigningSession = createServerFn({ method: "POST" })
       status: string;
       expires_at: string | null;
       message: string | null;
+      require_geo?: boolean;
+      require_photo_id?: boolean;
+      require_selfie?: boolean;
       documents: {
         id: string;
         name: string;
@@ -103,7 +106,15 @@ export const getSigningSession = createServerFn({ method: "POST" })
         status: signer.status,
         order_index: signer.order_index,
       },
-      request: { id: req.id, mode: req.mode, status: req.status, message: req.message },
+      request: {
+        id: req.id,
+        mode: req.mode,
+        status: req.status,
+        message: req.message,
+        requireGeo: !!req.require_geo,
+        requirePhotoId: !!req.require_photo_id,
+        requireSelfie: !!req.require_selfie,
+      },
       document: {
         id: req.documents.id,
         name: req.documents.name,
@@ -129,6 +140,8 @@ export const submitSignature = createServerFn({ method: "POST" })
         imageData: z.string().optional(),
         acceptedTerms: z.literal(true),
         geo: z.string().optional(),
+        photoId: z.string().optional(),
+        selfie: z.string().optional(),
         values: z.record(z.string(), z.string()).optional(),
       })
       .parse(d),
@@ -146,8 +159,15 @@ export const submitSignature = createServerFn({ method: "POST" })
       id: string;
       mode: string;
       expires_at: string | null;
+      require_geo?: boolean;
+      require_photo_id?: boolean;
+      require_selfie?: boolean;
       documents: { id: string; name: string; owner_id: string };
     };
+    if (req.require_geo && !data.geo) throw new Error("É obrigatório permitir a localização");
+    if (req.require_photo_id && !data.photoId)
+      throw new Error("Envie a foto do documento de identificação");
+    if (req.require_selfie && !data.selfie) throw new Error("Envie a selfie de verificação");
     if (req.expires_at && new Date(req.expires_at) < new Date()) throw new Error("Link expirado");
 
     const { data: others } = await db
@@ -170,9 +190,30 @@ export const submitSignature = createServerFn({ method: "POST" })
     const agent = parseAgent(ua);
     const now = new Date().toISOString();
 
+    const evidencePaths: { photo_id_path?: string; selfie_path?: string } = {};
+    for (const [kind, raw] of [
+      ["photo_id", data.photoId],
+      ["selfie", data.selfie],
+    ] as const) {
+      if (!raw) continue;
+      const match = /^data:(image\/[a-z+]+);base64,(.+)$/i.exec(raw);
+      if (!match) continue;
+      const bin = Uint8Array.from(atob(match[2]!), (c) => c.charCodeAt(0));
+      const ext = match[1]!.includes("png") ? "png" : "jpg";
+      const path = `${req.documents.owner_id}/${req.documents.id}/evidencias/${signer.id}-${kind}.${ext}`;
+      const up = await db.storage
+        .from("documents")
+        .upload(path, bin, { contentType: match[1]!, upsert: true });
+      if (!up.error) {
+        if (kind === "photo_id") evidencePaths.photo_id_path = path;
+        else evidencePaths.selfie_path = path;
+      }
+    }
+
     await db
       .from("signers")
       .update({
+        ...evidencePaths,
         status: "signed",
         signed_at: now,
         accepted_terms: true,
