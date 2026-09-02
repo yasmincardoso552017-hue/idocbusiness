@@ -282,9 +282,16 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
     y -= 6;
     line("PROVAS VISUAIS COLETADAS", 10, bold);
     for (const s of visuals) {
-      line(`${s.name}`, 8, bold);
+      const boxW = 120;
+      const boxH = 96;
+      if (y - boxH - 24 < 60) {
+        const np = pdf.addPage([595, 842]);
+        pagesExtra.push(np);
+        current = np;
+        y = 790;
+      }
+      line(s.name, 8, bold);
       let x = 42;
-      const top = y;
       for (const path of [s.photo_id_path, s.selfie_path]) {
         if (!path) continue;
         try {
@@ -292,32 +299,23 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
           if (file.error || !file.data) continue;
           const buf = new Uint8Array(await file.data.arrayBuffer());
           const img = path.endsWith(".png") ? await pdf.embedPng(buf) : await pdf.embedJpg(buf);
-          const w = 120;
-          const h = (img.height / img.width) * w;
-          if (top - h < 70) {
-            const np = pdf.addPage([595, 842]);
-            pagesExtra.push(np);
-            current = np;
-            y = 780;
-          }
+          const scale = Math.min(boxW / img.width, boxH / img.height);
+          const w = img.width * scale;
+          const h = img.height * scale;
           current.drawImage(img, { x, y: y - h, width: w, height: h });
           current.drawText(path.includes("photo_id") ? "Documento com foto" : "Selfie", {
             x,
-            y: y - h - 9,
+            y: y - boxH - 9,
             size: 6,
             font,
             color: rgb(0.4, 0.4, 0.45),
           });
-          x += w + 14;
-          y = Math.min(y, y);
-          if (h > 0) y = Math.min(y, y);
-          if (y - h - 16 < 60) y = 780;
-          else if (x > 300) y = y - h - 18;
+          x += boxW + 16;
         } catch {
           /* prova indisponivel */
         }
       }
-      y -= 6;
+      y -= boxH + 22;
     }
   }
 
