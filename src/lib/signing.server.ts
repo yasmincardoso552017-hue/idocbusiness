@@ -114,6 +114,8 @@ type Signer = {
   signed_at: string | null;
   viewed_at: string | null;
   accepted_terms: boolean;
+  photo_id_path: string | null;
+  selfie_path: string | null;
 };
 
 /** Gera o PDF final assinado: assinaturas posicionadas, rodapé em todas as páginas e página de evidências. */
@@ -267,8 +269,58 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
     );
     line(`   IP: ${s.ip ?? "-"} | Dispositivo: ${s.device ?? "-"} | Local: ${s.geo ?? "nao coletado"}`);
     line(`   Aceite dos termos: ${s.accepted_terms ? "sim" : "nao"}`);
+    line(
+      `   Documento com foto: ${s.photo_id_path ? "coletado" : "nao solicitado"} | Selfie: ${s.selfie_path ? "coletada" : "nao solicitada"}`,
+    );
     line(`   User agent: ${(s.user_agent ?? "-").slice(0, 95)}`, 7);
   }
+  // Provas visuais coletadas (documento com foto e selfie)
+  const visuals = (signers ?? []).filter(
+    (s) => (s as unknown as Signer).photo_id_path || (s as unknown as Signer).selfie_path,
+  ) as unknown as Signer[];
+  if (visuals.length) {
+    y -= 6;
+    line("PROVAS VISUAIS COLETADAS", 10, bold);
+    for (const s of visuals) {
+      line(`${s.name}`, 8, bold);
+      let x = 42;
+      const top = y;
+      for (const path of [s.photo_id_path, s.selfie_path]) {
+        if (!path) continue;
+        try {
+          const file = await db.storage.from("documents").download(path);
+          if (file.error || !file.data) continue;
+          const buf = new Uint8Array(await file.data.arrayBuffer());
+          const img = path.endsWith(".png") ? await pdf.embedPng(buf) : await pdf.embedJpg(buf);
+          const w = 120;
+          const h = (img.height / img.width) * w;
+          if (top - h < 70) {
+            const np = pdf.addPage([595, 842]);
+            pagesExtra.push(np);
+            current = np;
+            y = 780;
+          }
+          current.drawImage(img, { x, y: y - h, width: w, height: h });
+          current.drawText(path.includes("photo_id") ? "Documento com foto" : "Selfie", {
+            x,
+            y: y - h - 9,
+            size: 6,
+            font,
+            color: rgb(0.4, 0.4, 0.45),
+          });
+          x += w + 14;
+          y = Math.min(y, y);
+          if (h > 0) y = Math.min(y, y);
+          if (y - h - 16 < 60) y = 780;
+          else if (x > 300) y = y - h - 18;
+        } catch {
+          /* prova indisponivel */
+        }
+      }
+      y -= 6;
+    }
+  }
+
   y -= 6;
   line("HISTORICO DE EVENTOS", 10, bold);
   for (const e of events ?? []) {
