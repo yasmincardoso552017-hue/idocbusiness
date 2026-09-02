@@ -362,3 +362,46 @@ export const dispatchSigningRequest = createServerFn({ method: "POST" })
     });
     return { links };
   });
+
+/** Retorna a via assinada do documento para o signatário, após a conclusão. */
+export const getSignedDocument = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ token: z.string().min(8) }).parse(d))
+  .handler(async ({ data }) => {
+    const db = await admin();
+    const { data: signer } = await db
+      .from("signers")
+      .select("id, status, request_id, signing_requests(document_id)")
+      .eq("token", data.token)
+      .maybeSingle();
+    if (!signer) return { ready: false as const };
+    const rel = signer.signing_requests as unknown as { document_id: string } | null;
+    if (!rel) return { ready: false as const };
+    const { data: doc } = await db
+      .from("documents")
+      .select("id, name, status, signed_storage_path, storage_path")
+      .eq("id", rel.document_id)
+      .single();
+    if (!doc) return { ready: false as const };
+    const { data: ev } = await db
+      .from("document_evidence")
+      .select("verification_code, final_hash")
+      .eq("document_id", doc.id)
+      .maybeSingle();
+    const path = doc.signed_storage_path ?? null;
+    let url: string | null = null;
+    if (path) {
+      const signed = await db.storage.from("documents").createSignedUrl(path, 3600, {
+        download: `assinado-${doc.name.replace(/[^\w.-]+/g, "_")}`,
+      });
+      url = signed.data?.signedUrl ?? null;
+    }
+    return {
+      ready: !!path,
+      name: doc.name,
+      status: doc.status,
+      url,
+      code: ev?.verification_code ?? null,
+      hash: ev?.final_hash ?? null,
+      mySignature: signer.status === "signed",
+    };
+  });
