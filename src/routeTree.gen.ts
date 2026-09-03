@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VerifyRouteImport } from './routes/verify'
+import { Route as PastaTokenRouteImport } from './routes/pasta.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
@@ -65,6 +66,11 @@ const TermosRoute = TermosRouteImport.update({
 const VerifyRoute = VerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PastaTokenRoute = PastaTokenRouteImport.update({
+  id: '/pasta/$token',
+  path: '/pasta/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignTokenRoute = SignTokenRouteImport.update({
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
@@ -216,6 +224,7 @@ export interface FileRoutesById {
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/pasta/$token'
     | '/sign/$token'
     | '/app/admin'
     | '/app/assinaturas'
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/pasta/$token'
     | '/sign/$token'
     | '/app/admin'
     | '/app/assinaturas'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/pasta/$token'
     | '/sign/$token'
     | '/_authenticated/app/admin'
     | '/_authenticated/app/assinaturas'
@@ -317,6 +329,7 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   TermosRoute: typeof TermosRoute
   VerifyRoute: typeof VerifyRoute
+  PastaTokenRoute: typeof PastaTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   ApiPublicCronRemindersRoute: typeof ApiPublicCronRemindersRoute
 }
@@ -370,6 +383,13 @@ declare module '@tanstack/react-router' {
       path: '/verify'
       fullPath: '/verify'
       preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pasta/$token': {
+      id: '/pasta/$token'
+      path: '/pasta/$token'
+      fullPath: '/pasta/$token'
+      preLoaderRoute: typeof PastaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign/$token': {
@@ -534,6 +554,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,
   VerifyRoute: VerifyRoute,
+  PastaTokenRoute: PastaTokenRoute,
   SignTokenRoute: SignTokenRoute,
   ApiPublicCronRemindersRoute: ApiPublicCronRemindersRoute,
 }
