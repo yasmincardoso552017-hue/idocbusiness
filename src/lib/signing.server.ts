@@ -383,7 +383,31 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
       completed_at: new Date().toISOString(),
     },
   });
-  await db.from("contracts").update({ status: "active" }).eq("document_id", doc.id);
+  const nowIso = new Date().toISOString();
+  const { data: linked } = await db
+    .from("contracts")
+    .select("id, owner_id")
+    .or(`request_id.eq.${requestId},document_id.eq.${doc.id}`);
+  for (const c of linked ?? []) {
+    await db
+      .from("contracts")
+      .update({
+        status: "active",
+        stage: "completed",
+        request_id: requestId,
+        document_id: doc.id,
+        completed_at: nowIso,
+      })
+      .eq("id", c.id);
+    await db.from("contract_events").insert({
+      owner_id: c.owner_id,
+      contract_id: c.id,
+      request_id: requestId,
+      event_type: "completed",
+      message: "Envelope concluído: PDF final assinado gerado com evidências.",
+      payload: { verification_code: code, final_hash: finalHash },
+    });
+  }
   await logEvent(db, {
     owner_id: doc.owner_id,
     document_id: doc.id,
