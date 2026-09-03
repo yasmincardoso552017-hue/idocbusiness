@@ -161,11 +161,61 @@ export type Database = {
           },
         ]
       }
+      contract_events: {
+        Row: {
+          contract_id: string
+          event_type: string
+          id: string
+          message: string | null
+          occurred_at: string
+          owner_id: string
+          payload: Json
+          request_id: string | null
+        }
+        Insert: {
+          contract_id: string
+          event_type: string
+          id?: string
+          message?: string | null
+          occurred_at?: string
+          owner_id: string
+          payload?: Json
+          request_id?: string | null
+        }
+        Update: {
+          contract_id?: string
+          event_type?: string
+          id?: string
+          message?: string | null
+          occurred_at?: string
+          owner_id?: string
+          payload?: Json
+          request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_events_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "signing_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           auto_renew: boolean
           company_id: string | null
+          completed_at: string | null
           created_at: string
+          decline_reason: string | null
           document_id: string | null
           end_date: string | null
           id: string
@@ -174,16 +224,22 @@ export type Database = {
           notice_days: number | null
           number: string | null
           owner_id: string
+          request_id: string | null
           responsible: string | null
+          sent_at: string | null
+          stage: string
           start_date: string | null
           status: string
           type: string | null
           value: number | null
+          voided_at: string | null
         }
         Insert: {
           auto_renew?: boolean
           company_id?: string | null
+          completed_at?: string | null
           created_at?: string
+          decline_reason?: string | null
           document_id?: string | null
           end_date?: string | null
           id?: string
@@ -192,16 +248,22 @@ export type Database = {
           notice_days?: number | null
           number?: string | null
           owner_id: string
+          request_id?: string | null
           responsible?: string | null
+          sent_at?: string | null
+          stage?: string
           start_date?: string | null
           status?: string
           type?: string | null
           value?: number | null
+          voided_at?: string | null
         }
         Update: {
           auto_renew?: boolean
           company_id?: string | null
+          completed_at?: string | null
           created_at?: string
+          decline_reason?: string | null
           document_id?: string | null
           end_date?: string | null
           id?: string
@@ -210,11 +272,15 @@ export type Database = {
           notice_days?: number | null
           number?: string | null
           owner_id?: string
+          request_id?: string | null
           responsible?: string | null
+          sent_at?: string | null
+          stage?: string
           start_date?: string | null
           status?: string
           type?: string | null
           value?: number | null
+          voided_at?: string | null
         }
         Relationships: [
           {
@@ -229,6 +295,13 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "signing_requests"
             referencedColumns: ["id"]
           },
         ]
