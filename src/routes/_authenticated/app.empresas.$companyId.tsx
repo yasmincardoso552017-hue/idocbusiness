@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   FolderPlus,
   FileText,
@@ -25,6 +25,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { useDialogs } from "@/components/Dialogs";
+import { UploadDocumentDialog } from "@/components/UploadDocumentDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -466,8 +467,8 @@ function CompanyDetail() {
           >
             <Pencil className="mr-1 size-4" /> Editar
           </Button>
-          <Button size="sm" variant="outline" onClick={() => pickFiles(cwd)} disabled={busy}>
-            <Upload className="mr-1 size-4" /> Enviar
+          <Button size="sm" onClick={() => setUploadOpen(true)} disabled={busy}>
+            <Upload className="mr-1 size-4" /> Enviar documento
           </Button>
           <Button size="sm" variant="outline" onClick={() => navigate({ to: "/app/lembretes" })}>
             <BellRing className="mr-1 size-4" /> Lembretes
@@ -484,8 +485,9 @@ function CompanyDetail() {
         multiple
         className="hidden"
         onChange={(e) => {
-          upload(e.target.files);
+          const picked = Array.from(e.target.files ?? []);
           e.target.value = "";
+          upload(picked);
         }}
       />
 
