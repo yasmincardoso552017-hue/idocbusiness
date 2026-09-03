@@ -94,6 +94,7 @@ function Prepare() {
     if (!doc?.storage_path) return;
     let cancelled = false;
     setRendering(true);
+    setPages([]);
     (async () => {
       try {
         const { data: signed } = await supabase.storage
@@ -101,8 +102,12 @@ function Prepare() {
           .createSignedUrl(doc.storage_path!, 3600);
         if (!signed?.signedUrl) throw new Error("Não foi possível abrir o PDF");
         const bytes = new Uint8Array(await (await fetch(signed.signedUrl)).arrayBuffer());
-        const rendered = await renderPdfPages(bytes, 900);
-        if (!cancelled) setPages(rendered);
+        await renderPdfPages(bytes, 820, (p) => {
+          if (!cancelled) {
+            setPages((prev) => [...prev, p]);
+            setRendering(false);
+          }
+        });
       } catch (e) {
         toast.error((e as Error).message);
       } finally {
@@ -113,6 +118,7 @@ function Prepare() {
       cancelled = true;
     };
   }, [doc?.storage_path]);
+
 
   const total = pages.length || doc?.page_count || 1;
   const current = pages[page - 1];
