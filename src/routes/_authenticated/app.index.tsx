@@ -101,7 +101,7 @@ function Dashboard() {
         </p>
         <div className="mt-3 flex gap-2">
           <Button asChild size="sm" variant="secondary">
-            <Link to="/app/documentos">Novo documento</Link>
+            <Link to="/app/empresas">Enviar documento</Link>
           </Button>
           <Button asChild size="sm" variant="outline" className="bg-transparent text-primary-foreground">
             <Link to="/app/empresas">Nova empresa</Link>
