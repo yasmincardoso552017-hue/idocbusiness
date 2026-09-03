@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Building2, Plus, Search, ChevronRight, Trash2 } from "lucide-react";
+import { Building2, Plus, Search, ChevronRight, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 import { UploadDocumentDialog } from "@/components/UploadDocumentDialog";
@@ -47,6 +47,7 @@ function Companies() {
   const [q, setQ] = useState("");
   const { confirm, dialog } = useDialogs();
   const [open, setOpen] = useState(false);
+  const [upOpen, setUpOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
 
   const { data: companies } = useQuery({
