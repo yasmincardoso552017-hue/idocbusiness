@@ -5,6 +5,7 @@ import { Building2, Plus, Search, ChevronRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { useDialogs } from "@/components/Dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,7 @@ const DEFAULT_FOLDERS = [
 function Companies() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const { confirm, dialog } = useDialogs();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
 
@@ -161,12 +163,14 @@ function Companies() {
               className="p-1"
               onClick={async () => {
                 const label = c.nome_fantasia || c.razao_social;
-                if (!window.confirm(`Excluir a empresa "${label}" e todos os seus documentos, pastas e contratos?`))
-                  return;
-                if (window.prompt("Para confirmar, digite EXCLUIR")?.trim().toUpperCase() !== "EXCLUIR") {
-                  toast.error("Exclusão cancelada");
-                  return;
-                }
+                const ok = await confirm({
+                  title: `Excluir a empresa "${label}"?`,
+                  description:
+                    "Documentos, pastas e contratos serão removidos. Digite EXCLUIR para confirmar.",
+                  confirmText: "Excluir",
+                  requireText: "EXCLUIR",
+                });
+                if (!ok) return;
                 const docs = await supabase
                   .from("documents")
                   .select("storage_path, signed_storage_path")
@@ -195,6 +199,7 @@ function Companies() {
           </p>
         )}
       </div>
+      {dialog}
     </AppShell>
   );
 }
