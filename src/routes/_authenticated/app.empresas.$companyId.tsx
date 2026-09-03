@@ -544,17 +544,27 @@ function CompanyDetail() {
 
           <div className="grid grid-cols-2 gap-2">
             {children.map((f) => (
-              <button key={f.id} className="card-soft flex items-center gap-2 p-3 text-left" onClick={() => setCwd(f.id)}>
-                <Folder className="size-4 shrink-0 text-primary" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-semibold">{f.name}</span>
-                  <span className="block text-[10px] text-muted-foreground">
-                    {folders.filter((x) => x.parent_id === f.id).length} subpasta(s) •{" "}
-                    {docs.filter((d) => d.folder_id === f.id).length} arquivo(s)
+              <div key={f.id} className="card-soft flex items-center gap-2 p-3">
+                <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setCwd(f.id)}>
+                  <Folder className="size-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-semibold">{f.name}</span>
+                    <span className="block text-[10px] text-muted-foreground">
+                      {folders.filter((x) => x.parent_id === f.id).length} subpasta(s) •{" "}
+                      {docs.filter((d) => d.folder_id === f.id).length} arquivo(s)
+                    </span>
                   </span>
-                </span>
+                </button>
                 {f.public_token && <Link2 className="size-3 shrink-0 text-success" />}
-              </button>
+                <button
+                  aria-label={`Enviar documento para ${f.name}`}
+                  className="shrink-0 rounded-md border border-border p-1.5"
+                  disabled={busy}
+                  onClick={() => pickFiles(f.id)}
+                >
+                  <Upload className="size-3.5 text-primary" />
+                </button>
+              </div>
             ))}
           </div>
 
