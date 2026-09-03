@@ -280,7 +280,7 @@ function Prepare() {
                   onCheckedChange={async (v) => {
                     await supabase
                       .from("signing_requests")
-                      .update({ [key]: v })
+                      .update({ [key]: v } as Record<typeof key, boolean>)
                       .eq("id", requestId);
                     refresh();
                   }}
