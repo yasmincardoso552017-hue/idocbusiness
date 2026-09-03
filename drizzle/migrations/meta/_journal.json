@@ -22,6 +22,13 @@
       "when": 1788337965210,
       "tag": "0002_company_profile_evidence_audits",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788396425477,
+      "tag": "0003_contract_envelopes",
+      "breakpoints": true
     }
   ]
 }
