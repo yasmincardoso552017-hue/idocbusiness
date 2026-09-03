@@ -214,7 +214,7 @@ function Prepare() {
     window.addEventListener("pointerup", onUp);
   }
 
-  async function nudge(id: string, patch: Record<string, number>) {
+  async function nudge(id: string, patch: { x?: number; y?: number; w?: number; h?: number }) {
     await supabase.from("signature_fields").update(patch).eq("id", id);
     refresh();
   }
