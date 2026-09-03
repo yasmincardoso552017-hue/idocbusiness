@@ -41,13 +41,16 @@ export async function renderPdfPages(
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     await page.render({ canvas, canvasContext: ctx, viewport } as never).promise;
-    out.push({
+    const rendered: RenderedPage = {
       index: i - 1,
       width: canvas.width,
       height: canvas.height,
-      url: await canvasToUrl(canvas, "image/png"),
-    });
+      url: await canvasToUrl(canvas, "image/jpeg", 0.85),
+    };
+    out.push(rendered);
+    onPage?.(rendered, doc.numPages);
   }
+
   doc.cleanup();
   return out;
 }
