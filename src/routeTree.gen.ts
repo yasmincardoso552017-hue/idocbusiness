@@ -16,19 +16,23 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VerifyRouteImport } from './routes/verify'
+import { Route as PastaTokenRouteImport } from './routes/pasta.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
 import { Route as AuthenticatedAppAssinaturasRouteImport } from './routes/_authenticated/app.assinaturas'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app.configuracoes'
 import { Route as AuthenticatedAppContratosRouteImport } from './routes/_authenticated/app.contratos'
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app.documentos'
 import { Route as AuthenticatedAppFerramentasRouteImport } from './routes/_authenticated/app.ferramentas'
 import { Route as AuthenticatedAppIntegracoesRouteImport } from './routes/_authenticated/app.integracoes'
+import { Route as AuthenticatedAppLembretesRouteImport } from './routes/_authenticated/app.lembretes'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
 import { Route as AuthenticatedAppSegurancaRouteImport } from './routes/_authenticated/app.seguranca'
 import { Route as AuthenticatedAppEmpresasIndexRouteImport } from './routes/_authenticated/app.empresas.index'
 import { Route as AuthenticatedAppEmpresasCompanyIdRouteImport } from './routes/_authenticated/app.empresas.$companyId'
 import { Route as AuthenticatedAppPrepararRequestIdRouteImport } from './routes/_authenticated/app.preparar.$requestId'
+import { Route as ApiPublicCronRemindersRouteImport } from './routes/api/public/cron/reminders'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -64,6 +68,11 @@ const VerifyRoute = VerifyRouteImport.update({
   path: '/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PastaTokenRoute = PastaTokenRouteImport.update({
+  id: '/pasta/$token',
+  path: '/pasta/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignTokenRoute = SignTokenRouteImport.update({
   id: '/sign/$token',
   path: '/sign/$token',
@@ -72,6 +81,11 @@ const SignTokenRoute = SignTokenRouteImport.update({
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppAdminRoute = AuthenticatedAppAdminRouteImport.update({
+  id: '/app/admin',
+  path: '/app/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAppAssinaturasRoute =
@@ -110,6 +124,12 @@ const AuthenticatedAppIntegracoesRoute =
     path: '/app/integracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppLembretesRoute =
+  AuthenticatedAppLembretesRouteImport.update({
+    id: '/app/lembretes',
+    path: '/app/lembretes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   id: '/app/perfil',
   path: '/app/perfil',
@@ -139,6 +159,11 @@ const AuthenticatedAppPrepararRequestIdRoute =
     path: '/app/preparar/$requestId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicCronRemindersRoute = ApiPublicCronRemindersRouteImport.update({
+  id: '/api/public/cron/reminders',
+  path: '/api/public/cron/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -147,18 +172,22 @@ export interface FileRoutesByFullPath {
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
+  '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
+  '/app/lembretes': typeof AuthenticatedAppLembretesRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/seguranca': typeof AuthenticatedAppSegurancaRoute
   '/app/': typeof AuthenticatedAppIndexRoute
   '/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
   '/app/preparar/$requestId': typeof AuthenticatedAppPrepararRequestIdRoute
+  '/api/public/cron/reminders': typeof ApiPublicCronRemindersRoute
   '/app/empresas/': typeof AuthenticatedAppEmpresasIndexRoute
 }
 export interface FileRoutesByTo {
@@ -168,18 +197,22 @@ export interface FileRoutesByTo {
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
+  '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
+  '/app/lembretes': typeof AuthenticatedAppLembretesRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/seguranca': typeof AuthenticatedAppSegurancaRoute
   '/app': typeof AuthenticatedAppIndexRoute
   '/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
   '/app/preparar/$requestId': typeof AuthenticatedAppPrepararRequestIdRoute
+  '/api/public/cron/reminders': typeof ApiPublicCronRemindersRoute
   '/app/empresas': typeof AuthenticatedAppEmpresasIndexRoute
 }
 export interface FileRoutesById {
@@ -191,18 +224,22 @@ export interface FileRoutesById {
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
+  '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/contratos': typeof AuthenticatedAppContratosRoute
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/_authenticated/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
+  '/_authenticated/app/lembretes': typeof AuthenticatedAppLembretesRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/seguranca': typeof AuthenticatedAppSegurancaRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
   '/_authenticated/app/empresas/$companyId': typeof AuthenticatedAppEmpresasCompanyIdRoute
   '/_authenticated/app/preparar/$requestId': typeof AuthenticatedAppPrepararRequestIdRoute
+  '/api/public/cron/reminders': typeof ApiPublicCronRemindersRoute
   '/_authenticated/app/empresas/': typeof AuthenticatedAppEmpresasIndexRoute
 }
 export interface FileRouteTypes {
@@ -214,18 +251,22 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/pasta/$token'
     | '/sign/$token'
+    | '/app/admin'
     | '/app/assinaturas'
     | '/app/configuracoes'
     | '/app/contratos'
     | '/app/documentos'
     | '/app/ferramentas'
     | '/app/integracoes'
+    | '/app/lembretes'
     | '/app/perfil'
     | '/app/seguranca'
     | '/app/'
     | '/app/empresas/$companyId'
     | '/app/preparar/$requestId'
+    | '/api/public/cron/reminders'
     | '/app/empresas/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -235,18 +276,22 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/pasta/$token'
     | '/sign/$token'
+    | '/app/admin'
     | '/app/assinaturas'
     | '/app/configuracoes'
     | '/app/contratos'
     | '/app/documentos'
     | '/app/ferramentas'
     | '/app/integracoes'
+    | '/app/lembretes'
     | '/app/perfil'
     | '/app/seguranca'
     | '/app'
     | '/app/empresas/$companyId'
     | '/app/preparar/$requestId'
+    | '/api/public/cron/reminders'
     | '/app/empresas'
   id:
     | '__root__'
@@ -257,18 +302,22 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/pasta/$token'
     | '/sign/$token'
+    | '/_authenticated/app/admin'
     | '/_authenticated/app/assinaturas'
     | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/contratos'
     | '/_authenticated/app/documentos'
     | '/_authenticated/app/ferramentas'
     | '/_authenticated/app/integracoes'
+    | '/_authenticated/app/lembretes'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/seguranca'
     | '/_authenticated/app/'
     | '/_authenticated/app/empresas/$companyId'
     | '/_authenticated/app/preparar/$requestId'
+    | '/api/public/cron/reminders'
     | '/_authenticated/app/empresas/'
   fileRoutesById: FileRoutesById
 }
@@ -280,7 +329,9 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   TermosRoute: typeof TermosRoute
   VerifyRoute: typeof VerifyRoute
+  PastaTokenRoute: typeof PastaTokenRoute
   SignTokenRoute: typeof SignTokenRoute
+  ApiPublicCronRemindersRoute: typeof ApiPublicCronRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -334,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pasta/$token': {
+      id: '/pasta/$token'
+      path: '/pasta/$token'
+      fullPath: '/pasta/$token'
+      preLoaderRoute: typeof PastaTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sign/$token': {
       id: '/sign/$token'
       path: '/sign/$token'
@@ -346,6 +404,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app/'
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/app/admin': {
+      id: '/_authenticated/app/admin'
+      path: '/app/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AuthenticatedAppAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app/assinaturas': {
@@ -390,6 +455,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIntegracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/lembretes': {
+      id: '/_authenticated/app/lembretes'
+      path: '/app/lembretes'
+      fullPath: '/app/lembretes'
+      preLoaderRoute: typeof AuthenticatedAppLembretesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/perfil': {
       id: '/_authenticated/app/perfil'
       path: '/app/perfil'
@@ -425,16 +497,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPrepararRequestIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/cron/reminders': {
+      id: '/api/public/cron/reminders'
+      path: '/api/public/cron/reminders'
+      fullPath: '/api/public/cron/reminders'
+      preLoaderRoute: typeof ApiPublicCronRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppAdminRoute: typeof AuthenticatedAppAdminRoute
   AuthenticatedAppAssinaturasRoute: typeof AuthenticatedAppAssinaturasRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppContratosRoute: typeof AuthenticatedAppContratosRoute
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppFerramentasRoute: typeof AuthenticatedAppFerramentasRoute
   AuthenticatedAppIntegracoesRoute: typeof AuthenticatedAppIntegracoesRoute
+  AuthenticatedAppLembretesRoute: typeof AuthenticatedAppLembretesRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppSegurancaRoute: typeof AuthenticatedAppSegurancaRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
@@ -444,12 +525,14 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppAdminRoute: AuthenticatedAppAdminRoute,
   AuthenticatedAppAssinaturasRoute: AuthenticatedAppAssinaturasRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppContratosRoute: AuthenticatedAppContratosRoute,
   AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
   AuthenticatedAppFerramentasRoute: AuthenticatedAppFerramentasRoute,
   AuthenticatedAppIntegracoesRoute: AuthenticatedAppIntegracoesRoute,
+  AuthenticatedAppLembretesRoute: AuthenticatedAppLembretesRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppSegurancaRoute: AuthenticatedAppSegurancaRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,
@@ -471,7 +554,9 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,
   VerifyRoute: VerifyRoute,
+  PastaTokenRoute: PastaTokenRoute,
   SignTokenRoute: SignTokenRoute,
+  ApiPublicCronRemindersRoute: ApiPublicCronRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

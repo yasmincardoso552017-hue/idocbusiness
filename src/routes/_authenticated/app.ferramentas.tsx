@@ -10,6 +10,10 @@ import {
   Images,
   Hash,
   SplitSquareVertical,
+  ScanText,
+  FileType2,
+  FolderArchive,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument, degrees, rgb, StandardFonts } from "pdf-lib";
@@ -20,6 +24,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PdfWorkbench } from "@/components/PdfWorkbench";
+import { extractPdfText, rasterizePages } from "@/lib/pdf-preview";
+import { ocrPages } from "@/lib/audit.functions";
+import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/app/ferramentas")({
   head: () => ({
@@ -107,6 +114,9 @@ function Tools() {
   const wmRef = useRef<HTMLInputElement>(null);
   const numRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
+  const ocrRef = useRef<HTMLInputElement>(null);
+  const txtRef = useRef<HTMLInputElement>(null);
+  const zipRef = useRef<HTMLInputElement>(null);
 
   const [range, setRange] = useState("1-2");
   const [removeSpec, setRemoveSpec] = useState("1");
@@ -117,6 +127,10 @@ function Tools() {
   const [result, setResult] = useState<{ bytes: Uint8Array; name: string; format: "pdf" | "pdf-zip" } | null>(
     null,
   );
+  const [textResult, setTextResult] = useState<{ name: string; content: string } | null>(null);
+  const [textFormat, setTextFormat] = useState<"txt" | "doc" | "pdf">("txt");
+  const [folderName, setFolderName] = useState("Documentos IDOC");
+  const [zipFiles, setZipFiles] = useState<File[]>([]);
 
   function open(bytes: Uint8Array, name: string, format: "pdf" | "pdf-zip" = "pdf") {
     setResult({ bytes, name, format });
@@ -276,6 +290,148 @@ function Tools() {
       return `PDF criado com ${files.length} imagem(ns)`;
     });
 
+  function downloadBlob(blob: Blob, name: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  /** Gera PDF pesquisável: mantém a imagem da página e adiciona camada de texto invisível via OCR. */
+  const searchable = () =>
+    run(async () => {
+      const f = ocrRef.current?.files?.[0];
+      if (!f) throw new Error("Selecione um PDF digitalizado");
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      const count = src.getPageCount();
+      if (count > 30) throw new Error("Limite de 30 páginas por vez para o OCR");
+      const rasters = await rasterizePages(bytes, src.getPageIndices(), "image/jpeg", 2);
+      const images = await Promise.all(
+        rasters.map(
+          (r) =>
+            new Promise<string>((resolve) => {
+              const fr = new FileReader();
+              fr.onload = () => resolve(String(fr.result));
+              fr.readAsDataURL(r.blob);
+            }),
+        ),
+      );
+      const { texts } = await ocrPages({ data: { images } });
+      const out = await PDFDocument.create();
+      const font = await out.embedFont(StandardFonts.Helvetica);
+      for (let i = 0; i < rasters.length; i++) {
+        const jpg = await out.embedJpg(new Uint8Array(await rasters[i]!.blob.arrayBuffer()));
+        const page = out.addPage([jpg.width / 2, jpg.height / 2]);
+        page.drawImage(jpg, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() });
+        const words = (texts[i] ?? "").split(/\s+/).filter(Boolean);
+        let x = 4;
+        let y = page.getHeight() - 12;
+        for (const word of words) {
+          const w = font.widthOfTextAtSize(word, 8) + 3;
+          if (x + w > page.getWidth() - 4) {
+            x = 4;
+            y -= 10;
+          }
+          if (y < 6) break;
+          page.drawText(word, { x, y, size: 8, font, opacity: 0, color: rgb(0, 0, 0) });
+          x += w;
+        }
+      }
+      open(await out.save(), "idoc-pesquisavel");
+      return `PDF pesquisável gerado com ${rasters.length} página(s)`;
+    });
+
+  /** Converte PDF em texto editável para baixar como TXT, Word ou PDF. */
+  const toText = () =>
+    run(async () => {
+      const f = txtRef.current?.files?.[0];
+      if (!f) throw new Error("Selecione um PDF");
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      let pages = await extractPdfText(bytes);
+      if (pages.join("").trim().length < 20) {
+        const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
+        const rasters = await rasterizePages(bytes, src.getPageIndices().slice(0, 20), "image/jpeg", 2);
+        const images = await Promise.all(
+          rasters.map(
+            (r) =>
+              new Promise<string>((resolve) => {
+                const fr = new FileReader();
+                fr.onload = () => resolve(String(fr.result));
+                fr.readAsDataURL(r.blob);
+              }),
+          ),
+        );
+        pages = (await ocrPages({ data: { images } })).texts;
+      }
+      setTextResult({
+        name: f.name.replace(/\.pdf$/i, ""),
+        content: pages.map((t, i) => `--- Página ${i + 1} ---\n${t}`).join("\n\n"),
+      });
+      return "Texto extraído — revise antes de baixar";
+    });
+
+  async function downloadText() {
+    if (!textResult) return;
+    const base = textResult.name.trim() || "idoc-texto";
+    if (textFormat === "txt") {
+      downloadBlob(new Blob([textResult.content], { type: "text/plain;charset=utf-8" }), `${base}.txt`);
+      return;
+    }
+    if (textFormat === "doc") {
+      const html = `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"></head><body><div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;white-space:pre-wrap">${textResult.content
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")}</div></body></html>`;
+      downloadBlob(new Blob([html], { type: "application/msword" }), `${base}.doc`);
+      return;
+    }
+    const pdf = await PDFDocument.create();
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
+    const size = 11;
+    const margin = 48;
+    let page = pdf.addPage([595.28, 841.89]);
+    let y = page.getHeight() - margin;
+    const maxWidth = page.getWidth() - margin * 2;
+    for (const paragraph of textResult.content.split("\n")) {
+      let line = "";
+      for (const word of paragraph.split(" ")) {
+        const test = line ? `${line} ${word}` : word;
+        if (font.widthOfTextAtSize(test, size) > maxWidth) {
+          page.drawText(line, { x: margin, y, size, font });
+          y -= size * 1.45;
+          line = word;
+          if (y < margin) {
+            page = pdf.addPage([595.28, 841.89]);
+            y = page.getHeight() - margin;
+          }
+        } else line = test;
+      }
+      page.drawText(line, { x: margin, y, size, font });
+      y -= size * 1.45;
+      if (y < margin) {
+        page = pdf.addPage([595.28, 841.89]);
+        y = page.getHeight() - margin;
+      }
+    }
+    downloadBlob(new Blob([new Uint8Array(await pdf.save())], { type: "application/pdf" }), `${base}.pdf`);
+  }
+
+  /** Cria uma pasta ZIP com todos os arquivos enviados. */
+  const buildZip = () =>
+    run(async () => {
+      if (!zipFiles.length) throw new Error("Selecione os arquivos da pasta");
+      const folder = folderName.trim() || "Documentos IDOC";
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      const dir = zip.folder(folder)!;
+      for (const f of zipFiles) dir.file(f.name, await f.arrayBuffer());
+      const blob = await zip.generateAsync({ type: "blob" });
+      downloadBlob(blob, `${folder}.zip`);
+      return `Pasta "${folder}" criada com ${zipFiles.length} arquivo(s)`;
+    });
+
   async function inspect(files: File[]) {
     const f = files[0];
     if (!f) return setPageInfo(null);
@@ -310,6 +466,11 @@ function Tools() {
             <TabsTrigger value="wm" className="text-[11px]">Marca</TabsTrigger>
             <TabsTrigger value="num" className="text-[11px]">Numerar</TabsTrigger>
             <TabsTrigger value="img" className="text-[11px]">Imagens</TabsTrigger>
+          </TabsList>
+          <TabsList className="mt-1 grid h-auto w-full grid-cols-3 gap-1">
+            <TabsTrigger value="ocr" className="text-[11px]">Pesquisável</TabsTrigger>
+            <TabsTrigger value="txt" className="text-[11px]">Texto/Word</TabsTrigger>
+            <TabsTrigger value="zip" className="text-[11px]">Pasta ZIP</TabsTrigger>
           </TabsList>
 
           <TabsContent value="merge" className="mt-4 space-y-3">
@@ -380,6 +541,73 @@ function Tools() {
             />
             <Button className="w-full" disabled={busy} onClick={imagesToPdf}>
               <Images className="mr-1 size-4" /> Gerar PDF das imagens
+            </Button>
+          </TabsContent>
+          <TabsContent value="ocr" className="mt-4 space-y-3">
+            <FileField id="fo" label="PDF digitalizado (até 30 páginas)" inputRef={ocrRef} />
+            <p className="text-[11px] text-muted-foreground">
+              Aplica reconhecimento de texto e devolve um PDF em que é possível pesquisar qualquer
+              palavra, mantendo a aparência original.
+            </p>
+            <Button className="w-full" disabled={busy} onClick={searchable}>
+              {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <ScanText className="mr-1 size-4" />}
+              Gerar PDF pesquisável
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="txt" className="mt-4 space-y-3">
+            <FileField id="ft" label="PDF para converter" inputRef={txtRef} />
+            <Button className="w-full" disabled={busy} onClick={toText}>
+              {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <FileType2 className="mr-1 size-4" />}
+              Extrair texto
+            </Button>
+            {textResult && (
+              <div className="space-y-2 rounded-lg border border-border p-3">
+                <Label htmlFor="tn">Nome do arquivo</Label>
+                <Input
+                  id="tn"
+                  value={textResult.name}
+                  onChange={(e) => setTextResult({ ...textResult, name: e.target.value })}
+                />
+                <Label htmlFor="tc">Conteúdo (edite antes de baixar)</Label>
+                <Textarea
+                  id="tc"
+                  rows={10}
+                  value={textResult.content}
+                  onChange={(e) => setTextResult({ ...textResult, content: e.target.value })}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {(["txt", "doc", "pdf"] as const).map((f) => (
+                    <Button
+                      key={f}
+                      size="sm"
+                      variant={textFormat === f ? "default" : "outline"}
+                      onClick={() => setTextFormat(f)}
+                    >
+                      {f.toUpperCase()}
+                    </Button>
+                  ))}
+                  <Button size="sm" className="ml-auto" onClick={downloadText}>
+                    Baixar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="zip" className="mt-4 space-y-3">
+            <Label htmlFor="fnm">Nome da pasta</Label>
+            <Input id="fnm" value={folderName} onChange={(e) => setFolderName(e.target.value)} />
+            <FileField
+              id="fz"
+              label="Arquivos (PDF, imagens, planilhas, qualquer formato)"
+              inputRef={zipRef}
+              multiple
+              accept="*/*"
+              onPick={setZipFiles}
+            />
+            <Button className="w-full" disabled={busy} onClick={buildZip}>
+              <FolderArchive className="mr-1 size-4" /> Baixar pasta em ZIP
             </Button>
           </TabsContent>
         </Tabs>

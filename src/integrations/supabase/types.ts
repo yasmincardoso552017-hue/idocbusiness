@@ -536,6 +536,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          blocked: boolean
+          blocked_at: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -544,6 +546,8 @@ export type Database = {
           plan: string
         }
         Insert: {
+          blocked?: boolean
+          blocked_at?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -552,6 +556,8 @@ export type Database = {
           plan?: string
         }
         Update: {
+          blocked?: boolean
+          blocked_at?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -560,6 +566,112 @@ export type Database = {
           plan?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          email: string | null
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          email?: string | null
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          email?: string | null
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      reminders: {
+        Row: {
+          body: string | null
+          contract_id: string | null
+          created_at: string
+          document_id: string | null
+          due_at: string
+          id: string
+          owner_id: string
+          repeat_every: string | null
+          request_id: string | null
+          sent_at: string | null
+          status: string
+          target_email: string | null
+          target_user_id: string | null
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          contract_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          due_at: string
+          id?: string
+          owner_id: string
+          repeat_every?: string | null
+          request_id?: string | null
+          sent_at?: string | null
+          status?: string
+          target_email?: string | null
+          target_user_id?: string | null
+          title: string
+        }
+        Update: {
+          body?: string | null
+          contract_id?: string | null
+          created_at?: string
+          document_id?: string | null
+          due_at?: string
+          id?: string
+          owner_id?: string
+          repeat_every?: string | null
+          request_id?: string | null
+          sent_at?: string | null
+          status?: string
+          target_email?: string | null
+          target_user_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminders_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminders_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "signing_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       signature_fields: {
         Row: {
@@ -808,15 +920,42 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -943,6 +1082,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

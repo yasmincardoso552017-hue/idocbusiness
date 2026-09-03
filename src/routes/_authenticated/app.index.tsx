@@ -10,6 +10,7 @@ import {
   PenLine,
   CalendarClock,
   Activity,
+  BellRing,
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, Cell } from "recharts";
 
@@ -17,6 +18,8 @@ import { AppShell, StatCard } from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime, statusClass, STATUS_LABEL } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { PushSetup } from "@/components/PushSetup";
+import { fmtDateTime as fmtDT } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   component: Dashboard,
@@ -26,7 +29,7 @@ function Dashboard() {
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const [companies, docs, contracts, signers, events] = await Promise.all([
+      const [companies, docs, contracts, signers, events, reminders, notes] = await Promise.all([
         supabase.from("companies").select("id"),
         supabase.from("documents").select("id, name, status, created_at, company_id"),
         supabase.from("contracts").select("id, name, status, end_date"),
@@ -36,6 +39,17 @@ function Dashboard() {
           .select("id, action, actor, created_at")
           .order("created_at", { ascending: false })
           .limit(12),
+        supabase
+          .from("reminders")
+          .select("id, title, body, due_at, status, target_email")
+          .eq("status", "pending")
+          .order("due_at")
+          .limit(6),
+        supabase
+          .from("notifications")
+          .select("id, title, body, created_at, read")
+          .order("created_at", { ascending: false })
+          .limit(6),
       ]);
       return {
         companies: companies.data ?? [],
@@ -43,6 +57,8 @@ function Dashboard() {
         contracts: contracts.data ?? [],
         signers: signers.data ?? [],
         events: events.data ?? [],
+        reminders: reminders.data ?? [],
+        notes: notes.data ?? [],
       };
     },
   });
@@ -152,6 +168,38 @@ function Dashboard() {
           </ul>
         </div>
       )}
+
+      <div className="card-soft mt-4 p-4">
+        <div className="flex items-center gap-2">
+          <h2 className="flex flex-1 items-center gap-2 text-sm font-bold">
+            <BellRing className="size-4 text-primary" /> Lembretes e notificações
+          </h2>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/app/lembretes">Gerenciar</Link>
+          </Button>
+        </div>
+        <PushSetup className="mt-3 w-full" />
+        <ul className="mt-3 space-y-2">
+          {(data?.reminders ?? []).map((r) => (
+            <li key={r.id} className="rounded-lg border border-border px-3 py-2">
+              <p className="text-xs font-semibold">{r.title}</p>
+              <p className="text-[11px] text-muted-foreground">
+                {fmtDT(r.due_at)}
+                {r.target_email ? ` • ${r.target_email}` : " • você"}
+              </p>
+            </li>
+          ))}
+          {(data?.notes ?? []).map((n) => (
+            <li key={n.id} className="rounded-lg bg-secondary/50 px-3 py-2">
+              <p className="text-xs font-semibold">{n.title}</p>
+              <p className="text-[11px] text-muted-foreground">{fmtDT(n.created_at)}</p>
+            </li>
+          ))}
+          {(data?.reminders ?? []).length === 0 && (data?.notes ?? []).length === 0 && (
+            <li className="text-xs text-muted-foreground">Nenhum lembrete agendado.</li>
+          )}
+        </ul>
+      </div>
 
       <div className="card-soft mt-4 p-4">
         <h2 className="mb-3 flex items-center gap-2 text-sm font-bold">
