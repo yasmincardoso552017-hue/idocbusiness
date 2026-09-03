@@ -36,7 +36,7 @@ export async function pushToUser(
       );
       const res = await fetch(s.endpoint, {
         method: req.method,
-        headers: req.headers,
+        headers: req.headers as Record<string, string>,
         body: req.body as unknown as BodyInit,
       });
       if (res.status === 404 || res.status === 410) {

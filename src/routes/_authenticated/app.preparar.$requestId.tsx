@@ -489,7 +489,7 @@ function Prepare() {
                     key={label as string}
                     size="sm"
                     variant="outline"
-                    onClick={() => nudge(sel.id, patch as Record<string, number>)}
+                    onClick={() => nudge(sel.id, patch as { x?: number; y?: number; w?: number; h?: number })}
                   >
                     {label as string}
                   </Button>
