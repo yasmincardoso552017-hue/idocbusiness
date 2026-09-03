@@ -8,4 +8,4 @@
 ## Lembretes (confirmado pelo usuário)
 - [x] Quem envia o documento define data e hora da notificação para cada signatário
 - [x] Botão "Notificar agora" dispara a notificação imediata na barra de notificações do destinatário
-- [ ] Atalho de lembrete direto na tela inicial do painel
+- [x] Atalho de lembrete direto na tela inicial do painel
