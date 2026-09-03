@@ -1,14 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
-import { Plus, Trash2, Send, GripVertical, ChevronLeft, ChevronRight, Copy } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Plus, Trash2, Send, Move, ChevronLeft, ChevronRight, Copy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { dispatchSigningRequest } from "@/lib/signing.functions";
+import { renderPdfPages, type RenderedPage } from "@/lib/pdf-preview";
 
 export const Route = createFileRoute("/_authenticated/app/preparar/$requestId")({
   component: Prepare,
@@ -34,6 +34,8 @@ const FIELD_LABEL: Record<FieldType, string> = {
   text: "Texto",
 };
 
+const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+
 function Prepare() {
   const { requestId } = Route.useParams();
   const qc = useQueryClient();
@@ -42,7 +44,10 @@ function Prepare() {
   const [page, setPage] = useState(1);
   const [activeType, setActiveType] = useState<FieldType>("signature");
   const [activeSigner, setActiveSigner] = useState<string>("");
-  const [dragId, setDragId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [ghost, setGhost] = useState<{ id: string; x: number; y: number; w: number; h: number } | null>(
+    null,
+  );
   const [form, setForm] = useState({ name: "", email: "", phone: "", cpf: "" });
 
   const { data } = useQuery({
@@ -51,30 +56,60 @@ function Prepare() {
       const [req, signers, fields] = await Promise.all([
         supabase
           .from("signing_requests")
-          .select("*, documents(id, name, page_count)")
+          .select("*, documents(id, name, page_count, storage_path)")
           .eq("id", requestId)
           .single(),
         supabase.from("signers").select("*").eq("request_id", requestId).order("order_index"),
         supabase.from("signature_fields").select("*").eq("request_id", requestId),
       ]);
-      return {
-        request: req.data,
-        signers: signers.data ?? [],
-        fields: fields.data ?? [],
-      };
+      return { request: req.data, signers: signers.data ?? [], fields: fields.data ?? [] };
     },
   });
 
-  const doc = data?.request?.documents as { id: string; name: string; page_count: number | null } | undefined;
-  const pages = doc?.page_count ?? 1;
+  const doc = data?.request?.documents as
+    | { id: string; name: string; page_count: number | null; storage_path: string | null }
+    | undefined;
   const signers = data?.signers ?? [];
-  const fields = (data?.fields ?? []).filter((f) => f.page === page);
+  const allFields = data?.fields ?? [];
   const currentSigner = activeSigner || signers[0]?.id || "";
 
+  const [pages, setPages] = useState<RenderedPage[]>([]);
+  const [rendering, setRendering] = useState(false);
+
+  useEffect(() => {
+    if (!doc?.storage_path) return;
+    let cancelled = false;
+    setRendering(true);
+    (async () => {
+      try {
+        const { data: signed } = await supabase.storage
+          .from("documents")
+          .createSignedUrl(doc.storage_path!, 3600);
+        if (!signed?.signedUrl) throw new Error("Não foi possível abrir o PDF");
+        const bytes = new Uint8Array(await (await fetch(signed.signedUrl)).arrayBuffer());
+        const rendered = await renderPdfPages(bytes, 900);
+        if (!cancelled) setPages(rendered);
+      } catch (e) {
+        toast.error((e as Error).message);
+      } finally {
+        if (!cancelled) setRendering(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [doc?.storage_path]);
+
+  const total = pages.length || doc?.page_count || 1;
+  const current = pages[page - 1];
+  const fields = allFields.filter((f) => f.page === page);
   const refresh = () => qc.invalidateQueries({ queryKey: ["prepare", requestId] });
 
   async function addSigner() {
-    if (!form.name.trim() || !form.email.trim()) { toast.error("Informe nome e e-mail"); return; }
+    if (!form.name.trim() || !form.email.trim()) {
+      toast.error("Informe nome e e-mail");
+      return;
+    }
     const { data: auth } = await supabase.auth.getUser();
     const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().slice(0, 8);
     const { error } = await supabase.from("signers").insert({
@@ -87,7 +122,10 @@ function Prepare() {
       order_index: signers.length + 1,
       token,
     });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setForm({ name: "", email: "", phone: "", cpf: "" });
     refresh();
   }
@@ -99,34 +137,85 @@ function Prepare() {
   }
 
   async function addFieldAt(xRatio: number, yRatio: number) {
-    if (!currentSigner) { toast.error("Adicione um signatário primeiro"); return; }
+    if (!currentSigner) {
+      toast.error("Adicione um signatário primeiro");
+      return;
+    }
     const { data: auth } = await supabase.auth.getUser();
+    const w = activeType === "signature" ? 0.3 : 0.22;
+    const h = activeType === "signature" ? 0.07 : 0.04;
     const { error } = await supabase.from("signature_fields").insert({
       request_id: requestId,
       signer_id: currentSigner,
       owner_id: auth.user!.id,
       page,
-      x: Math.min(0.9, Math.max(0, xRatio)),
-      y: Math.min(0.94, Math.max(0, yRatio)),
-      w: activeType === "signature" ? 0.3 : 0.22,
-      h: activeType === "signature" ? 0.07 : 0.04,
+      x: clamp(xRatio - w / 2, 0, 1 - w),
+      y: clamp(yRatio - h / 2, 0, 1 - h),
+      w,
+      h,
       type: activeType,
     });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     refresh();
   }
 
-  function onCanvasClick(e: React.MouseEvent) {
-    if (dragId) return;
+  function onCanvasPointerDown(e: React.PointerEvent) {
+    if ((e.target as HTMLElement).closest("[data-field]")) return;
     const box = canvasRef.current!.getBoundingClientRect();
     addFieldAt((e.clientX - box.left) / box.width, (e.clientY - box.top) / box.height);
   }
 
-  async function moveField(id: string, clientX: number, clientY: number) {
+  /** Arrastar (move) ou redimensionar (resize) o campo com o dedo/mouse. */
+  function startGesture(
+    e: React.PointerEvent,
+    field: { id: string; x: number; y: number; w: number; h: number },
+    mode: "move" | "resize",
+  ) {
+    e.stopPropagation();
+    e.preventDefault();
+    setSelected(field.id);
     const box = canvasRef.current!.getBoundingClientRect();
-    const x = Math.min(0.92, Math.max(0, (clientX - box.left) / box.width));
-    const y = Math.min(0.95, Math.max(0, (clientY - box.top) / box.height));
-    await supabase.from("signature_fields").update({ x, y }).eq("id", id);
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const base = { ...field };
+    let latest = { ...field };
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = (ev.clientX - startX) / box.width;
+      const dy = (ev.clientY - startY) / box.height;
+      latest =
+        mode === "move"
+          ? {
+              ...base,
+              x: clamp(base.x + dx, 0, 1 - base.w),
+              y: clamp(base.y + dy, 0, 1 - base.h),
+            }
+          : {
+              ...base,
+              w: clamp(base.w + dx, 0.05, 1 - base.x),
+              h: clamp(base.h + dy, 0.02, 1 - base.y),
+            };
+      setGhost({ id: field.id, ...latest });
+    };
+    const onUp = async () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      setGhost(null);
+      await supabase
+        .from("signature_fields")
+        .update({ x: latest.x, y: latest.y, w: latest.w, h: latest.h })
+        .eq("id", field.id);
+      refresh();
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  async function nudge(id: string, patch: Record<string, number>) {
+    await supabase.from("signature_fields").update(patch).eq("id", id);
     refresh();
   }
 
@@ -134,13 +223,17 @@ function Prepare() {
     try {
       const res = await dispatchSigningRequest({ data: { requestId } });
       const links = Object.entries(res.links);
-      await navigator.clipboard?.writeText(links.map(([e, l]) => `${e}: ${l}`).join("\n")).catch(() => null);
+      await navigator.clipboard
+        ?.writeText(links.map(([e, l]) => `${e}: ${l}`).join("\n"))
+        .catch(() => null);
       toast.success("Enviado para assinatura. Links copiados.");
       navigate({ to: "/app/assinaturas" });
     } catch (e) {
       toast.error((e as Error).message);
     }
   }
+
+  const sel = allFields.find((f) => f.id === selected);
 
   return (
     <AppShell title="Preparar assinatura">
@@ -162,7 +255,7 @@ function Prepare() {
                 }}
               />
             </div>
-            <div className="flex-1 min-w-[200px]">
+            <div className="min-w-[200px] flex-1">
               <Input
                 placeholder="Mensagem para os signatários"
                 defaultValue={data?.request?.message ?? ""}
@@ -174,6 +267,27 @@ function Prepare() {
                 }}
               />
             </div>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            {[
+              ["require_geo", "Exigir localização"],
+              ["require_photo_id", "Exigir documento com foto"],
+              ["require_selfie", "Exigir selfie"],
+            ].map(([key, label]) => (
+              <label key={key} className="flex items-center gap-2 text-xs">
+                <Switch
+                  checked={Boolean((data?.request as Record<string, unknown> | undefined)?.[key])}
+                  onCheckedChange={async (v) => {
+                    await supabase
+                      .from("signing_requests")
+                      .update({ [key]: v })
+                      .eq("id", requestId);
+                    refresh();
+                  }}
+                />
+                {label}
+              </label>
+            ))}
           </div>
         </div>
 
@@ -189,6 +303,9 @@ function Prepare() {
                   <div className="truncate text-sm font-semibold">{s.name}</div>
                   <div className="truncate text-[11px] text-muted-foreground">{s.email}</div>
                 </div>
+                <span className="text-[10px] text-muted-foreground">
+                  {allFields.filter((f) => f.signer_id === s.id).length} campo(s)
+                </span>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -213,7 +330,12 @@ function Prepare() {
             </div>
             <div>
               <Label htmlFor="se">E-mail</Label>
-              <Input id="se" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <Input
+                id="se"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
             </div>
             <div>
               <Label htmlFor="sp">Telefone</Label>
@@ -230,9 +352,10 @@ function Prepare() {
         </div>
 
         <div className="card-soft p-4">
-          <h2 className="text-sm font-bold">Posicionar campos</h2>
+          <h2 className="text-sm font-bold">Posicionar campos no documento</h2>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Toque na página para inserir o campo e arraste para ajustar a posição.
+            Toque na página para inserir o campo, arraste para mover e use o canto inferior direito
+            para ajustar o tamanho.
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             <Select value={activeType} onValueChange={(v) => setActiveType(v as FieldType)}>
@@ -266,50 +389,62 @@ function Prepare() {
               <ChevronLeft className="size-4" />
             </Button>
             <span className="text-xs font-medium text-muted-foreground">
-              Página {page} de {pages}
+              Página {page} de {total}
             </span>
-            <Button size="sm" variant="outline" disabled={page >= pages} onClick={() => setPage(page + 1)}>
+            <Button size="sm" variant="outline" disabled={page >= total} onClick={() => setPage(page + 1)}>
               <ChevronRight className="size-4" />
             </Button>
           </div>
 
           <div
             ref={canvasRef}
-            onClick={onCanvasClick}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (dragId) {
-                moveField(dragId, e.clientX, e.clientY);
-                setDragId(null);
-              }
-            }}
-            className="relative mt-3 w-full overflow-hidden rounded-lg border border-dashed border-border bg-secondary/40"
-            style={{ aspectRatio: "1 / 1.414" }}
+            onPointerDown={onCanvasPointerDown}
+            className="relative mt-3 w-full touch-none select-none overflow-hidden rounded-lg border border-border bg-white"
+            style={{ aspectRatio: current ? `${current.width} / ${current.height}` : "1 / 1.414" }}
           >
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[11px] text-muted-foreground">
-              Área da página {page}
-            </div>
+            {current ? (
+              <img
+                src={current.url}
+                alt={`Página ${page} do documento`}
+                className="pointer-events-none absolute inset-0 h-full w-full object-contain"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+                {rendering ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" /> Carregando páginas do PDF…
+                  </>
+                ) : (
+                  "Página não disponível para pré-visualização"
+                )}
+              </div>
+            )}
+
             {fields.map((f) => {
               const signer = signers.find((s) => s.id === f.signer_id);
+              const g = ghost?.id === f.id ? ghost : null;
+              const box = {
+                x: g ? g.x : Number(f.x),
+                y: g ? g.y : Number(f.y),
+                w: g ? g.w : Number(f.w),
+                h: g ? g.h : Number(f.h),
+              };
               return (
                 <div
                   key={f.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.stopPropagation();
-                    setDragId(f.id);
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute flex items-center gap-1 rounded-md border border-primary/60 bg-primary/15 px-1 text-[10px] font-semibold text-primary"
+                  data-field
+                  onPointerDown={(e) => startGesture(e, { id: f.id, ...box }, "move")}
+                  className={`absolute flex items-center gap-1 rounded-md border-2 bg-primary/15 px-1 text-[10px] font-semibold text-primary ${
+                    selected === f.id ? "border-primary" : "border-primary/50"
+                  }`}
                   style={{
-                    left: `${Number(f.x) * 100}%`,
-                    top: `${Number(f.y) * 100}%`,
-                    width: `${Number(f.w) * 100}%`,
-                    height: `${Number(f.h) * 100}%`,
+                    left: `${box.x * 100}%`,
+                    top: `${box.y * 100}%`,
+                    width: `${box.w * 100}%`,
+                    height: `${box.h * 100}%`,
                   }}
                 >
-                  <GripVertical className="size-3 shrink-0" />
+                  <Move className="size-3 shrink-0" />
                   <span className="truncate">
                     {FIELD_LABEL[f.type as FieldType] ?? f.type}
                     {signer ? ` • ${signer.name.split(" ")[0]}` : ""}
@@ -317,6 +452,7 @@ function Prepare() {
                   <button
                     aria-label="Excluir campo"
                     className="ml-auto shrink-0"
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={async (e) => {
                       e.stopPropagation();
                       await supabase.from("signature_fields").delete().eq("id", f.id);
@@ -325,10 +461,42 @@ function Prepare() {
                   >
                     <Trash2 className="size-3 text-destructive" />
                   </button>
+                  <span
+                    aria-label="Redimensionar"
+                    onPointerDown={(e) => startGesture(e, { id: f.id, ...box }, "resize")}
+                    className="absolute -bottom-1 -right-1 size-3 cursor-se-resize rounded-sm border border-primary bg-card"
+                  />
                 </div>
               );
             })}
           </div>
+
+          {sel && (
+            <div className="mt-3 rounded-lg border border-border p-3">
+              <p className="text-[11px] font-semibold">
+                Ajuste fino — {FIELD_LABEL[sel.type as FieldType] ?? sel.type}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[
+                  ["◀", { x: clamp(Number(sel.x) - 0.01, 0, 1 - Number(sel.w)) }],
+                  ["▶", { x: clamp(Number(sel.x) + 0.01, 0, 1 - Number(sel.w)) }],
+                  ["▲", { y: clamp(Number(sel.y) - 0.01, 0, 1 - Number(sel.h)) }],
+                  ["▼", { y: clamp(Number(sel.y) + 0.01, 0, 1 - Number(sel.h)) }],
+                  ["−", { w: clamp(Number(sel.w) - 0.02, 0.05, 1), h: clamp(Number(sel.h) - 0.005, 0.02, 1) }],
+                  ["+", { w: clamp(Number(sel.w) + 0.02, 0.05, 1), h: clamp(Number(sel.h) + 0.005, 0.02, 1) }],
+                ].map(([label, patch]) => (
+                  <Button
+                    key={label as string}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => nudge(sel.id, patch as Record<string, number>)}
+                  >
+                    {label as string}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <Button className="w-full" size="lg" onClick={send}>
