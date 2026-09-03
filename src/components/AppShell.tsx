@@ -4,7 +4,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   Home,
   Building2,
-  FileText,
+  
   FileSignature,
   PenLine,
   Menu,
