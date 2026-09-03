@@ -91,8 +91,14 @@ export function UploadDocumentDialog({
   }, [data, companyId]);
 
   const submit = async () => {
-    if (!companyId) return toast.error("Selecione a empresa");
-    if (!file) return toast.error("Selecione o documento");
+    if (!companyId) {
+      toast.error("Selecione a empresa");
+      return;
+    }
+    if (!file) {
+      toast.error("Selecione o documento");
+      return;
+    }
     setBusy(true);
     try {
       const { data: u } = await supabase.auth.getUser();
