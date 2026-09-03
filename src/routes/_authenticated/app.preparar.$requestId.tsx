@@ -1,7 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Send, Move, ChevronLeft, ChevronRight, Copy, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Send,
+  Move,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  Loader2,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
+
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -510,6 +522,8 @@ function Prepare() {
               );
             })}
           </div>
+          </div>
+
 
           {sel && (
             <div className="mt-3 rounded-lg border border-border p-3">
