@@ -18,6 +18,7 @@ import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
+import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
 import { Route as AuthenticatedAppAssinaturasRouteImport } from './routes/_authenticated/app.assinaturas'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app.configuracoes'
 import { Route as AuthenticatedAppContratosRouteImport } from './routes/_authenticated/app.contratos'
@@ -73,6 +74,11 @@ const SignTokenRoute = SignTokenRouteImport.update({
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
   id: '/app/',
   path: '/app/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppAdminRoute = AuthenticatedAppAdminRouteImport.update({
+  id: '/app/admin',
+  path: '/app/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAppAssinaturasRoute =
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
   '/sign/$token': typeof SignTokenRoute
+  '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
   '/sign/$token': typeof SignTokenRoute
+  '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
   '/sign/$token': typeof SignTokenRoute
+  '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/contratos': typeof AuthenticatedAppContratosRoute
@@ -224,6 +233,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/verify'
     | '/sign/$token'
+    | '/app/admin'
     | '/app/assinaturas'
     | '/app/configuracoes'
     | '/app/contratos'
@@ -246,6 +256,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/verify'
     | '/sign/$token'
+    | '/app/admin'
     | '/app/assinaturas'
     | '/app/configuracoes'
     | '/app/contratos'
@@ -269,6 +280,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/verify'
     | '/sign/$token'
+    | '/_authenticated/app/admin'
     | '/_authenticated/app/assinaturas'
     | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/contratos'
@@ -361,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/admin': {
+      id: '/_authenticated/app/admin'
+      path: '/app/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AuthenticatedAppAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/assinaturas': {
       id: '/_authenticated/app/assinaturas'
       path: '/app/assinaturas'
@@ -449,6 +468,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppAdminRoute: typeof AuthenticatedAppAdminRoute
   AuthenticatedAppAssinaturasRoute: typeof AuthenticatedAppAssinaturasRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppContratosRoute: typeof AuthenticatedAppContratosRoute
@@ -464,6 +484,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppAdminRoute: AuthenticatedAppAdminRoute,
   AuthenticatedAppAssinaturasRoute: AuthenticatedAppAssinaturasRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppContratosRoute: AuthenticatedAppContratosRoute,
