@@ -21,10 +21,15 @@ async function canvasToUrl(canvas: HTMLCanvasElement, type: string, quality?: nu
 }
 
 /** Renders every page of a PDF to object URLs for preview. */
-export async function renderPdfPages(bytes: Uint8Array, targetWidth = 260): Promise<RenderedPage[]> {
+export async function renderPdfPages(
+  bytes: Uint8Array,
+  targetWidth = 260,
+  onPage?: (page: RenderedPage, total: number) => void,
+): Promise<RenderedPage[]> {
   const lib = await getLib();
   const doc = await lib.getDocument({ data: bytes.slice(0) }).promise;
   const out: RenderedPage[] = [];
+
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
     const base = page.getViewport({ scale: 1 });
@@ -36,13 +41,16 @@ export async function renderPdfPages(bytes: Uint8Array, targetWidth = 260): Prom
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     await page.render({ canvas, canvasContext: ctx, viewport } as never).promise;
-    out.push({
+    const rendered: RenderedPage = {
       index: i - 1,
       width: canvas.width,
       height: canvas.height,
-      url: await canvasToUrl(canvas, "image/png"),
-    });
+      url: await canvasToUrl(canvas, "image/jpeg", 0.85),
+    };
+    out.push(rendered);
+    onPage?.(rendered, doc.numPages);
   }
+
   doc.cleanup();
   return out;
 }

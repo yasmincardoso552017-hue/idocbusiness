@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { PDFDocument } from "pdf-lib";
 
 import { AppShell } from "@/components/AppShell";
+import { useDialogs } from "@/components/Dialogs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,6 +92,7 @@ function Documents() {
   const search = Route.useSearch();
   const fileRef = useRef<HTMLInputElement>(null);
   const [q, setQ] = useState("");
+  const { confirm, promptText, dialog } = useDialogs();
   const [status, setStatus] = useState("all");
   const [companyId, setCompanyId] = useState("all");
   const [folderId, setFolderId] = useState("none");
@@ -212,7 +214,7 @@ function Documents() {
       toast.error("Selecione uma empresa para criar pastas");
       return;
     }
-    const name = window.prompt(parentId ? "Nome da subpasta" : "Nome da pasta");
+    const name = await promptText({ title: parentId ? "Nome da subpasta" : "Nome da pasta" });
     if (!name?.trim()) return;
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("folders").insert({
@@ -456,7 +458,7 @@ function Documents() {
                   icon={Pencil}
                   label="Renomear"
                   onClick={async () => {
-                    const name = window.prompt("Novo nome", d.name);
+                    const name = await promptText({ title: "Renomear documento", defaultValue: d.name });
                     if (!name) return;
                     await supabase.from("documents").update({ name }).eq("id", d.id);
                     refresh();
@@ -509,7 +511,7 @@ function Documents() {
                   icon={Trash2}
                   label="Excluir"
                   onClick={async () => {
-                    if (!window.confirm("Excluir definitivamente?")) return;
+                    if (!(await confirm({ title: `Excluir "${d.name}"?`, description: "Esta ação não pode ser desfeita.", confirmText: "Excluir" }))) return;
                     if (d.storage_path) await supabase.storage.from("documents").remove([d.storage_path]);
                     await supabase.from("documents").delete().eq("id", d.id);
                     toast.success("Documento excluído");
@@ -552,6 +554,7 @@ function Documents() {
       </Dialog>
 
       <Label className="sr-only">Documentos</Label>
+      {dialog}
     </AppShell>
   );
 }

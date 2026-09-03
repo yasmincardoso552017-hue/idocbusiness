@@ -12,6 +12,8 @@ import {
   Loader2,
   ZoomIn,
   ZoomOut,
+  Hand,
+  MousePointer2,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -53,6 +55,8 @@ function Prepare() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [panMode, setPanMode] = useState(false);
   const [page, setPage] = useState(1);
   const [zoom, setZoom] = useState(1);
 
@@ -94,6 +98,7 @@ function Prepare() {
     if (!doc?.storage_path) return;
     let cancelled = false;
     setRendering(true);
+    setPages([]);
     (async () => {
       try {
         const { data: signed } = await supabase.storage
@@ -101,8 +106,12 @@ function Prepare() {
           .createSignedUrl(doc.storage_path!, 3600);
         if (!signed?.signedUrl) throw new Error("Não foi possível abrir o PDF");
         const bytes = new Uint8Array(await (await fetch(signed.signedUrl)).arrayBuffer());
-        const rendered = await renderPdfPages(bytes, 900);
-        if (!cancelled) setPages(rendered);
+        await renderPdfPages(bytes, 820, (p) => {
+          if (!cancelled) {
+            setPages((prev) => [...prev, p]);
+            setRendering(false);
+          }
+        });
       } catch (e) {
         toast.error((e as Error).message);
       } finally {
@@ -113,6 +122,7 @@ function Prepare() {
       cancelled = true;
     };
   }, [doc?.storage_path]);
+
 
   const total = pages.length || doc?.page_count || 1;
   const current = pages[page - 1];
@@ -176,7 +186,31 @@ function Prepare() {
     refresh();
   }
 
+  /** Arrasta a página dentro da área visível (útil com zoom alto). */
+  function startPan(e: React.PointerEvent) {
+    const box = scrollRef.current;
+    if (!box) return;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const left = box.scrollLeft;
+    const top = box.scrollTop;
+    const onMove = (ev: PointerEvent) => {
+      box.scrollLeft = left - (ev.clientX - startX);
+      box.scrollTop = top - (ev.clientY - startY);
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
   function onCanvasPointerDown(e: React.PointerEvent) {
+    if (panMode) {
+      startPan(e);
+      return;
+    }
     if ((e.target as HTMLElement).closest("[data-field]")) return;
     const box = canvasRef.current!.getBoundingClientRect();
     addFieldAt((e.clientX - box.left) / box.width, (e.clientY - box.top) / box.height);
@@ -188,6 +222,7 @@ function Prepare() {
     field: { id: string; x: number; y: number; w: number; h: number },
     mode: "move" | "resize",
   ) {
+    if (panMode) return;
     e.stopPropagation();
     e.preventDefault();
     setSelected(field.id);
@@ -443,13 +478,31 @@ function Prepare() {
             <Button size="sm" variant="ghost" onClick={() => setZoom(1)}>
               1:1
             </Button>
+            <Button
+              size="sm"
+              variant={panMode ? "default" : "outline"}
+              aria-label={panMode ? "Modo mover ativo" : "Ativar modo mover"}
+              onClick={() => setPanMode((v) => !v)}
+            >
+              {panMode ? <Hand className="size-4" /> : <MousePointer2 className="size-4" />}
+            </Button>
           </div>
 
-          <div className="mt-3 max-h-[70vh] overflow-auto rounded-lg border border-border bg-secondary/30">
+          <p className="mt-2 text-[10px] text-muted-foreground">
+            {panMode
+              ? "Modo mover: arraste o documento para navegar. Desative para inserir campos."
+              : "Modo edição: toque para inserir campos. Ative a mãozinha para arrastar o documento."}
+          </p>
+          <div
+            ref={scrollRef}
+            className="mt-3 max-h-[70vh] overflow-auto rounded-lg border border-border bg-secondary/30"
+          >
           <div
             ref={canvasRef}
             onPointerDown={onCanvasPointerDown}
-            className="relative touch-none select-none overflow-hidden bg-white"
+            className={`relative touch-none select-none overflow-hidden bg-white ${
+              panMode ? "cursor-grab active:cursor-grabbing" : ""
+            }`}
             style={{
               width: `${zoom * 100}%`,
               aspectRatio: current ? `${current.width} / ${current.height}` : "1 / 1.414",
