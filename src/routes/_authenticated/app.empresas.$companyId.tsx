@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { useDialogs } from "@/components/Dialogs";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +89,7 @@ function CompanyDetail() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [cwd, setCwd] = useState<string | null>(null);
+  const { confirm, promptText, dialog } = useDialogs();
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -142,7 +144,7 @@ function CompanyDetail() {
 
   /** Cria pasta ou subpasta dentro da pasta aberta. */
   const addFolder = async () => {
-    const name = window.prompt(cwd ? "Nome da subpasta" : "Nome da pasta");
+    const name = await promptText({ title: cwd ? "Nome da subpasta" : "Nome da pasta" });
     if (!name?.trim()) return;
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("folders").insert({
@@ -157,7 +159,7 @@ function CompanyDetail() {
   };
 
   const renameFolder = async (f: FolderRec) => {
-    const name = window.prompt("Novo nome da pasta", f.name);
+    const name = await promptText({ title: "Renomear pasta", defaultValue: f.name });
     if (!name?.trim()) return;
     await supabase.from("folders").update({ name: name.trim() }).eq("id", f.id);
     refresh();
@@ -166,12 +168,12 @@ function CompanyDetail() {
   /** Exclui a pasta com confirmação; subpastas e arquivos voltam para a raiz. */
   const deleteFolder = async (f: FolderRec) => {
     const inside = docs.filter((d) => d.folder_id === f.id).length;
-    if (
-      !window.confirm(
-        `Excluir a pasta "${f.name}"?${inside ? ` ${inside} arquivo(s) voltarão para a raiz da empresa.` : ""}`,
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: `Excluir a pasta "${f.name}"?`,
+      description: inside ? `${inside} arquivo(s) voltarão para a raiz da empresa.` : undefined,
+      confirmText: "Excluir",
+    });
+    if (!ok) return;
     await supabase.from("documents").update({ folder_id: null }).eq("folder_id", f.id);
     await supabase.from("folders").update({ parent_id: f.parent_id }).eq("parent_id", f.id);
     const { error } = await supabase.from("folders").delete().eq("id", f.id);
@@ -303,7 +305,12 @@ function CompanyDetail() {
   };
 
   const deleteDoc = async (d: Doc) => {
-    if (!window.confirm(`Excluir definitivamente "${d.name}"? Esta ação não pode ser desfeita.`)) return;
+    const ok = await confirm({
+      title: `Excluir "${d.name}"?`,
+      description: "Esta ação não pode ser desfeita.",
+      confirmText: "Excluir",
+    });
+    if (!ok) return;
     const paths = [d.storage_path, d.signed_storage_path].filter(Boolean) as string[];
     if (paths.length) await supabase.storage.from("documents").remove(paths);
     const { error } = await supabase.from("documents").delete().eq("id", d.id);
@@ -326,16 +333,15 @@ function CompanyDetail() {
   /** Exclui a empresa com dupla confirmação, removendo pastas, contratos e arquivos. */
   const deleteCompany = async () => {
     const label = c?.nome_fantasia || c?.razao_social || "empresa";
-    if (
-      !window.confirm(
-        `Excluir a empresa "${label}"? Serão removidos ${docs.length} documento(s), ${folders.length} pasta(s) e ${
-          data?.contracts.length ?? 0
-        } contrato(s).`,
-      )
-    )
-      return;
-    const typed = window.prompt(`Para confirmar, digite EXCLUIR`);
-    if (typed?.trim().toUpperCase() !== "EXCLUIR") { toast.error("Exclusão cancelada"); return; }
+    const ok = await confirm({
+      title: `Excluir a empresa "${label}"?`,
+      description: `Serão removidos ${docs.length} documento(s), ${folders.length} pasta(s) e ${
+        data?.contracts.length ?? 0
+      } contrato(s). Digite EXCLUIR para confirmar.`,
+      confirmText: "Excluir",
+      requireText: "EXCLUIR",
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const paths = docs
@@ -366,7 +372,7 @@ function CompanyDetail() {
   };
 
   const createContract = async () => {
-    const name = window.prompt("Nome do contrato");
+    const name = await promptText({ title: "Nome do contrato" });
     if (!name?.trim()) return;
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("contracts").insert({
@@ -584,7 +590,7 @@ function CompanyDetail() {
                   variant="outline"
                   className="text-destructive"
                   onClick={async () => {
-                    if (!window.confirm(`Excluir o contrato "${k.name}"?`)) return;
+                    if (!(await confirm({ title: `Excluir o contrato "${k.name}"?`, confirmText: "Excluir" }))) return;
                     const { error } = await supabase.from("contracts").delete().eq("id", k.id);
                     if (error) toast.error(error.message);
                     else toast.success("Contrato excluído");
@@ -651,7 +657,7 @@ function CompanyDetail() {
                   icon={Pencil}
                   label="Renomear"
                   onClick={async () => {
-                    const name = window.prompt("Novo nome", actionDoc.name);
+                    const name = await promptText({ title: "Renomear documento", defaultValue: actionDoc.name });
                     if (!name?.trim()) return;
                     await supabase.from("documents").update({ name: name.trim() }).eq("id", actionDoc.id);
                     setActionDoc(null);
@@ -740,6 +746,7 @@ function CompanyDetail() {
           onOpenChange={(o) => !o && setEnvelopeFor(null)}
         />
       )}
+      {dialog}
     </AppShell>
   );
 }
