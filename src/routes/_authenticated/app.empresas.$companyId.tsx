@@ -89,7 +89,6 @@ function CompanyDetail() {
   const { companyId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const fileRef = useRef<HTMLInputElement>(null);
   const uploadTarget = useRef<string | null>(null);
 
   const search = Route.useSearch();
@@ -305,12 +304,6 @@ function CompanyDetail() {
     qc.invalidateQueries({ queryKey: ["documents"] });
   };
 
-  /** Abre o seletor de arquivos apontando para uma pasta específica. */
-  const pickFiles = (targetFolder: string | null) => {
-    uploadTarget.current = targetFolder;
-    fileRef.current?.click();
-  };
-
   const openFile = async (d: Doc, download = false) => {
     const p = d.signed_storage_path ?? d.storage_path;
     if (!p) { toast.error("Arquivo indisponível"); return; }
@@ -486,17 +479,6 @@ function CompanyDetail() {
         </div>
       </div>
 
-      <input
-        ref={fileRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          const picked = Array.from(e.target.files ?? []);
-          e.target.value = "";
-          upload(picked);
-        }}
-      />
 
       <UploadDocumentDialog
         open={uploadOpen}
