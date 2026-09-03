@@ -90,7 +90,12 @@ function CompanyDetail() {
   const fileRef = useRef<HTMLInputElement>(null);
   const uploadTarget = useRef<string | null>(null);
 
-  const [cwd, setCwd] = useState<string | null>(null);
+  const search = Route.useSearch();
+  const [cwd, setCwd] = useState<string | null>(search.folder || null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  useEffect(() => {
+    if (search.folder) setCwd(search.folder);
+  }, [search.folder]);
   const { confirm, promptText, dialog } = useDialogs();
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
