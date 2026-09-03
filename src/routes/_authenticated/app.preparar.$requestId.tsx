@@ -396,12 +396,52 @@ function Prepare() {
             </Button>
           </div>
 
+          <div className="mt-2 flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Reduzir zoom"
+              onClick={() => setZoom((z) => Math.max(1, Number((z - 0.25).toFixed(2))))}
+            >
+              <ZoomOut className="size-4" />
+            </Button>
+            <input
+              type="range"
+              min={1}
+              max={4}
+              step={0.25}
+              value={zoom}
+              aria-label="Zoom da página"
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="h-1.5 flex-1 accent-primary"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              aria-label="Aumentar zoom"
+              onClick={() => setZoom((z) => Math.min(4, Number((z + 0.25).toFixed(2))))}
+            >
+              <ZoomIn className="size-4" />
+            </Button>
+            <span className="w-10 text-right text-[11px] font-semibold text-muted-foreground">
+              {Math.round(zoom * 100)}%
+            </span>
+            <Button size="sm" variant="ghost" onClick={() => setZoom(1)}>
+              1:1
+            </Button>
+          </div>
+
+          <div className="mt-3 max-h-[70vh] overflow-auto rounded-lg border border-border bg-secondary/30">
           <div
             ref={canvasRef}
             onPointerDown={onCanvasPointerDown}
-            className="relative mt-3 w-full touch-none select-none overflow-hidden rounded-lg border border-border bg-white"
-            style={{ aspectRatio: current ? `${current.width} / ${current.height}` : "1 / 1.414" }}
+            className="relative touch-none select-none overflow-hidden bg-white"
+            style={{
+              width: `${zoom * 100}%`,
+              aspectRatio: current ? `${current.width} / ${current.height}` : "1 / 1.414",
+            }}
           >
+
             {current ? (
               <img
                 src={current.url}
