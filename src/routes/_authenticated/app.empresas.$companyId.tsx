@@ -87,6 +87,7 @@ function CompanyDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const uploadTarget = useRef<string | null>(null);
 
   const [cwd, setCwd] = useState<string | null>(null);
   const { confirm, promptText, dialog } = useDialogs();
@@ -243,23 +244,29 @@ function CompanyDetail() {
     }
   };
 
-  /** Envia arquivos direto para a pasta aberta. */
-  const upload = async (files: FileList | null) => {
+  /** Envia arquivos direto para a pasta escolhida (a aberta por padrão). */
+  const upload = async (files: FileList | null, targetFolder: string | null = uploadTarget.current) => {
     if (!files?.length) return;
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
+    if (!u.user) {
+      setBusy(false);
+      toast.error("Sessão expirada — entre novamente");
+      return;
+    }
+    let ok = 0;
     for (const file of Array.from(files)) {
       try {
         const id = crypto.randomUUID();
-        const p = `${u.user!.id}/${id}/original-${file.name.replace(/[^\w.\-]/g, "_")}`;
+        const p = `${u.user.id}/${id}/original-${file.name.replace(/[^\w.\-]/g, "_")}`;
         const up = await supabase.storage.from("documents").upload(p, file, { upsert: true });
         if (up.error) throw up.error;
         const { error } = await supabase.from("documents").insert({
           id,
-          owner_id: u.user!.id,
+          owner_id: u.user.id,
           name: file.name,
           company_id: companyId,
-          folder_id: cwd,
+          folder_id: targetFolder,
           storage_path: p,
           mime_type: file.type || "application/octet-stream",
           size_bytes: file.size,
@@ -267,13 +274,25 @@ function CompanyDetail() {
           status: "draft",
         });
         if (error) throw error;
-        toast.success(`${file.name} enviado`);
+        ok += 1;
       } catch (e) {
         toast.error(`${file.name}: ${(e as Error).message}`);
       }
     }
     setBusy(false);
-    refresh();
+    if (ok) {
+      const folderName = targetFolder ? folders.find((f) => f.id === targetFolder)?.name ?? "pasta" : "raiz";
+      toast.success(`${ok} arquivo(s) em ${folderName}`);
+      if (targetFolder !== cwd) setCwd(targetFolder);
+    }
+    await refetch();
+    qc.invalidateQueries({ queryKey: ["documents"] });
+  };
+
+  /** Abre o seletor de arquivos apontando para uma pasta específica. */
+  const pickFiles = (targetFolder: string | null) => {
+    uploadTarget.current = targetFolder;
+    fileRef.current?.click();
   };
 
   const openFile = async (d: Doc, download = false) => {
@@ -439,7 +458,7 @@ function CompanyDetail() {
           >
             <Pencil className="mr-1 size-4" /> Editar
           </Button>
-          <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+          <Button size="sm" variant="outline" onClick={() => pickFiles(cwd)} disabled={busy}>
             <Upload className="mr-1 size-4" /> Enviar
           </Button>
           <Button size="sm" variant="outline" onClick={() => navigate({ to: "/app/lembretes" })}>
@@ -490,9 +509,9 @@ function CompanyDetail() {
               <Button size="sm" variant="outline" onClick={addFolder}>
                 <FolderPlus className="mr-1 size-4" /> {cwd ? "Subpasta" : "Pasta"}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={busy}>
+              <Button size="sm" variant="outline" onClick={() => pickFiles(cwd)} disabled={busy}>
                 {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Upload className="mr-1 size-4" />}
-                Documento
+                {cwd ? "Enviar nesta pasta" : "Documento"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => zipFolder(cwd)} disabled={busy}>
                 <FolderArchive className="mr-1 size-4" /> ZIP
@@ -525,17 +544,27 @@ function CompanyDetail() {
 
           <div className="grid grid-cols-2 gap-2">
             {children.map((f) => (
-              <button key={f.id} className="card-soft flex items-center gap-2 p-3 text-left" onClick={() => setCwd(f.id)}>
-                <Folder className="size-4 shrink-0 text-primary" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-xs font-semibold">{f.name}</span>
-                  <span className="block text-[10px] text-muted-foreground">
-                    {folders.filter((x) => x.parent_id === f.id).length} subpasta(s) •{" "}
-                    {docs.filter((d) => d.folder_id === f.id).length} arquivo(s)
+              <div key={f.id} className="card-soft flex items-center gap-2 p-3">
+                <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setCwd(f.id)}>
+                  <Folder className="size-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-semibold">{f.name}</span>
+                    <span className="block text-[10px] text-muted-foreground">
+                      {folders.filter((x) => x.parent_id === f.id).length} subpasta(s) •{" "}
+                      {docs.filter((d) => d.folder_id === f.id).length} arquivo(s)
+                    </span>
                   </span>
-                </span>
+                </button>
                 {f.public_token && <Link2 className="size-3 shrink-0 text-success" />}
-              </button>
+                <button
+                  aria-label={`Enviar documento para ${f.name}`}
+                  className="shrink-0 rounded-md border border-border p-1.5"
+                  disabled={busy}
+                  onClick={() => pickFiles(f.id)}
+                >
+                  <Upload className="size-3.5 text-primary" />
+                </button>
+              </div>
             ))}
           </div>
 

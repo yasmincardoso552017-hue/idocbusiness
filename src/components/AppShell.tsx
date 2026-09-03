@@ -4,7 +4,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   Home,
   Building2,
-  FileText,
+  
   FileSignature,
   PenLine,
   Menu,
@@ -30,7 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 const tabs = [
   { to: "/app", label: "Início", icon: Home },
   { to: "/app/empresas", label: "Empresas", icon: Building2 },
-  { to: "/app/documentos", label: "Docs", icon: FileText },
+  { to: "/app/ferramentas", label: "Ferramentas", icon: Wrench },
   { to: "/app/contratos", label: "Contratos", icon: FileSignature },
   { to: "/app/assinaturas", label: "Assinaturas", icon: PenLine },
 ];
