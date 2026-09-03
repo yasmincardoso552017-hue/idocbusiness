@@ -44,6 +44,7 @@ import { fmtDateTime, fmtSize, statusClass, STATUS_LABEL } from "@/lib/format";
 import { shareFolder } from "@/lib/vault.functions";
 
 export const Route = createFileRoute("/_authenticated/app/empresas/$companyId")({
+  validateSearch: (s: Record<string, unknown>) => ({ folder: typeof s['folder'] === "string" ? s['folder'] : "" }),
   component: CompanyDetail,
 });
 
