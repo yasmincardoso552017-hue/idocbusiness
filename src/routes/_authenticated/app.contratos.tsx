@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Search, Trash2, FileSignature, Pencil } from "lucide-react";
+import { Plus, Search, Trash2, FileSignature, Pencil, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell, StatCard } from "@/components/AppShell";
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { ContractEnvelopeDialog, StageBadge, STAGE_LABEL } from "@/components/ContractEnvelope";
 import { fmtDate, fmtMoney, statusClass, STATUS_LABEL } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/contratos")({
@@ -52,6 +53,8 @@ function Contracts() {
   const [status, setStatus] = useState("all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(empty);
+  const [stage, setStage] = useState("all");
+  const [envelope, setEnvelope] = useState<{ id: string; name: string; documentId: string | null } | null>(null);
 
   const { data: companies } = useQuery({
     queryKey: ["companies-min"],
@@ -77,7 +80,8 @@ function Contracts() {
       (c.number ?? "").toLowerCase().includes(q.toLowerCase());
     const d = daysTo(c.end_date);
     const effective = d != null && d < 0 ? "expired" : d != null && d <= (c.notice_days ?? 30) ? "expiring" : c.status;
-    return okQ && (status === "all" || effective === status);
+    const okStage = stage === "all" || (c.stage ?? "draft") === stage;
+    return okQ && okStage && (status === "all" || effective === status);
   });
 
   const expiring = (contracts ?? []).filter((c) => {
@@ -146,6 +150,20 @@ function Contracts() {
           </Select>
         </div>
 
+        <Select value={stage} onValueChange={setStage}>
+          <SelectTrigger>
+            <SelectValue placeholder="Estágio do envelope" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os estágios</SelectItem>
+            {["draft", "sent", "delivered", "signed", "completed", "voided", "expired", "declined"].map((s) => (
+              <SelectItem key={s} value={s}>
+                {STAGE_LABEL[s] ?? s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
         <Button
           className="w-full"
           onClick={() => {
@@ -170,9 +188,12 @@ function Contracts() {
                       {company?.nome_fantasia || company?.razao_social || "Sem empresa"} • {c.number || "s/nº"}
                     </div>
                   </div>
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(eff)}`}>
-                    {STATUS_LABEL[eff] ?? eff}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(eff)}`}>
+                      {STATUS_LABEL[eff] ?? eff}
+                    </span>
+                    <StageBadge stage={c.stage ?? "draft"} />
+                  </div>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
                   <span>Início: {fmtDate(c.start_date)}</span>
@@ -180,7 +201,14 @@ function Contracts() {
                   <span>Valor: {fmtMoney(c.value)}</span>
                   <span>{c.auto_renew ? "Renovação automática" : `Aviso: ${c.notice_days ?? 30} dias`}</span>
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => setEnvelope({ id: c.id, name: c.name, documentId: c.document_id ?? null })}
+                  >
+                    <Send className="mr-1 size-3.5" />
+                    {c.request_id ? "Acompanhar" : "Enviar p/ assinar"}
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -209,7 +237,10 @@ function Contracts() {
                     size="sm"
                     variant="ghost"
                     onClick={async () => {
-                      await supabase.from("contracts").delete().eq("id", c.id);
+                      if (!confirm(`Excluir o contrato "${c.name}"?`)) return;
+                      const res = await supabase.from("contracts").delete().eq("id", c.id);
+                      if (res.error) { toast.error(res.error.message); return; }
+                      toast.success("Contrato excluído");
                       qc.invalidateQueries({ queryKey: ["contracts"] });
                     }}
                   >
@@ -317,6 +348,18 @@ function Contracts() {
           </Button>
         </DialogContent>
       </Dialog>
+
+      {envelope ? (
+        <ContractEnvelopeDialog
+          contractId={envelope.id}
+          contractName={envelope.name}
+          documentId={envelope.documentId}
+          open
+          onOpenChange={(v) => {
+            if (!v) setEnvelope(null);
+          }}
+        />
+      ) : null}
     </AppShell>
   );
 }
