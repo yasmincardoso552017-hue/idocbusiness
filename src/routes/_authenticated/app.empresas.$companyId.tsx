@@ -263,7 +263,7 @@ function CompanyDetail() {
       return;
     }
     let ok = 0;
-    for (const file of Array.from(files)) {
+    for (const file of files) {
       try {
         const id = crypto.randomUUID();
         const p = `${u.user.id}/${id}/original-${file.name.replace(/[^\w.\-]/g, "_")}`;
