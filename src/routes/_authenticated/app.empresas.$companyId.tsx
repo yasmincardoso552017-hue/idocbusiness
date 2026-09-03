@@ -94,6 +94,12 @@ function CompanyDetail() {
   const search = Route.useSearch();
   const [cwd, setCwd] = useState<string | null>(search.folder || null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadFolder, setUploadFolder] = useState<string | null>(null);
+  /** Abre o envio único já apontado para a pasta escolhida. */
+  const openUpload = (folder: string | null) => {
+    setUploadFolder(folder);
+    setUploadOpen(true);
+  };
   useEffect(() => {
     if (search.folder) setCwd(search.folder);
   }, [search.folder]);
@@ -467,7 +473,7 @@ function CompanyDetail() {
           >
             <Pencil className="mr-1 size-4" /> Editar
           </Button>
-          <Button size="sm" onClick={() => setUploadOpen(true)} disabled={busy}>
+          <Button size="sm" onClick={() => openUpload(cwd)} disabled={busy}>
             <Upload className="mr-1 size-4" /> Enviar documento
           </Button>
           <Button size="sm" variant="outline" onClick={() => navigate({ to: "/app/lembretes" })}>
@@ -489,6 +495,13 @@ function CompanyDetail() {
           e.target.value = "";
           upload(picked);
         }}
+      />
+
+      <UploadDocumentDialog
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        defaultCompanyId={companyId}
+        defaultFolderId={uploadFolder}
       />
 
       <Tabs defaultValue="files">
@@ -519,7 +532,7 @@ function CompanyDetail() {
               <Button size="sm" variant="outline" onClick={addFolder}>
                 <FolderPlus className="mr-1 size-4" /> {cwd ? "Subpasta" : "Pasta"}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => pickFiles(cwd)} disabled={busy}>
+              <Button size="sm" variant="outline" onClick={() => openUpload(cwd)} disabled={busy}>
                 {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Upload className="mr-1 size-4" />}
                 {cwd ? "Enviar nesta pasta" : "Documento"}
               </Button>
@@ -570,7 +583,7 @@ function CompanyDetail() {
                   aria-label={`Enviar documento para ${f.name}`}
                   className="shrink-0 rounded-md border border-border p-1.5"
                   disabled={busy}
-                  onClick={() => pickFiles(f.id)}
+                  onClick={() => openUpload(f.id)}
                 >
                   <Upload className="size-3.5 text-primary" />
                 </button>
