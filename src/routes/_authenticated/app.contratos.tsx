@@ -170,9 +170,12 @@ function Contracts() {
                       {company?.nome_fantasia || company?.razao_social || "Sem empresa"} • {c.number || "s/nº"}
                     </div>
                   </div>
-                  <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(eff)}`}>
-                    {STATUS_LABEL[eff] ?? eff}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusClass(eff)}`}>
+                      {STATUS_LABEL[eff] ?? eff}
+                    </span>
+                    <StageBadge stage={c.stage ?? "draft"} />
+                  </div>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-muted-foreground">
                   <span>Início: {fmtDate(c.start_date)}</span>
