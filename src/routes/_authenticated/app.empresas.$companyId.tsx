@@ -458,7 +458,7 @@ function CompanyDetail() {
           >
             <Pencil className="mr-1 size-4" /> Editar
           </Button>
-          <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()}>
+          <Button size="sm" variant="outline" onClick={() => pickFiles(cwd)} disabled={busy}>
             <Upload className="mr-1 size-4" /> Enviar
           </Button>
           <Button size="sm" variant="outline" onClick={() => navigate({ to: "/app/lembretes" })}>
