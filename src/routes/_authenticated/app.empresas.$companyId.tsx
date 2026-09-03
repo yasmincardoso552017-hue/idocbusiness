@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FolderPlus,
   FileText,
@@ -89,7 +89,6 @@ function CompanyDetail() {
   const { companyId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const uploadTarget = useRef<string | null>(null);
 
   const search = Route.useSearch();
   const [cwd, setCwd] = useState<string | null>(search.folder || null);
@@ -255,53 +254,6 @@ function CompanyDetail() {
     } finally {
       setBusy(false);
     }
-  };
-
-  /** Envia arquivos direto para a pasta escolhida (a aberta por padrão). */
-  const upload = async (input: FileList | File[] | null, targetFolder: string | null = uploadTarget.current) => {
-    // A lista precisa ser copiada de forma síncrona: limpar o input zera o FileList original.
-    const files = input ? Array.from(input) : [];
-    if (!files.length) return;
-    setBusy(true);
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) {
-      setBusy(false);
-      toast.error("Sessão expirada — entre novamente");
-      return;
-    }
-    let ok = 0;
-    for (const file of files) {
-      try {
-        const id = crypto.randomUUID();
-        const p = `${u.user.id}/${id}/original-${file.name.replace(/[^\w.\-]/g, "_")}`;
-        const up = await supabase.storage.from("documents").upload(p, file, { upsert: true });
-        if (up.error) throw up.error;
-        const { error } = await supabase.from("documents").insert({
-          id,
-          owner_id: u.user.id,
-          name: file.name,
-          company_id: companyId,
-          folder_id: targetFolder,
-          storage_path: p,
-          mime_type: file.type || "application/octet-stream",
-          size_bytes: file.size,
-          hash: file.size <= 200 * 1024 * 1024 ? await sha256(file) : null,
-          status: "draft",
-        });
-        if (error) throw error;
-        ok += 1;
-      } catch (e) {
-        toast.error(`${file.name}: ${(e as Error).message}`);
-      }
-    }
-    setBusy(false);
-    if (ok) {
-      const folderName = targetFolder ? folders.find((f) => f.id === targetFolder)?.name ?? "pasta" : "raiz";
-      toast.success(`${ok} arquivo(s) em ${folderName}`);
-      if (targetFolder !== cwd) setCwd(targetFolder);
-    }
-    await refetch();
-    qc.invalidateQueries({ queryKey: ["documents"] });
   };
 
   const openFile = async (d: Doc, download = false) => {
