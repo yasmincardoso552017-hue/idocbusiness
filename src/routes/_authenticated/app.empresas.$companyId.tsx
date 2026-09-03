@@ -509,9 +509,9 @@ function CompanyDetail() {
               <Button size="sm" variant="outline" onClick={addFolder}>
                 <FolderPlus className="mr-1 size-4" /> {cwd ? "Subpasta" : "Pasta"}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={busy}>
+              <Button size="sm" variant="outline" onClick={() => pickFiles(cwd)} disabled={busy}>
                 {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Upload className="mr-1 size-4" />}
-                Documento
+                {cwd ? "Enviar nesta pasta" : "Documento"}
               </Button>
               <Button size="sm" variant="outline" onClick={() => zipFolder(cwd)} disabled={busy}>
                 <FolderArchive className="mr-1 size-4" /> ZIP
