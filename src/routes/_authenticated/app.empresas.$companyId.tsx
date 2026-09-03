@@ -243,23 +243,29 @@ function CompanyDetail() {
     }
   };
 
-  /** Envia arquivos direto para a pasta aberta. */
-  const upload = async (files: FileList | null) => {
+  /** Envia arquivos direto para a pasta escolhida (a aberta por padrão). */
+  const upload = async (files: FileList | null, targetFolder: string | null = uploadTarget.current) => {
     if (!files?.length) return;
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
+    if (!u.user) {
+      setBusy(false);
+      toast.error("Sessão expirada — entre novamente");
+      return;
+    }
+    let ok = 0;
     for (const file of Array.from(files)) {
       try {
         const id = crypto.randomUUID();
-        const p = `${u.user!.id}/${id}/original-${file.name.replace(/[^\w.\-]/g, "_")}`;
+        const p = `${u.user.id}/${id}/original-${file.name.replace(/[^\w.\-]/g, "_")}`;
         const up = await supabase.storage.from("documents").upload(p, file, { upsert: true });
         if (up.error) throw up.error;
         const { error } = await supabase.from("documents").insert({
           id,
-          owner_id: u.user!.id,
+          owner_id: u.user.id,
           name: file.name,
           company_id: companyId,
-          folder_id: cwd,
+          folder_id: targetFolder,
           storage_path: p,
           mime_type: file.type || "application/octet-stream",
           size_bytes: file.size,
@@ -267,13 +273,25 @@ function CompanyDetail() {
           status: "draft",
         });
         if (error) throw error;
-        toast.success(`${file.name} enviado`);
+        ok += 1;
       } catch (e) {
         toast.error(`${file.name}: ${(e as Error).message}`);
       }
     }
     setBusy(false);
-    refresh();
+    if (ok) {
+      const folderName = targetFolder ? folders.find((f) => f.id === targetFolder)?.name ?? "pasta" : "raiz";
+      toast.success(`${ok} arquivo(s) em ${folderName}`);
+      if (targetFolder !== cwd) setCwd(targetFolder);
+    }
+    await refetch();
+    qc.invalidateQueries({ queryKey: ["documents"] });
+  };
+
+  /** Abre o seletor de arquivos apontando para uma pasta específica. */
+  const pickFiles = (targetFolder: string | null) => {
+    uploadTarget.current = targetFolder;
+    fileRef.current?.click();
   };
 
   const openFile = async (d: Doc, download = false) => {

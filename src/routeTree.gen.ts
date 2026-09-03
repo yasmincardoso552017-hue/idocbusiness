@@ -23,7 +23,6 @@ import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAppAssinaturasRouteImport } from './routes/_authenticated/app.assinaturas'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app.configuracoes'
 import { Route as AuthenticatedAppContratosRouteImport } from './routes/_authenticated/app.contratos'
-import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app.documentos'
 import { Route as AuthenticatedAppFerramentasRouteImport } from './routes/_authenticated/app.ferramentas'
 import { Route as AuthenticatedAppIntegracoesRouteImport } from './routes/_authenticated/app.integracoes'
 import { Route as AuthenticatedAppLembretesRouteImport } from './routes/_authenticated/app.lembretes'
@@ -106,12 +105,6 @@ const AuthenticatedAppContratosRoute =
     path: '/app/contratos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAppDocumentosRoute =
-  AuthenticatedAppDocumentosRouteImport.update({
-    id: '/app/documentos',
-    path: '/app/documentos',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedAppFerramentasRoute =
   AuthenticatedAppFerramentasRouteImport.update({
     id: '/app/ferramentas',
@@ -178,7 +171,6 @@ export interface FileRoutesByFullPath {
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
-  '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
   '/app/lembretes': typeof AuthenticatedAppLembretesRoute
@@ -203,7 +195,6 @@ export interface FileRoutesByTo {
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
-  '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
   '/app/lembretes': typeof AuthenticatedAppLembretesRoute
@@ -230,7 +221,6 @@ export interface FileRoutesById {
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/contratos': typeof AuthenticatedAppContratosRoute
-  '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/_authenticated/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
   '/_authenticated/app/lembretes': typeof AuthenticatedAppLembretesRoute
@@ -257,7 +247,6 @@ export interface FileRouteTypes {
     | '/app/assinaturas'
     | '/app/configuracoes'
     | '/app/contratos'
-    | '/app/documentos'
     | '/app/ferramentas'
     | '/app/integracoes'
     | '/app/lembretes'
@@ -282,7 +271,6 @@ export interface FileRouteTypes {
     | '/app/assinaturas'
     | '/app/configuracoes'
     | '/app/contratos'
-    | '/app/documentos'
     | '/app/ferramentas'
     | '/app/integracoes'
     | '/app/lembretes'
@@ -308,7 +296,6 @@ export interface FileRouteTypes {
     | '/_authenticated/app/assinaturas'
     | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/contratos'
-    | '/_authenticated/app/documentos'
     | '/_authenticated/app/ferramentas'
     | '/_authenticated/app/integracoes'
     | '/_authenticated/app/lembretes'
@@ -434,13 +421,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppContratosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/app/documentos': {
-      id: '/_authenticated/app/documentos'
-      path: '/app/documentos'
-      fullPath: '/app/documentos'
-      preLoaderRoute: typeof AuthenticatedAppDocumentosRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/app/ferramentas': {
       id: '/_authenticated/app/ferramentas'
       path: '/app/ferramentas'
@@ -512,7 +492,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAssinaturasRoute: typeof AuthenticatedAppAssinaturasRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppContratosRoute: typeof AuthenticatedAppContratosRoute
-  AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppFerramentasRoute: typeof AuthenticatedAppFerramentasRoute
   AuthenticatedAppIntegracoesRoute: typeof AuthenticatedAppIntegracoesRoute
   AuthenticatedAppLembretesRoute: typeof AuthenticatedAppLembretesRoute
@@ -529,7 +508,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAssinaturasRoute: AuthenticatedAppAssinaturasRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppContratosRoute: AuthenticatedAppContratosRoute,
-  AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
   AuthenticatedAppFerramentasRoute: AuthenticatedAppFerramentasRoute,
   AuthenticatedAppIntegracoesRoute: AuthenticatedAppIntegracoesRoute,
   AuthenticatedAppLembretesRoute: AuthenticatedAppLembretesRoute,
