@@ -87,6 +87,7 @@ function CompanyDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const uploadTarget = useRef<string | null>(null);
 
   const [cwd, setCwd] = useState<string | null>(null);
   const { confirm, promptText, dialog } = useDialogs();
