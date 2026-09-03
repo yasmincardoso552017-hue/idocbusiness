@@ -174,9 +174,16 @@ function Reminders() {
             />
           </div>
         </div>
-        <Button className="mt-3 w-full" onClick={create}>
-          Agendar lembrete
-        </Button>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <Button onClick={create}>Agendar lembrete</Button>
+          <Button variant="outline" onClick={notifyNow}>
+            <BellRing className="mr-1 size-4" /> Notificar agora
+          </Button>
+        </div>
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          Você define a data e a hora do aviso para cada signatário. Em "Notificar agora" a
+          notificação cai imediatamente na barra de notificações do destinatário.
+        </p>
       </div>
 
       <div className="card-soft mt-4 p-4">
