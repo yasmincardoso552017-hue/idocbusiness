@@ -198,7 +198,7 @@ function Prepare() {
               w: clamp(base.w + dx, 0.05, 1 - base.x),
               h: clamp(base.h + dy, 0.02, 1 - base.y),
             };
-      setGhost({ id: field.id, ...latest });
+      setGhost({ ...latest, id: field.id });
     };
     const onUp = async () => {
       window.removeEventListener("pointermove", onMove);
