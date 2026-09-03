@@ -77,6 +77,31 @@ function Reminders() {
     }
   }
 
+  /** Notificar agora: cria o lembrete e dispara a notificação imediatamente. */
+  async function notifyNow() {
+    if (!form.title.trim()) {
+      toast.error("Informe o título da notificação");
+      return;
+    }
+    try {
+      const created = await createReminder({
+        data: {
+          title: form.title.trim(),
+          body: form.body || undefined,
+          dueAt: new Date().toISOString(),
+          targetEmail: form.targetEmail.trim() ? form.targetEmail.trim() : undefined,
+          repeatEvery: "none",
+        },
+      });
+      await sendReminderNow({ data: { reminderId: created.id } });
+      setForm({ title: "", body: "", dueAt: "", targetEmail: "", repeatEvery: "none" });
+      toast.success("Notificação enviada agora");
+      refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
   return (
     <AppShell title="Lembretes e notificações">
       <div className="card-soft p-4">
