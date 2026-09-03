@@ -25,6 +25,7 @@ import { Route as AuthenticatedAppContratosRouteImport } from './routes/_authent
 import { Route as AuthenticatedAppDocumentosRouteImport } from './routes/_authenticated/app.documentos'
 import { Route as AuthenticatedAppFerramentasRouteImport } from './routes/_authenticated/app.ferramentas'
 import { Route as AuthenticatedAppIntegracoesRouteImport } from './routes/_authenticated/app.integracoes'
+import { Route as AuthenticatedAppLembretesRouteImport } from './routes/_authenticated/app.lembretes'
 import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/app.perfil'
 import { Route as AuthenticatedAppSegurancaRouteImport } from './routes/_authenticated/app.seguranca'
 import { Route as AuthenticatedAppEmpresasIndexRouteImport } from './routes/_authenticated/app.empresas.index'
@@ -117,6 +118,12 @@ const AuthenticatedAppIntegracoesRoute =
     path: '/app/integracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAppLembretesRoute =
+  AuthenticatedAppLembretesRouteImport.update({
+    id: '/app/lembretes',
+    path: '/app/lembretes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
   id: '/app/perfil',
   path: '/app/perfil',
@@ -167,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
+  '/app/lembretes': typeof AuthenticatedAppLembretesRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/seguranca': typeof AuthenticatedAppSegurancaRoute
   '/app/': typeof AuthenticatedAppIndexRoute
@@ -190,6 +198,7 @@ export interface FileRoutesByTo {
   '/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
+  '/app/lembretes': typeof AuthenticatedAppLembretesRoute
   '/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/app/seguranca': typeof AuthenticatedAppSegurancaRoute
   '/app': typeof AuthenticatedAppIndexRoute
@@ -215,6 +224,7 @@ export interface FileRoutesById {
   '/_authenticated/app/documentos': typeof AuthenticatedAppDocumentosRoute
   '/_authenticated/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
   '/_authenticated/app/integracoes': typeof AuthenticatedAppIntegracoesRoute
+  '/_authenticated/app/lembretes': typeof AuthenticatedAppLembretesRoute
   '/_authenticated/app/perfil': typeof AuthenticatedAppPerfilRoute
   '/_authenticated/app/seguranca': typeof AuthenticatedAppSegurancaRoute
   '/_authenticated/app/': typeof AuthenticatedAppIndexRoute
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/app/documentos'
     | '/app/ferramentas'
     | '/app/integracoes'
+    | '/app/lembretes'
     | '/app/perfil'
     | '/app/seguranca'
     | '/app/'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/app/documentos'
     | '/app/ferramentas'
     | '/app/integracoes'
+    | '/app/lembretes'
     | '/app/perfil'
     | '/app/seguranca'
     | '/app'
@@ -287,6 +299,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/documentos'
     | '/_authenticated/app/ferramentas'
     | '/_authenticated/app/integracoes'
+    | '/_authenticated/app/lembretes'
     | '/_authenticated/app/perfil'
     | '/_authenticated/app/seguranca'
     | '/_authenticated/app/'
@@ -422,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppIntegracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/lembretes': {
+      id: '/_authenticated/app/lembretes'
+      path: '/app/lembretes'
+      fullPath: '/app/lembretes'
+      preLoaderRoute: typeof AuthenticatedAppLembretesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/perfil': {
       id: '/_authenticated/app/perfil'
       path: '/app/perfil'
@@ -475,6 +495,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppDocumentosRoute: typeof AuthenticatedAppDocumentosRoute
   AuthenticatedAppFerramentasRoute: typeof AuthenticatedAppFerramentasRoute
   AuthenticatedAppIntegracoesRoute: typeof AuthenticatedAppIntegracoesRoute
+  AuthenticatedAppLembretesRoute: typeof AuthenticatedAppLembretesRoute
   AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
   AuthenticatedAppSegurancaRoute: typeof AuthenticatedAppSegurancaRoute
   AuthenticatedAppIndexRoute: typeof AuthenticatedAppIndexRoute
@@ -491,6 +512,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppDocumentosRoute: AuthenticatedAppDocumentosRoute,
   AuthenticatedAppFerramentasRoute: AuthenticatedAppFerramentasRoute,
   AuthenticatedAppIntegracoesRoute: AuthenticatedAppIntegracoesRoute,
+  AuthenticatedAppLembretesRoute: AuthenticatedAppLembretesRoute,
   AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
   AuthenticatedAppSegurancaRoute: AuthenticatedAppSegurancaRoute,
   AuthenticatedAppIndexRoute: AuthenticatedAppIndexRoute,

@@ -16,8 +16,12 @@ import {
   LogOut,
   BadgeCheck,
   Wrench,
+  Users,
+  BellRing,
 } from "lucide-react";
 import type { ReactNode } from "react";
+
+import { useQuery } from "@tanstack/react-query";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -33,6 +37,7 @@ const tabs = [
 
 const menu = [
   { to: "/app/perfil", label: "Perfil", icon: User },
+  { to: "/app/lembretes", label: "Lembretes e notificações", icon: BellRing },
   { to: "/app/ferramentas", label: "Ferramentas PDF", icon: Wrench },
   { to: "/app/configuracoes", label: "Configurações", icon: Settings },
   { to: "/app/integracoes", label: "Integrações", icon: Plug },
@@ -44,6 +49,19 @@ const menu = [
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return false;
+      const { data } = await supabase.rpc("has_role", { _user_id: auth.user.id, _role: "admin" });
+      return Boolean(data);
+    },
+    staleTime: 300000,
+  });
+  const items = isAdmin
+    ? [...menu, { to: "/app/admin", label: "Gestão de usuários", icon: Users }]
+    : menu;
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,7 +85,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
                 <InstallAppButton className="w-full justify-center" />
               </div>
               <nav className="mt-2 flex flex-col gap-1 px-2">
-                {menu.map((m) => (
+                {items.map((m) => (
                   <Link
                     key={m.to}
                     to={m.to}
