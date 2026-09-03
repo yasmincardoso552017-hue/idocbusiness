@@ -75,3 +75,23 @@ export async function rasterizePages(
   doc.cleanup();
   return out;
 }
+
+/** Extrai o texto de cada página do PDF (camada de texto existente). */
+export async function extractPdfText(bytes: Uint8Array): Promise<string[]> {
+  const lib = await getLib();
+  const doc = await lib.getDocument({ data: bytes.slice(0) }).promise;
+  const pages: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    pages.push(
+      content.items
+        .map((it) => ("str" in it ? it.str : ""))
+        .join(" ")
+        .replace(/\s+/g, " ")
+        .trim(),
+    );
+  }
+  doc.cleanup();
+  return pages;
+}
