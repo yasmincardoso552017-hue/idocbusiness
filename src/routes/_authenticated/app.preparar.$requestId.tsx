@@ -269,11 +269,11 @@ function Prepare() {
             </div>
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-3">
-            {[
+            {([
               ["require_geo", "Exigir localização"],
               ["require_photo_id", "Exigir documento com foto"],
               ["require_selfie", "Exigir selfie"],
-            ].map(([key, label]) => (
+            ] as const).map(([key, label]) => (
               <label key={key} className="flex items-center gap-2 text-xs">
                 <Switch
                   checked={Boolean((data?.request as Record<string, unknown> | undefined)?.[key])}
