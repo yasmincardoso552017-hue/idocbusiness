@@ -54,6 +54,8 @@ function Prepare() {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
+  const [zoom, setZoom] = useState(1);
+
   const [activeType, setActiveType] = useState<FieldType>("signature");
   const [activeSigner, setActiveSigner] = useState<string>("");
   const [selected, setSelected] = useState<string | null>(null);
