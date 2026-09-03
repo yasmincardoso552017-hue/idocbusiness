@@ -180,7 +180,14 @@ function Contracts() {
                   <span>Valor: {fmtMoney(c.value)}</span>
                   <span>{c.auto_renew ? "Renovação automática" : `Aviso: ${c.notice_days ?? 30} dias`}</span>
                 </div>
-                <div className="mt-2 flex gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => setEnvelope({ id: c.id, name: c.name, documentId: c.document_id ?? null })}
+                  >
+                    <Send className="mr-1 size-3.5" />
+                    {c.request_id ? "Acompanhar" : "Enviar p/ assinar"}
+                  </Button>
                   <Button
                     size="sm"
                     variant="outline"
@@ -209,7 +216,10 @@ function Contracts() {
                     size="sm"
                     variant="ghost"
                     onClick={async () => {
-                      await supabase.from("contracts").delete().eq("id", c.id);
+                      if (!confirm(`Excluir o contrato "${c.name}"?`)) return;
+                      const res = await supabase.from("contracts").delete().eq("id", c.id);
+                      if (res.error) { toast.error(res.error.message); return; }
+                      toast.success("Contrato excluído");
                       qc.invalidateQueries({ queryKey: ["contracts"] });
                     }}
                   >
