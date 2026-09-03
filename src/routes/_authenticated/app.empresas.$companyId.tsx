@@ -276,7 +276,7 @@ function CompanyDetail() {
 
   const openFile = async (d: Doc, download = false) => {
     const p = d.signed_storage_path ?? d.storage_path;
-    if (!p) return toast.error("Arquivo indisponível");
+    if (!p) { toast.error("Arquivo indisponível"); return; }
     const { data: s } = await supabase.storage.from("documents").createSignedUrl(p, 300, { download });
     if (s?.signedUrl) window.open(s.signedUrl, "_blank");
   };
@@ -296,7 +296,7 @@ function CompanyDetail() {
         .insert({ document_id: docId, owner_id: u.user!.id, mode: "sequential", status: "draft" })
         .select("id")
         .single();
-      if (error) return toast.error(error.message);
+      if (error) { toast.error(error.message); return; }
       requestId = r.id;
     }
     navigate({ to: "/app/preparar/$requestId", params: { requestId } });
@@ -335,7 +335,7 @@ function CompanyDetail() {
     )
       return;
     const typed = window.prompt(`Para confirmar, digite EXCLUIR`);
-    if (typed?.trim().toUpperCase() !== "EXCLUIR") return toast.error("Exclusão cancelada");
+    if (typed?.trim().toUpperCase() !== "EXCLUIR") { toast.error("Exclusão cancelada"); return; }
     setBusy(true);
     try {
       const paths = docs
@@ -358,8 +358,8 @@ function CompanyDetail() {
   };
 
   const saveCompany = async () => {
-    const { error } = await supabase.from("companies").update(form).eq("id", companyId);
-    if (error) return toast.error(error.message);
+    const { error } = await supabase.from("companies").update(form as never).eq("id", companyId);
+    if (error) { toast.error(error.message); return; }
     toast.success("Empresa atualizada");
     setEditOpen(false);
     refresh();
