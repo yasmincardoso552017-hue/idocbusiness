@@ -251,8 +251,10 @@ function CompanyDetail() {
   };
 
   /** Envia arquivos direto para a pasta escolhida (a aberta por padrão). */
-  const upload = async (files: FileList | null, targetFolder: string | null = uploadTarget.current) => {
-    if (!files?.length) return;
+  const upload = async (input: FileList | File[] | null, targetFolder: string | null = uploadTarget.current) => {
+    // A lista precisa ser copiada de forma síncrona: limpar o input zera o FileList original.
+    const files = input ? Array.from(input) : [];
+    if (!files.length) return;
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) {
