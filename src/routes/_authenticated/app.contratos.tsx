@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Search, Trash2, FileSignature, Pencil } from "lucide-react";
+import { Plus, Search, Trash2, FileSignature, Pencil, Send } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell, StatCard } from "@/components/AppShell";
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { ContractEnvelopeDialog, StageBadge, STAGE_LABEL } from "@/components/ContractEnvelope";
 import { fmtDate, fmtMoney, statusClass, STATUS_LABEL } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/contratos")({
@@ -52,6 +53,8 @@ function Contracts() {
   const [status, setStatus] = useState("all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(empty);
+  const [stage, setStage] = useState("all");
+  const [envelope, setEnvelope] = useState<{ id: string; name: string; documentId: string | null } | null>(null);
 
   const { data: companies } = useQuery({
     queryKey: ["companies-min"],
@@ -77,7 +80,8 @@ function Contracts() {
       (c.number ?? "").toLowerCase().includes(q.toLowerCase());
     const d = daysTo(c.end_date);
     const effective = d != null && d < 0 ? "expired" : d != null && d <= (c.notice_days ?? 30) ? "expiring" : c.status;
-    return okQ && (status === "all" || effective === status);
+    const okStage = stage === "all" || (c.stage ?? "draft") === stage;
+    return okQ && okStage && (status === "all" || effective === status);
   });
 
   const expiring = (contracts ?? []).filter((c) => {
@@ -145,6 +149,20 @@ function Contracts() {
             </SelectContent>
           </Select>
         </div>
+
+        <Select value={stage} onValueChange={setStage}>
+          <SelectTrigger>
+            <SelectValue placeholder="Estágio do envelope" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os estágios</SelectItem>
+            {["draft", "sent", "delivered", "signed", "completed", "voided", "expired", "declined"].map((s) => (
+              <SelectItem key={s} value={s}>
+                {STAGE_LABEL[s] ?? s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         <Button
           className="w-full"
@@ -330,6 +348,18 @@ function Contracts() {
           </Button>
         </DialogContent>
       </Dialog>
+
+      {envelope ? (
+        <ContractEnvelopeDialog
+          contractId={envelope.id}
+          contractName={envelope.name}
+          documentId={envelope.documentId}
+          open
+          onOpenChange={(v) => {
+            if (!v) setEnvelope(null);
+          }}
+        />
+      ) : null}
     </AppShell>
   );
 }
