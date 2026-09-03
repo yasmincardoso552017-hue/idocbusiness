@@ -137,26 +137,58 @@ function Companies() {
 
       <div className="space-y-2">
         {list.map((c) => (
-          <Link
-            key={c.id}
-            to="/app/empresas/$companyId"
-            params={{ companyId: c.id }}
-            className="card-soft flex items-center gap-3 p-3"
-          >
-            <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
-              <Building2 className="size-5 text-primary" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold">
-                {c.nome_fantasia || c.razao_social}
+          <div key={c.id} className="card-soft flex items-center gap-3 p-3">
+            <Link
+              to="/app/empresas/$companyId"
+              params={{ companyId: c.id }}
+              className="flex min-w-0 flex-1 items-center gap-3"
+            >
+              <span className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
+                <Building2 className="size-5 text-primary" />
               </span>
-              <span className="block truncate text-[11px] text-muted-foreground">
-                {c.cnpj || c.razao_social}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">
+                  {c.nome_fantasia || c.razao_social}
+                </span>
+                <span className="block truncate text-[11px] text-muted-foreground">
+                  {c.cnpj || c.cpf || c.razao_social}
+                </span>
               </span>
-            </span>
-            <ChevronRight className="size-4 text-muted-foreground" />
-          </Link>
+              <ChevronRight className="size-4 text-muted-foreground" />
+            </Link>
+            <button
+              aria-label="Excluir empresa"
+              className="p-1"
+              onClick={async () => {
+                const label = c.nome_fantasia || c.razao_social;
+                if (!window.confirm(`Excluir a empresa "${label}" e todos os seus documentos, pastas e contratos?`))
+                  return;
+                if (window.prompt("Para confirmar, digite EXCLUIR")?.trim().toUpperCase() !== "EXCLUIR") {
+                  toast.error("Exclusão cancelada");
+                  return;
+                }
+                const docs = await supabase
+                  .from("documents")
+                  .select("storage_path, signed_storage_path")
+                  .eq("company_id", c.id);
+                const paths = (docs.data ?? [])
+                  .flatMap((d) => [d.storage_path, d.signed_storage_path])
+                  .filter(Boolean) as string[];
+                if (paths.length) await supabase.storage.from("documents").remove(paths);
+                await supabase.from("contracts").delete().eq("company_id", c.id);
+                await supabase.from("documents").delete().eq("company_id", c.id);
+                await supabase.from("folders").delete().eq("company_id", c.id);
+                const { error } = await supabase.from("companies").delete().eq("id", c.id);
+                if (error) toast.error(error.message);
+                else toast.success("Empresa excluída");
+                qc.invalidateQueries({ queryKey: ["companies"] });
+              }}
+            >
+              <Trash2 className="size-4 text-destructive" />
+            </button>
+          </div>
         ))}
+
         {list.length === 0 && (
           <p className="py-10 text-center text-sm text-muted-foreground">
             Nenhuma empresa cadastrada. Toque em + para começar.
