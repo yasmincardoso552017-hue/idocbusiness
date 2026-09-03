@@ -14,10 +14,10 @@ import {
 type State = {
   kind: "confirm" | "prompt";
   title: string;
-  description?: string;
+  description?: string | undefined;
   confirmText: string;
-  destructive?: boolean;
-  requireText?: string;
+  destructive?: boolean | undefined;
+  requireText?: string | undefined;
 };
 
 /**
@@ -44,7 +44,13 @@ export function useDialogs() {
   };
 
   const confirm = useCallback(
-    (o: { title: string; description?: string; confirmText?: string; destructive?: boolean; requireText?: string }) =>
+    (o: {
+      title: string;
+      description?: string | undefined;
+      confirmText?: string | undefined;
+      destructive?: boolean | undefined;
+      requireText?: string | undefined;
+    }) =>
       open({
         kind: "confirm",
         title: o.title,
@@ -57,7 +63,12 @@ export function useDialogs() {
   );
 
   const promptText = useCallback(
-    (o: { title: string; description?: string; defaultValue?: string; confirmText?: string }) =>
+    (o: {
+      title: string;
+      description?: string | undefined;
+      defaultValue?: string | undefined;
+      confirmText?: string | undefined;
+    }) =>
       open(
         {
           kind: "prompt",
