@@ -16,6 +16,12 @@ import {
   Copy,
   Mail,
   ShieldCheck,
+  FolderPlus,
+  FolderArchive,
+  Link2,
+  Folder,
+  ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument } from "pdf-lib";
@@ -34,6 +40,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime, fmtSize, statusClass, STATUS_LABEL } from "@/lib/format";
+import { shareFolder } from "@/lib/vault.functions";
 
 export const Route = createFileRoute("/_authenticated/app/documentos")({
   validateSearch: (s: Record<string, unknown>) =>
@@ -90,6 +97,7 @@ function Documents() {
   const [sort, setSort] = useState("recent");
   const [active, setActive] = useState<string | undefined>(search.doc);
   const [auditFor, setAuditFor] = useState<string | null>(null);
+  const [zipping, setZipping] = useState(false);
 
   const { data } = useQuery({
     queryKey: ["documents"],
@@ -97,7 +105,7 @@ function Documents() {
       const [docs, companies, folders] = await Promise.all([
         supabase.from("documents").select("*").order("created_at", { ascending: false }),
         supabase.from("companies").select("id, razao_social, nome_fantasia"),
-        supabase.from("folders").select("id, name, company_id"),
+        supabase.from("folders").select("id, name, company_id, parent_id, public_token"),
       ]);
       return { docs: docs.data ?? [], companies: companies.data ?? [], folders: folders.data ?? [] };
     },
@@ -199,9 +207,91 @@ function Documents() {
     navigate({ to: "/app/preparar/$requestId", params: { requestId } });
   };
 
+  async function createFolder(parentId: string | null) {
+    if (companyId === "all") {
+      toast.error("Selecione uma empresa para criar pastas");
+      return;
+    }
+    const name = window.prompt(parentId ? "Nome da subpasta" : "Nome da pasta");
+    if (!name?.trim()) return;
+    const { data: u } = await supabase.auth.getUser();
+    const { error } = await supabase.from("folders").insert({
+      owner_id: u.user!.id,
+      company_id: companyId,
+      parent_id: parentId,
+      name: name.trim(),
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Pasta criada");
+    refresh();
+  }
+
+  /** Baixa todos os arquivos de uma pasta (e subpastas) em um ZIP organizado. */
+  async function downloadFolderZip(rootId: string) {
+    setZipping(true);
+    try {
+      const all = data?.folders ?? [];
+      const ids = [rootId];
+      const paths = new Map<string, string>([
+        [rootId, all.find((f) => f.id === rootId)?.name ?? "pasta"],
+      ]);
+      let frontier = [rootId];
+      while (frontier.length) {
+        const next: string[] = [];
+        for (const f of all) {
+          if (f.parent_id && frontier.includes(f.parent_id) && !ids.includes(f.id)) {
+            ids.push(f.id);
+            next.push(f.id);
+            paths.set(f.id, `${paths.get(f.parent_id)}/${f.name}`);
+          }
+        }
+        frontier = next;
+      }
+      const items = (data?.docs ?? []).filter((d) => d.folder_id && ids.includes(d.folder_id));
+      if (!items.length) throw new Error("Esta pasta não possui arquivos");
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      for (const d of items) {
+        const path = d.signed_storage_path ?? d.storage_path;
+        if (!path) continue;
+        const { data: signed } = await supabase.storage.from("documents").createSignedUrl(path, 600);
+        if (!signed?.signedUrl) continue;
+        const buf = await (await fetch(signed.signedUrl)).arrayBuffer();
+        zip.folder(paths.get(d.folder_id!) ?? "pasta")!.file(d.name, buf);
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${paths.get(rootId)}.zip`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      toast.success(`${items.length} arquivo(s) no ZIP`);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setZipping(false);
+    }
+  }
+
+  async function togglePublic(folder: { id: string; public_token: string | null }) {
+    try {
+      const res = await shareFolder({ data: { folderId: folder.id, enabled: !folder.public_token } });
+      if (res.token) {
+        const link = `${window.location.origin}/pasta/${res.token}`;
+        await navigator.clipboard?.writeText(link).catch(() => null);
+        toast.success("Link público copiado");
+      } else toast.success("Link público desativado");
+      refresh();
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
   const docs = (data?.docs ?? [])
     .filter((d) => (status === "all" ? true : d.status === status))
     .filter((d) => (companyId === "all" ? true : d.company_id === companyId))
+    .filter((d) => (folderId === "none" || folderId === "all" ? true : d.folder_id === folderId))
     .filter((d) => d.name.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) =>
       sort === "name"
@@ -235,6 +325,7 @@ function Documents() {
               <SelectValue placeholder="Pasta" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">Todas as pastas</SelectItem>
               <SelectItem value="none">Sem pasta</SelectItem>
               {folders.map((f) => (
                 <SelectItem key={f.id} value={f.id}>
@@ -259,6 +350,44 @@ function Documents() {
           Até {MAX_LABEL} por arquivo, envios múltiplos. Cada upload gera hash SHA-256 e trilha de
           auditoria.
         </p>
+      </div>
+
+      <div className="card-soft mb-3 p-3">
+        <div className="flex items-center gap-2">
+          <h2 className="flex-1 text-sm font-bold">Pastas da empresa</h2>
+          <Button size="sm" variant="outline" onClick={() => createFolder(null)}>
+            <FolderPlus className="mr-1 size-4" /> Nova pasta
+          </Button>
+        </div>
+        {companyId === "all" ? (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Selecione uma empresa acima para organizar em pastas e subpastas.
+          </p>
+        ) : (
+          <ul className="mt-2 space-y-1">
+            {folders
+              .filter((f) => !f.parent_id)
+              .map((root) => (
+                <FolderRow
+                  key={root.id}
+                  folder={root}
+                  all={folders}
+                  depth={0}
+                  count={(data?.docs ?? []).filter((d) => d.folder_id === root.id).length}
+                  docs={data?.docs ?? []}
+                  selected={folderId}
+                  zipping={zipping}
+                  onSelect={setFolderId}
+                  onSub={createFolder}
+                  onZip={downloadFolderZip}
+                  onShare={togglePublic}
+                />
+              ))}
+            {folders.filter((f) => !f.parent_id).length === 0 && (
+              <li className="text-[11px] text-muted-foreground">Nenhuma pasta criada ainda.</li>
+            )}
+          </ul>
+        )}
       </div>
 
       <div className="mb-3 flex gap-2">
@@ -424,6 +553,88 @@ function Documents() {
 
       <Label className="sr-only">Documentos</Label>
     </AppShell>
+  );
+}
+
+type FolderNode = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  public_token: string | null;
+};
+
+function FolderRow({
+  folder,
+  all,
+  depth,
+  docs,
+  selected,
+  zipping,
+  onSelect,
+  onSub,
+  onZip,
+  onShare,
+}: {
+  folder: FolderNode;
+  all: FolderNode[];
+  depth: number;
+  count: number;
+  docs: { folder_id: string | null }[];
+  selected: string;
+  zipping: boolean;
+  onSelect: (id: string) => void;
+  onSub: (parentId: string) => void;
+  onZip: (id: string) => void;
+  onShare: (f: { id: string; public_token: string | null }) => void;
+}) {
+  const children = all.filter((f) => f.parent_id === folder.id);
+  const count = docs.filter((d) => d.folder_id === folder.id).length;
+  return (
+    <>
+      <li
+        className={`flex items-center gap-1 rounded-lg border px-2 py-1.5 ${
+          selected === folder.id ? "border-primary bg-primary/5" : "border-border"
+        }`}
+        style={{ marginLeft: depth * 12 }}
+      >
+        <button className="flex min-w-0 flex-1 items-center gap-2" onClick={() => onSelect(folder.id)}>
+          {depth > 0 && <ChevronRight className="size-3 shrink-0 text-muted-foreground" />}
+          <Folder className="size-4 shrink-0 text-primary" />
+          <span className="truncate text-xs font-semibold">{folder.name}</span>
+          <span className="shrink-0 text-[10px] text-muted-foreground">{count}</span>
+          {folder.public_token && <Link2 className="size-3 shrink-0 text-success" />}
+        </button>
+        <button aria-label="Nova subpasta" onClick={() => onSub(folder.id)} className="p-1">
+          <FolderPlus className="size-4 text-muted-foreground" />
+        </button>
+        <button aria-label="Baixar ZIP" disabled={zipping} onClick={() => onZip(folder.id)} className="p-1">
+          {zipping ? (
+            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+          ) : (
+            <FolderArchive className="size-4 text-muted-foreground" />
+          )}
+        </button>
+        <button aria-label="Link público" onClick={() => onShare(folder)} className="p-1">
+          <Link2 className={`size-4 ${folder.public_token ? "text-success" : "text-muted-foreground"}`} />
+        </button>
+      </li>
+      {children.map((c) => (
+        <FolderRow
+          key={c.id}
+          folder={c}
+          all={all}
+          depth={depth + 1}
+          count={0}
+          docs={docs}
+          selected={selected}
+          zipping={zipping}
+          onSelect={onSelect}
+          onSub={onSub}
+          onZip={onZip}
+          onShare={onShare}
+        />
+      ))}
+    </>
   );
 }
 
