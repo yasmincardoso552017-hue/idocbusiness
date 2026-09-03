@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Building2, Plus, Search, ChevronRight, Trash2 } from "lucide-react";
+import { Building2, Plus, Search, ChevronRight, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
+import { UploadDocumentDialog } from "@/components/UploadDocumentDialog";
 import { AppShell } from "@/components/AppShell";
 import { useDialogs } from "@/components/Dialogs";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ function Companies() {
   const [q, setQ] = useState("");
   const { confirm, dialog } = useDialogs();
   const [open, setOpen] = useState(false);
+  const [upOpen, setUpOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
 
   const { data: companies } = useQuery({
@@ -85,6 +87,10 @@ function Companies() {
 
   return (
     <AppShell title="Empresas">
+      <UploadDocumentDialog open={upOpen} onOpenChange={setUpOpen} />
+      <Button className="mb-3 w-full" onClick={() => setUpOpen(true)}>
+        <Upload className="mr-1 size-4" /> Enviar documento
+      </Button>
       <div className="mb-3 flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

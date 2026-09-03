@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FolderPlus,
   FileText,
@@ -25,6 +25,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { useDialogs } from "@/components/Dialogs";
+import { UploadDocumentDialog } from "@/components/UploadDocumentDialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,8 @@ import { fmtDateTime, fmtSize, statusClass, STATUS_LABEL } from "@/lib/format";
 import { shareFolder } from "@/lib/vault.functions";
 
 export const Route = createFileRoute("/_authenticated/app/empresas/$companyId")({
+  validateSearch: (s: Record<string, unknown>): { folder?: string } =>
+    typeof s['folder'] === "string" && s['folder'] ? { folder: s['folder'] } : {},
   component: CompanyDetail,
 });
 
@@ -75,21 +78,23 @@ const EDIT_FIELDS: Array<[string, string]> = [
   ["contato", "Pessoa de contato"],
 ];
 
-async function sha256(file: File) {
-  const buf = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
-  return Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 function CompanyDetail() {
   const { companyId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const uploadTarget = useRef<string | null>(null);
 
-  const [cwd, setCwd] = useState<string | null>(null);
+  const search = Route.useSearch();
+  const [cwd, setCwd] = useState<string | null>(search.folder || null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadFolder, setUploadFolder] = useState<string | null>(null);
+  /** Abre o envio único já apontado para a pasta escolhida. */
+  const openUpload = (folder: string | null) => {
+    setUploadFolder(folder);
+    setUploadOpen(true);
+  };
+  useEffect(() => {
+    if (search.folder) setCwd(search.folder);
+  }, [search.folder]);
   const { confirm, promptText, dialog } = useDialogs();
   const [editOpen, setEditOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
@@ -242,57 +247,6 @@ function CompanyDetail() {
     } finally {
       setBusy(false);
     }
-  };
-
-  /** Envia arquivos direto para a pasta escolhida (a aberta por padrão). */
-  const upload = async (files: FileList | null, targetFolder: string | null = uploadTarget.current) => {
-    if (!files?.length) return;
-    setBusy(true);
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) {
-      setBusy(false);
-      toast.error("Sessão expirada — entre novamente");
-      return;
-    }
-    let ok = 0;
-    for (const file of Array.from(files)) {
-      try {
-        const id = crypto.randomUUID();
-        const p = `${u.user.id}/${id}/original-${file.name.replace(/[^\w.\-]/g, "_")}`;
-        const up = await supabase.storage.from("documents").upload(p, file, { upsert: true });
-        if (up.error) throw up.error;
-        const { error } = await supabase.from("documents").insert({
-          id,
-          owner_id: u.user.id,
-          name: file.name,
-          company_id: companyId,
-          folder_id: targetFolder,
-          storage_path: p,
-          mime_type: file.type || "application/octet-stream",
-          size_bytes: file.size,
-          hash: file.size <= 200 * 1024 * 1024 ? await sha256(file) : null,
-          status: "draft",
-        });
-        if (error) throw error;
-        ok += 1;
-      } catch (e) {
-        toast.error(`${file.name}: ${(e as Error).message}`);
-      }
-    }
-    setBusy(false);
-    if (ok) {
-      const folderName = targetFolder ? folders.find((f) => f.id === targetFolder)?.name ?? "pasta" : "raiz";
-      toast.success(`${ok} arquivo(s) em ${folderName}`);
-      if (targetFolder !== cwd) setCwd(targetFolder);
-    }
-    await refetch();
-    qc.invalidateQueries({ queryKey: ["documents"] });
-  };
-
-  /** Abre o seletor de arquivos apontando para uma pasta específica. */
-  const pickFiles = (targetFolder: string | null) => {
-    uploadTarget.current = targetFolder;
-    fileRef.current?.click();
   };
 
   const openFile = async (d: Doc, download = false) => {
@@ -458,8 +412,8 @@ function CompanyDetail() {
           >
             <Pencil className="mr-1 size-4" /> Editar
           </Button>
-          <Button size="sm" variant="outline" onClick={() => pickFiles(cwd)} disabled={busy}>
-            <Upload className="mr-1 size-4" /> Enviar
+          <Button size="sm" onClick={() => openUpload(cwd)} disabled={busy}>
+            <Upload className="mr-1 size-4" /> Enviar documento
           </Button>
           <Button size="sm" variant="outline" onClick={() => navigate({ to: "/app/lembretes" })}>
             <BellRing className="mr-1 size-4" /> Lembretes
@@ -470,15 +424,12 @@ function CompanyDetail() {
         </div>
       </div>
 
-      <input
-        ref={fileRef}
-        type="file"
-        multiple
-        className="hidden"
-        onChange={(e) => {
-          upload(e.target.files);
-          e.target.value = "";
-        }}
+
+      <UploadDocumentDialog
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        defaultCompanyId={companyId}
+        defaultFolderId={uploadFolder}
       />
 
       <Tabs defaultValue="files">
@@ -509,7 +460,7 @@ function CompanyDetail() {
               <Button size="sm" variant="outline" onClick={addFolder}>
                 <FolderPlus className="mr-1 size-4" /> {cwd ? "Subpasta" : "Pasta"}
               </Button>
-              <Button size="sm" variant="outline" onClick={() => pickFiles(cwd)} disabled={busy}>
+              <Button size="sm" variant="outline" onClick={() => openUpload(cwd)} disabled={busy}>
                 {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Upload className="mr-1 size-4" />}
                 {cwd ? "Enviar nesta pasta" : "Documento"}
               </Button>
@@ -560,7 +511,7 @@ function CompanyDetail() {
                   aria-label={`Enviar documento para ${f.name}`}
                   className="shrink-0 rounded-md border border-border p-1.5"
                   disabled={busy}
-                  onClick={() => pickFiles(f.id)}
+                  onClick={() => openUpload(f.id)}
                 >
                   <Upload className="size-3.5 text-primary" />
                 </button>
