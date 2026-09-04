@@ -66,7 +66,9 @@ function SecurityPage() {
     const a = document.createElement("a");
     a.href = url;
     a.download = "docflow-auditoria.csv";
+    document.body.appendChild(a);
     a.click();
+    a.remove();
     URL.revokeObjectURL(url);
     toast.success("Auditoria exportada");
   }

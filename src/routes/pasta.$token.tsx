@@ -56,7 +56,9 @@ function PublicFolder() {
       const a = document.createElement("a");
       a.href = url;
       a.download = `${(data as { folder: string }).folder || "pasta"}.zip`;
+      document.body.appendChild(a);
       a.click();
+      a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (e) {
       toast.error((e as Error).message);
