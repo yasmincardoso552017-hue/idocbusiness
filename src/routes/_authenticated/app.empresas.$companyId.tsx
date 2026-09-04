@@ -61,7 +61,14 @@ type Doc = {
   page_count: number | null;
   created_at: string;
 };
-type FolderRec = { id: string; name: string; parent_id: string | null; public_token: string | null };
+type FolderRec = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  public_token: string | null;
+  sku: string;
+};
+type ShareRec = { id: string; folder_id: string; member_email: string | null; sku: string };
 
 const EDIT_FIELDS: Array<[string, string]> = [
   ["razao_social", "Razão social / Nome"],
