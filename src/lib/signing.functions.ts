@@ -13,6 +13,12 @@ import {
   sha256,
 } from "./signing.server";
 
+/** Nome de download sempre em PDF. */
+function pdfFileName(name: string) {
+  const base = name.replace(/\.[A-Za-z0-9]+$/, "").replace(/[^\w.-]+/g, "_") || "documento";
+  return `assinado-${base}.pdf`;
+}
+
 /** Abre a sessão pública de assinatura a partir do token do signatário. */
 export const getSigningSession = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ token: z.string().min(8) }).parse(d))
@@ -393,7 +399,7 @@ export const getSignedDocument = createServerFn({ method: "POST" })
     let url: string | null = null;
     if (path) {
       const signed = await db.storage.from("documents").createSignedUrl(path, 3600, {
-        download: `assinado-${doc.name.replace(/[^\w.-]+/g, "_")}`,
+        download: pdfFileName(doc.name),
       });
       url = signed.data?.signedUrl ?? null;
     }
@@ -442,9 +448,63 @@ export const claimSignedCopy = createServerFn({ method: "POST" })
     let url: string | null = null;
     if (doc.signed_storage_path) {
       const res = await db.storage.from("documents").createSignedUrl(doc.signed_storage_path, 3600, {
-        download: `assinado-${doc.name.replace(/[^\w.-]+/g, "_")}`,
+        download: pdfFileName(doc.name),
       });
       url = res.data?.signedUrl ?? null;
     }
     return { ready: !!url, name: doc.name, url, error: null as string | null };
+  });
+
+/** Lista as vias assinadas vinculadas à conta do signatário autenticado. */
+export const myClaimedDocuments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const db = await admin();
+    const email = String((context.claims as { email?: string } | null)?.email ?? "").toLowerCase();
+    let query = db
+      .from("signers")
+      .select("id, name, email, status, signed_at, claimed_by, request_id, signing_requests(document_id)")
+      .eq("status", "signed");
+    query = email
+      ? query.or(`claimed_by.eq.${context.userId},email.ilike.${email}`)
+      : query.eq("claimed_by", context.userId);
+    const { data: rows } = await query;
+    const docIds = Array.from(
+      new Set(
+        (rows ?? [])
+          .map((r) => (r.signing_requests as unknown as { document_id: string } | null)?.document_id)
+          .filter((v): v is string => !!v),
+      ),
+    );
+    if (!docIds.length) return { items: [] as Array<{ id: string; name: string; signedAt: string | null; url: string | null; code: string | null }> };
+    const { data: docs } = await db
+      .from("documents")
+      .select("id, name, status, signed_storage_path")
+      .in("id", docIds);
+    const { data: evs } = await db
+      .from("document_evidence")
+      .select("document_id, verification_code")
+      .in("document_id", docIds);
+    const items = [] as Array<{ id: string; name: string; signedAt: string | null; url: string | null; code: string | null }>;
+    for (const d of docs ?? []) {
+      const signer = (rows ?? []).find(
+        (r) => (r.signing_requests as unknown as { document_id: string } | null)?.document_id === d.id,
+      );
+      let url: string | null = null;
+      if (d.signed_storage_path) {
+        const res = await db.storage
+          .from("documents")
+          .createSignedUrl(d.signed_storage_path, 3600, { download: pdfFileName(d.name) });
+        url = res.data?.signedUrl ?? null;
+      }
+      if (signer && !signer.claimed_by) await db.from("signers").update({ claimed_by: context.userId }).eq("id", signer.id);
+      items.push({
+        id: d.id,
+        name: d.name,
+        signedAt: signer?.signed_at ?? null,
+        url,
+        code: (evs ?? []).find((e) => e.document_id === d.id)?.verification_code ?? null,
+      });
+    }
+    return { items };
   });
