@@ -561,6 +561,18 @@ function AfterSign({ token }: { token: string }) {
     if (authed && !claimUrl) void claim();
   }, [authed]);
 
+  /** Leva o signatário ao app: entra com Google e cai direto nos contratos dele. */
+  async function openApp() {
+    if (authed) {
+      window.location.href = "/app/meus-contratos";
+      return;
+    }
+    const res = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: `${window.location.origin}/app/meus-contratos`,
+    });
+    if (res.error) toast.error("Falha ao entrar com Google");
+  }
+
   async function google() {
     const res = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.href,
@@ -606,6 +618,16 @@ function AfterSign({ token }: { token: string }) {
             </Button>
           </div>
         )}
+
+        <div className="space-y-2 rounded-lg border border-border bg-muted/60 p-3 text-left">
+          <p className="text-[11px] text-muted-foreground">
+            Acesse seu contrato também pelo aplicativo: entre com sua conta Google e veja apenas os
+            seus documentos assinados, com download em PDF a qualquer momento.
+          </p>
+          <Button variant="outline" size="sm" className="w-full" onClick={() => void openApp()}>
+            Acessar meus contratos no app
+          </Button>
+        </div>
 
         <Link to="/" className="inline-block pt-1 text-xs font-semibold text-primary">
           Ir para o IDOC BUSINESS

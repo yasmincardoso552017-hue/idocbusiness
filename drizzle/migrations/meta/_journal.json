@@ -43,6 +43,13 @@
       "when": 1788510087658,
       "tag": "0005_signers_claimed_by",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788536270502,
+      "tag": "0006_signers_scoped_signer_policy",
+      "breakpoints": true
     }
   ]
 }

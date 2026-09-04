@@ -173,17 +173,47 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const pages = pdf.getPages();
 
-  // Assinaturas posicionadas
+  // Assinaturas posicionadas: sempre na horizontal e exatamente no local marcado.
   for (const f of fields ?? []) {
     const page = pages[Math.min(Math.max((f.page ?? 1) - 1, 0), pages.length - 1)];
     if (!page) continue;
-    const { width, height } = page.getSize();
+    const { width: pw, height: ph } = page.getSize();
+    const rot = ((Math.round(page.getRotation().angle) % 360) + 360) % 360;
+    const rotated = rot === 90 || rot === 270;
+    const vw = rotated ? ph : pw;
+    const vh = rotated ? pw : ph;
+    // Converte coordenadas visíveis (origem no topo-esquerda) para o espaço do PDF.
+    const toPdf = (vx: number, vy: number) => {
+      if (rot === 90) return { x: vy, y: vx };
+      if (rot === 180) return { x: pw - vx, y: vy };
+      if (rot === 270) return { x: pw - vy, y: ph - vx };
+      return { x: vx, y: ph - vy };
+    };
+    /** Devolve a origem de desenho para que o conteúdo apareça horizontal na página. */
+    const place = (vx: number, vyTop: number, dw: number, dh: number) => {
+      const a = toPdf(vx, vyTop);
+      const b = toPdf(vx + dw, vyTop + dh);
+      const left = Math.min(a.x, b.x);
+      const right = Math.max(a.x, b.x);
+      const bottom = Math.min(a.y, b.y);
+      const top = Math.max(a.y, b.y);
+      const origin =
+        rot === 90
+          ? { x: right, y: bottom }
+          : rot === 180
+            ? { x: right, y: top }
+            : rot === 270
+              ? { x: left, y: top }
+              : { x: left, y: bottom };
+      return { ...origin, rotate: degrees(rot) };
+    };
+
     const s = (signers ?? []).find((x) => x.id === f.signer_id) as Signer | undefined;
     const sig = (sigs ?? []).find((x) => x.signer_id === f.signer_id);
-    const bx = Number(f.x) * width;
-    const bw = Number(f.w) * width;
-    const bh = Number(f.h) * height;
-    const by = height - Number(f.y) * height - bh;
+    const bx = Number(f.x) * vw;
+    const byTop = Number(f.y) * vh;
+    const bw = Number(f.w) * vw;
+    const bh = Number(f.h) * vh;
     let text = "";
     if (f.type === "signature" || f.type === "initials")
       text = sig?.typed_name || s?.name || "";
@@ -197,33 +227,53 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
 
     if (f.type === "signature" || f.type === "initials") {
       const img = sig?.image_data;
+      let drawn = false;
       if (img && img.startsWith("data:image/png;base64,")) {
         try {
           const png = await pdf.embedPng(img);
-          page.drawImage(png, { x: bx, y: by, width: bw, height: bh });
+          // Mantém a proporção original (nunca deformada/vertical) e centraliza na marcação.
+          const scale = Math.min(bw / png.width, bh / png.height);
+          const dw = png.width * scale;
+          const dh = png.height * scale;
+          const ix = bx + (bw - dw) / 2;
+          const iy = byTop + (bh - dh) / 2;
+          const p = place(ix, iy, dw, dh);
+          page.drawImage(png, { x: p.x, y: p.y, width: dw, height: dh, rotate: p.rotate });
+          drawn = true;
         } catch {
-          page.drawText(text, { x: bx + 2, y: by + bh / 2 - 5, size: 11, font: bold });
+          drawn = false;
         }
-      } else {
-        page.drawText(text, { x: bx + 2, y: by + bh / 2 - 5, size: 11, font: bold });
       }
+      if (!drawn) {
+        const size = Math.max(7, Math.min(13, bh * 0.5));
+        const tw = Math.min(bold.widthOfTextAtSize(text, size), bw);
+        const p = place(bx + Math.max(0, (bw - tw) / 2), byTop + bh / 2 - size * 0.7, tw, size);
+        page.drawText(text, { x: p.x, y: p.y, size, font: bold, rotate: p.rotate });
+      }
+      const baseline = place(bx, byTop + bh, bw, 0);
+      const capH = 6;
+      const cap = place(bx, byTop + bh + 2, bw, capH);
       page.drawLine({
-        start: { x: bx, y: by },
-        end: { x: bx + bw, y: by },
+        start: { x: baseline.x, y: baseline.y },
+        end: toPdf(bx + bw, byTop + bh),
         thickness: 0.5,
         color: rgb(0.4, 0.4, 0.45),
       });
       page.drawText(`${s?.name ?? ""} • ${s?.email ?? ""}`, {
-        x: bx,
-        y: by - 8,
+        x: cap.x,
+        y: cap.y,
         size: 5.5,
         font,
         color: rgb(0.35, 0.35, 0.4),
+        rotate: cap.rotate,
       });
     } else {
-      page.drawText(text, { x: bx + 2, y: by + bh / 2 - 4, size: 9, font });
+      const size = 9;
+      const p = place(bx + 2, byTop + bh / 2 - size * 0.6, bw, size);
+      page.drawText(text, { x: p.x, y: p.y, size, font, rotate: p.rotate });
     }
   }
+
 
   const code = verificationCode();
   const verifyUrl = `${baseUrl}/verify?code=${code}`;

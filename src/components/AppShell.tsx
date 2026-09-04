@@ -37,6 +37,7 @@ const tabs = [
 
 const menu = [
   { to: "/app/perfil", label: "Perfil", icon: User },
+  { to: "/app/meus-contratos", label: "Meus contratos assinados", icon: FileSignature },
   { to: "/app/lembretes", label: "Lembretes e notificações", icon: BellRing },
   { to: "/app/ferramentas", label: "Ferramentas PDF", icon: Wrench },
   { to: "/app/configuracoes", label: "Configurações", icon: Settings },
