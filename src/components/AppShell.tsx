@@ -1,5 +1,4 @@
-import {
-  KeyRound, Brand } from "@/components/Brand";
+import { Brand } from "@/components/Brand";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
@@ -19,6 +18,7 @@ import {
   Wrench,
   Users,
   BellRing,
+  KeyRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
