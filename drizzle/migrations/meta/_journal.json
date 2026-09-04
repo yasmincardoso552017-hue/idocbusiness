@@ -50,6 +50,13 @@
       "when": 1788536270502,
       "tag": "0006_signers_scoped_signer_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788549170746,
+      "tag": "0007_folder_sku_sharing",
+      "breakpoints": true
     }
   ]
 }
