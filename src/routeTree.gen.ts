@@ -21,6 +21,7 @@ import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
 import { Route as AuthenticatedAppAssinaturasRouteImport } from './routes/_authenticated/app.assinaturas'
+import { Route as AuthenticatedAppCompartilhadasRouteImport } from './routes/_authenticated/app.compartilhadas'
 import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/app.configuracoes'
 import { Route as AuthenticatedAppContratosRouteImport } from './routes/_authenticated/app.contratos'
 import { Route as AuthenticatedAppFerramentasRouteImport } from './routes/_authenticated/app.ferramentas'
@@ -92,6 +93,12 @@ const AuthenticatedAppAssinaturasRoute =
   AuthenticatedAppAssinaturasRouteImport.update({
     id: '/app/assinaturas',
     path: '/app/assinaturas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAppCompartilhadasRoute =
+  AuthenticatedAppCompartilhadasRouteImport.update({
+    id: '/app/compartilhadas',
+    path: '/app/compartilhadas',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAppConfiguracoesRoute =
@@ -176,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/sign/$token': typeof SignTokenRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
+  '/app/compartilhadas': typeof AuthenticatedAppCompartilhadasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
@@ -201,6 +209,7 @@ export interface FileRoutesByTo {
   '/sign/$token': typeof SignTokenRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
+  '/app/compartilhadas': typeof AuthenticatedAppCompartilhadasRoute
   '/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/app/contratos': typeof AuthenticatedAppContratosRoute
   '/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
@@ -228,6 +237,7 @@ export interface FileRoutesById {
   '/sign/$token': typeof SignTokenRoute
   '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
+  '/_authenticated/app/compartilhadas': typeof AuthenticatedAppCompartilhadasRoute
   '/_authenticated/app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
   '/_authenticated/app/contratos': typeof AuthenticatedAppContratosRoute
   '/_authenticated/app/ferramentas': typeof AuthenticatedAppFerramentasRoute
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/sign/$token'
     | '/app/admin'
     | '/app/assinaturas'
+    | '/app/compartilhadas'
     | '/app/configuracoes'
     | '/app/contratos'
     | '/app/ferramentas'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/sign/$token'
     | '/app/admin'
     | '/app/assinaturas'
+    | '/app/compartilhadas'
     | '/app/configuracoes'
     | '/app/contratos'
     | '/app/ferramentas'
@@ -306,6 +318,7 @@ export interface FileRouteTypes {
     | '/sign/$token'
     | '/_authenticated/app/admin'
     | '/_authenticated/app/assinaturas'
+    | '/_authenticated/app/compartilhadas'
     | '/_authenticated/app/configuracoes'
     | '/_authenticated/app/contratos'
     | '/_authenticated/app/ferramentas'
@@ -420,6 +433,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppAssinaturasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/app/compartilhadas': {
+      id: '/_authenticated/app/compartilhadas'
+      path: '/app/compartilhadas'
+      fullPath: '/app/compartilhadas'
+      preLoaderRoute: typeof AuthenticatedAppCompartilhadasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/app/configuracoes': {
       id: '/_authenticated/app/configuracoes'
       path: '/app/configuracoes'
@@ -510,6 +530,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppAdminRoute: typeof AuthenticatedAppAdminRoute
   AuthenticatedAppAssinaturasRoute: typeof AuthenticatedAppAssinaturasRoute
+  AuthenticatedAppCompartilhadasRoute: typeof AuthenticatedAppCompartilhadasRoute
   AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
   AuthenticatedAppContratosRoute: typeof AuthenticatedAppContratosRoute
   AuthenticatedAppFerramentasRoute: typeof AuthenticatedAppFerramentasRoute
@@ -527,6 +548,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppAdminRoute: AuthenticatedAppAdminRoute,
   AuthenticatedAppAssinaturasRoute: AuthenticatedAppAssinaturasRoute,
+  AuthenticatedAppCompartilhadasRoute: AuthenticatedAppCompartilhadasRoute,
   AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
   AuthenticatedAppContratosRoute: AuthenticatedAppContratosRoute,
   AuthenticatedAppFerramentasRoute: AuthenticatedAppFerramentasRoute,
