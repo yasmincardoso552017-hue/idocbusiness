@@ -243,6 +243,32 @@ function Landing() {
           </div>
         </section>
 
+        <section id="ferramentas" className="mt-10 scroll-mt-20">
+          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Central completa de ferramentas de PDF</h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Organize, converta, edite, assine, proteja, comprima e reconheça texto — tudo no navegador, com
+            pré-visualização e escolha do nome e do formato antes de baixar.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {toolCategories.map((c) => (
+              <article key={c.t} className="card-soft p-4">
+                <div className="mb-3 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <c.icon className="size-4" />
+                </div>
+                <h3 className="text-sm font-bold">{c.t}</h3>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  {c.items.map((i) => (
+                    <li key={i} className="flex gap-1.5">
+                      <Check className="mt-0.5 size-3 shrink-0 text-primary" /> {i}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+
+
         <section className="mt-10 card-soft p-5">
           <h2 className="text-lg font-bold">Como funciona em 6 passos</h2>
           <ol className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
