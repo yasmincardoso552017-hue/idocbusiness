@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   Combine,
   Scissors,
@@ -14,6 +14,23 @@ import {
   FileType2,
   FolderArchive,
   Loader2,
+  Layers,
+  RefreshCw,
+  PencilRuler,
+  PenLine,
+  ShieldCheck,
+  Gauge,
+  Eye,
+  FileSpreadsheet,
+  Presentation,
+  FileText,
+  Globe,
+  Archive,
+  Lock,
+  Unlock,
+  EyeOff,
+  FormInput,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument, degrees, rgb, StandardFonts } from "pdf-lib";
@@ -22,28 +39,124 @@ import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { PdfWorkbench } from "@/components/PdfWorkbench";
+import { PdfEditor } from "@/components/PdfEditor";
 import { extractPdfText, rasterizePages } from "@/lib/pdf-preview";
 import { ocrPages } from "@/lib/audit.functions";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  compressPdf,
+  fillFormFields,
+  officeToPdf,
+  pdfToDocx,
+  pdfToPptx,
+  pdfToXlsx,
+  protectPdf,
+  readFormFields,
+  toPdfA,
+  unlockPdf,
+} from "@/lib/pdf-tools";
 
 export const Route = createFileRoute("/_authenticated/app/ferramentas")({
   head: () => ({
     meta: [
-      { title: "Ferramentas PDF — IDOC BUSINESS" },
+      { title: "Ferramentas de PDF — organizar, converter, editar e proteger | IDOC BUSINESS" },
       {
         name: "description",
         content:
-          "Una, divida, rotacione, numere e marque PDFs direto no navegador, sem enviar arquivos ao servidor.",
+          "Junte, divida, converta (Word, Excel, PowerPoint, JPG), edite, assine, proteja com senha, comprima e aplique OCR em PDFs direto no navegador.",
       },
-      { property: "og:title", content: "Ferramentas PDF — IDOC BUSINESS" },
-      { property: "og:description", content: "Editor de PDF local do IDOC BUSINESS." },
+      { property: "og:title", content: "Ferramentas de PDF — IDOC BUSINESS" },
+      {
+        property: "og:description",
+        content: "Central completa de PDF: organizar, converter, editar, assinar, proteger, comprimir e OCR.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: Tools,
 });
 
+type ToolId =
+  | "merge" | "burst" | "extract" | "order" | "remove" | "rotate" | "wm" | "num"
+  | "pdf2img" | "img2pdf" | "pdf2word" | "pdf2excel" | "pdf2ppt" | "office2pdf" | "pdfa"
+  | "editor" | "forms"
+  | "sign" | "request"
+  | "protect" | "unlock" | "redact"
+  | "compress"
+  | "ocr" | "text" | "zip";
+
+const CATS = [
+  {
+    id: "org",
+    label: "Organizar",
+    icon: Layers,
+    tools: [
+      { id: "merge", label: "Juntar PDFs" },
+      { id: "burst", label: "Dividir em arquivos" },
+      { id: "extract", label: "Extrair páginas" },
+      { id: "order", label: "Reordenar páginas" },
+      { id: "remove", label: "Excluir páginas" },
+      { id: "rotate", label: "Girar páginas" },
+      { id: "wm", label: "Marca d'água" },
+      { id: "num", label: "Numerar páginas" },
+    ],
+  },
+  {
+    id: "conv",
+    label: "Converter",
+    icon: RefreshCw,
+    tools: [
+      { id: "pdf2word", label: "PDF → Word" },
+      { id: "pdf2excel", label: "PDF → Excel" },
+      { id: "pdf2ppt", label: "PDF → PowerPoint" },
+      { id: "pdf2img", label: "PDF → JPG/PNG" },
+      { id: "img2pdf", label: "JPG → PDF" },
+      { id: "office2pdf", label: "Word/Excel/PPT/HTML → PDF" },
+      { id: "pdfa", label: "PDF → PDF/A" },
+    ],
+  },
+  {
+    id: "edit",
+    label: "Editar",
+    icon: PencilRuler,
+    tools: [
+      { id: "editor", label: "Editor completo" },
+      { id: "forms", label: "Preencher formulários" },
+    ],
+  },
+  {
+    id: "sig",
+    label: "Assinatura",
+    icon: PenLine,
+    tools: [
+      { id: "sign", label: "Assinar PDF" },
+      { id: "request", label: "Solicitar assinaturas" },
+    ],
+  },
+  {
+    id: "sec",
+    label: "Segurança",
+    icon: ShieldCheck,
+    tools: [
+      { id: "protect", label: "Colocar senha" },
+      { id: "unlock", label: "Remover senha" },
+      { id: "redact", label: "Redigir dados" },
+    ],
+  },
+  { id: "opt", label: "Otimizar", icon: Gauge, tools: [{ id: "compress", label: "Comprimir PDF" }] },
+  {
+    id: "ocr",
+    label: "OCR",
+    icon: Eye,
+    tools: [
+      { id: "ocr", label: "PDF pesquisável" },
+      { id: "text", label: "Extrair texto" },
+      { id: "zip", label: "Pasta ZIP" },
+    ],
+  },
+] as const;
 
 function parseRange(spec: string, total: number) {
   const idx = new Set<number>();
@@ -64,41 +177,41 @@ async function loadPdf(file: File) {
   return pdf;
 }
 
+function downloadBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
 function FileField({
-  id,
   label,
-  inputRef,
   multiple,
   accept = ".pdf,application/pdf",
   onPick,
+  files,
 }: {
-  id: string;
   label: string;
-  inputRef: React.RefObject<HTMLInputElement | null>;
   multiple?: boolean;
   accept?: string;
-  onPick?: (files: File[]) => void;
+  onPick: (files: File[]) => void;
+  files: File[];
 }) {
-  const [names, setNames] = useState<string[]>([]);
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label>{label}</Label>
       <Input
-        id={id}
-        ref={inputRef}
         type="file"
         accept={accept}
         multiple={multiple}
-        onChange={(e) => {
-          const files = Array.from(e.target.files ?? []);
-          setNames(files.map((f) => f.name));
-          onPick?.(files);
-        }}
+        onChange={(e) => onPick(Array.from(e.target.files ?? []))}
         className="file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-2 file:py-1 file:text-xs file:font-semibold"
       />
-      {names.length > 0 && (
+      {files.length > 0 && (
         <p className="truncate text-[11px] text-muted-foreground">
-          {names.length} arquivo(s): {names.join(", ")}
+          {files.length} arquivo(s): {files.map((f) => f.name).join(", ")}
         </p>
       )}
     </div>
@@ -106,31 +219,35 @@ function FileField({
 }
 
 function Tools() {
-  const mergeRef = useRef<HTMLInputElement>(null);
-  const splitRef = useRef<HTMLInputElement>(null);
-  const burstRef = useRef<HTMLInputElement>(null);
-  const removeRef = useRef<HTMLInputElement>(null);
-  const rotRef = useRef<HTMLInputElement>(null);
-  const wmRef = useRef<HTMLInputElement>(null);
-  const numRef = useRef<HTMLInputElement>(null);
-  const imgRef = useRef<HTMLInputElement>(null);
-  const ocrRef = useRef<HTMLInputElement>(null);
-  const txtRef = useRef<HTMLInputElement>(null);
-  const zipRef = useRef<HTMLInputElement>(null);
-
+  const [cat, setCat] = useState<string>("org");
+  const [tool, setTool] = useState<ToolId>("merge");
+  const [files, setFiles] = useState<File[]>([]);
+  const [busy, setBusy] = useState(false);
   const [range, setRange] = useState("1-2");
   const [removeSpec, setRemoveSpec] = useState("1");
   const [angle, setAngle] = useState("90");
-  const [text, setText] = useState("CONFIDENCIAL");
-  const [busy, setBusy] = useState(false);
-  const [pageInfo, setPageInfo] = useState<string | null>(null);
+  const [wmText, setWmText] = useState("CONFIDENCIAL");
+  const [password, setPassword] = useState("");
+  const [level, setLevel] = useState<"leve" | "media" | "forte">("media");
+  const [imgFormat, setImgFormat] = useState<"image/jpeg" | "image/png">("image/jpeg");
+  const [folderName, setFolderName] = useState("Documentos IDOC");
+  const [fields, setFields] = useState<{ name: string; type: string; value: string }[] | null>(null);
+  const [textResult, setTextResult] = useState<{ name: string; content: string } | null>(null);
+  const [textFormat, setTextFormat] = useState<"txt" | "doc" | "pdf">("txt");
   const [result, setResult] = useState<{ bytes: Uint8Array; name: string; format: "pdf" | "pdf-zip" } | null>(
     null,
   );
-  const [textResult, setTextResult] = useState<{ name: string; content: string } | null>(null);
-  const [textFormat, setTextFormat] = useState<"txt" | "doc" | "pdf">("txt");
-  const [folderName, setFolderName] = useState("Documentos IDOC");
-  const [zipFiles, setZipFiles] = useState<File[]>([]);
+
+  const first = files[0];
+  const activeCat = CATS.find((c) => c.id === cat)!;
+
+  function pickTool(id: ToolId) {
+    setTool(id);
+    setFiles([]);
+    setResult(null);
+    setFields(null);
+    setTextResult(null);
+  }
 
   function open(bytes: Uint8Array, name: string, format: "pdf" | "pdf-zip" = "pdf") {
     setResult({ bytes, name, format });
@@ -140,93 +257,79 @@ function Tools() {
     if (busy) return;
     setBusy(true);
     try {
-      const msg = await fn();
-      toast.success(`${msg} — revise e escolha o formato antes de baixar`);
+      toast.success(await fn());
     } catch (e) {
-      toast.error((e as Error).message || "Falha ao processar o PDF");
+      toast.error((e as Error).message || "Falha ao processar o arquivo");
     } finally {
       setBusy(false);
     }
   }
 
-  const merge = () =>
-    run(async () => {
-      const files = Array.from(mergeRef.current?.files ?? []);
+  function needPdf() {
+    if (!first) throw new Error("Selecione um arquivo PDF");
+    return first;
+  }
+
+  const actions: Record<string, () => Promise<string>> = {
+    merge: async () => {
       if (files.length < 2) throw new Error("Selecione ao menos 2 PDFs");
       const out = await PDFDocument.create();
       for (const f of files) {
         const src = await loadPdf(f);
-        const pages = await out.copyPages(src, src.getPageIndices());
-        pages.forEach((p) => out.addPage(p));
+        (await out.copyPages(src, src.getPageIndices())).forEach((p) => out.addPage(p));
       }
       open(await out.save(), "idoc-unido");
       return `PDF unido com ${out.getPageCount()} páginas`;
-    });
-
-  const extract = () =>
-    run(async () => {
-      const f = splitRef.current?.files?.[0];
-      if (!f) throw new Error("Selecione um PDF");
-      const src = await loadPdf(f);
+    },
+    burst: async () => {
+      const src = await loadPdf(needPdf());
+      const out = await PDFDocument.create();
+      (await out.copyPages(src, src.getPageIndices())).forEach((p) => out.addPage(p));
+      open(await out.save(), "idoc-dividido", "pdf-zip");
+      return `${out.getPageCount()} página(s) prontas para dividir`;
+    },
+    extract: async () => {
+      const src = await loadPdf(needPdf());
       const idx = parseRange(range, src.getPageCount());
       if (!idx.length) throw new Error("Intervalo inválido para este documento");
       const out = await PDFDocument.create();
-      const pages = await out.copyPages(src, idx);
-      pages.forEach((p) => out.addPage(p));
+      (await out.copyPages(src, idx)).forEach((p) => out.addPage(p));
       open(await out.save(), "idoc-paginas");
       return `${idx.length} página(s) extraída(s)`;
-    });
-
-  const burst = () =>
-    run(async () => {
-      const f = burstRef.current?.files?.[0];
-      if (!f) throw new Error("Selecione um PDF");
-      const src = await loadPdf(f);
+    },
+    order: async () => {
+      const src = await loadPdf(needPdf());
       const out = await PDFDocument.create();
-      const pages = await out.copyPages(src, src.getPageIndices());
-      pages.forEach((p) => out.addPage(p));
-      open(await out.save(), "idoc-dividido", "pdf-zip");
-      return `${out.getPageCount()} página(s) prontas para dividir`;
-    });
-
-  const removePages = () =>
-    run(async () => {
-      const f = removeRef.current?.files?.[0];
-      if (!f) throw new Error("Selecione um PDF");
-      const src = await loadPdf(f);
+      (await out.copyPages(src, src.getPageIndices())).forEach((p) => out.addPage(p));
+      open(await out.save(), needPdf().name.replace(/\.pdf$/i, "-organizado"));
+      return "Arraste as páginas para reordenar e depois baixe";
+    },
+    remove: async () => {
+      const src = await loadPdf(needPdf());
       const drop = new Set(parseRange(removeSpec, src.getPageCount()));
       if (!drop.size) throw new Error("Informe as páginas a remover");
       const keep = src.getPageIndices().filter((i) => !drop.has(i));
       if (!keep.length) throw new Error("Não é possível remover todas as páginas");
       const out = await PDFDocument.create();
-      const pages = await out.copyPages(src, keep);
-      pages.forEach((p) => out.addPage(p));
+      (await out.copyPages(src, keep)).forEach((p) => out.addPage(p));
       open(await out.save(), "idoc-sem-paginas");
       return `${drop.size} página(s) removida(s)`;
-    });
-
-  const rotate = () =>
-    run(async () => {
-      const f = rotRef.current?.files?.[0];
-      if (!f) throw new Error("Selecione um PDF");
+    },
+    rotate: async () => {
       const step = Number(angle);
       if (!Number.isFinite(step) || step % 90 !== 0) throw new Error("Use ângulos múltiplos de 90");
-      const pdf = await loadPdf(f);
+      const pdf = await loadPdf(needPdf());
       pdf.getPages().forEach((p) =>
-        p.setRotation(degrees(((p.getRotation().angle + step) % 360 + 360) % 360)),
+        p.setRotation(degrees((((p.getRotation().angle + step) % 360) + 360) % 360)),
       );
       open(await pdf.save(), "idoc-rotacionado");
       return "Páginas rotacionadas";
-    });
-
-  const watermark = () =>
-    run(async () => {
-      const f = wmRef.current?.files?.[0];
-      if (!f) throw new Error("Selecione um PDF");
-      if (!text.trim()) throw new Error("Informe o texto da marca d'água");
-      const pdf = await loadPdf(f);
+    },
+    wm: async () => {
+      if (!wmText.trim()) throw new Error("Informe o texto da marca d'água");
+      const pdf = await loadPdf(needPdf());
       const font = await pdf.embedFont(StandardFonts.HelveticaBold);
-      const label = text.trim();
+      const label = wmText.trim();
       for (const p of pdf.getPages()) {
         const { width, height } = p.getSize();
         let size = Math.max(18, Math.min(64, (width * 1.1) / Math.max(6, label.length)));
@@ -244,34 +347,25 @@ function Tools() {
       }
       open(await pdf.save(), "idoc-marca-dagua");
       return "Marca d'água aplicada";
-    });
-
-  const numberPages = () =>
-    run(async () => {
-      const f = numRef.current?.files?.[0];
-      if (!f) throw new Error("Selecione um PDF");
-      const pdf = await loadPdf(f);
+    },
+    num: async () => {
+      const pdf = await loadPdf(needPdf());
       const font = await pdf.embedFont(StandardFonts.Helvetica);
       const pages = pdf.getPages();
       pages.forEach((p, i) => {
-        const { width } = p.getSize();
         const label = `${i + 1} / ${pages.length}`;
-        const size = 9;
         p.drawText(label, {
-          x: width - font.widthOfTextAtSize(label, size) - 28,
+          x: p.getSize().width - font.widthOfTextAtSize(label, 9) - 28,
           y: 18,
-          size,
+          size: 9,
           font,
           color: rgb(0.4, 0.45, 0.53),
         });
       });
       open(await pdf.save(), "idoc-numerado");
       return `${pages.length} página(s) numerada(s)`;
-    });
-
-  const imagesToPdf = () =>
-    run(async () => {
-      const files = Array.from(imgRef.current?.files ?? []);
+    },
+    img2pdf: async () => {
       if (!files.length) throw new Error("Selecione imagens JPG ou PNG");
       const out = await PDFDocument.create();
       for (const f of files) {
@@ -281,44 +375,95 @@ function Tools() {
         const maxW = 595.28;
         const maxH = 841.89;
         const scale = Math.min(maxW / img.width, maxH / img.height, 1);
-        const w = img.width * scale;
-        const h = img.height * scale;
         const page = out.addPage([maxW, maxH]);
-        page.drawImage(img, { x: (maxW - w) / 2, y: (maxH - h) / 2, width: w, height: h });
+        page.drawImage(img, {
+          x: (maxW - img.width * scale) / 2,
+          y: (maxH - img.height * scale) / 2,
+          width: img.width * scale,
+          height: img.height * scale,
+        });
       }
       open(await out.save(), "idoc-imagens");
       return `PDF criado com ${files.length} imagem(ns)`;
-    });
-
-  function downloadBlob(blob: Blob, name: string) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-  }
-
-  /** Gera PDF pesquisável: mantém a imagem da página e adiciona camada de texto invisível via OCR. */
-  const searchable = () =>
-    run(async () => {
-      const f = ocrRef.current?.files?.[0];
-      if (!f) throw new Error("Selecione um PDF digitalizado");
+    },
+    pdf2img: async () => {
+      const f = needPdf();
       const bytes = new Uint8Array(await f.arrayBuffer());
       const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
-      const count = src.getPageCount();
-      if (count > 30) throw new Error("Limite de 30 páginas por vez para o OCR");
+      const rasters = await rasterizePages(bytes, src.getPageIndices(), imgFormat, 2);
+      const ext = imgFormat === "image/png" ? "png" : "jpg";
+      const base = f.name.replace(/\.pdf$/i, "");
+      if (rasters.length === 1) {
+        downloadBlob(rasters[0]!.blob, `${base}.${ext}`);
+      } else {
+        const { default: JSZip } = await import("jszip");
+        const zip = new JSZip();
+        const dir = zip.folder(base)!;
+        for (const r of rasters) dir.file(`${base}-${String(r.index + 1).padStart(3, "0")}.${ext}`, r.blob);
+        downloadBlob(await zip.generateAsync({ type: "blob" }), `${base}-${ext}.zip`);
+      }
+      return `${rasters.length} imagem(ns) gerada(s)`;
+    },
+    pdf2word: async () => {
+      const f = needPdf();
+      downloadBlob(await pdfToDocx(new Uint8Array(await f.arrayBuffer())), `${f.name.replace(/\.pdf$/i, "")}.doc`);
+      return "Documento do Word gerado";
+    },
+    pdf2excel: async () => {
+      const f = needPdf();
+      downloadBlob(await pdfToXlsx(new Uint8Array(await f.arrayBuffer())), `${f.name.replace(/\.pdf$/i, "")}.xlsx`);
+      return "Planilha do Excel gerada";
+    },
+    pdf2ppt: async () => {
+      const f = needPdf();
+      downloadBlob(await pdfToPptx(new Uint8Array(await f.arrayBuffer())), `${f.name.replace(/\.pdf$/i, "")}.pptx`);
+      return "Apresentação gerada";
+    },
+    office2pdf: async () => {
+      if (!first) throw new Error("Selecione um arquivo Word, Excel, PowerPoint, HTML ou TXT");
+      open(await officeToPdf(first), first.name.replace(/\.[^.]+$/, ""));
+      return "Arquivo convertido em PDF";
+    },
+    pdfa: async () => {
+      const f = needPdf();
+      open(await toPdfA(new Uint8Array(await f.arrayBuffer())), f.name.replace(/\.pdf$/i, "-pdfa"));
+      return "PDF/A gerado para arquivamento";
+    },
+    forms: async () => {
+      const f = needPdf();
+      const list = await readFormFields(new Uint8Array(await f.arrayBuffer()));
+      if (!list.length) throw new Error("Este PDF não tem campos de formulário — use o editor completo");
+      setFields(list);
+      return `${list.length} campo(s) encontrado(s)`;
+    },
+    protect: async () => {
+      const f = needPdf();
+      if (password.trim().length < 4) throw new Error("Use uma senha com pelo menos 4 caracteres");
+      const bytes = await protectPdf(new Uint8Array(await f.arrayBuffer()), password.trim());
+      downloadBlob(new Blob([new Uint8Array(bytes)], { type: "application/pdf" }), `${f.name.replace(/\.pdf$/i, "")}-protegido.pdf`);
+      return "PDF protegido com senha e baixado";
+    },
+    unlock: async () => {
+      const f = needPdf();
+      if (!password.trim()) throw new Error("Informe a senha atual do PDF");
+      open(await unlockPdf(new Uint8Array(await f.arrayBuffer()), password.trim()), f.name.replace(/\.pdf$/i, "-liberado"));
+      return "Proteção removida";
+    },
+    compress: async () => {
+      const f = needPdf();
+      const bytes = await compressPdf(new Uint8Array(await f.arrayBuffer()), level);
+      const before = f.size / 1024 / 1024;
+      const after = bytes.byteLength / 1024 / 1024;
+      open(bytes, f.name.replace(/\.pdf$/i, "-comprimido"));
+      return `De ${before.toFixed(1)} MB para ${after.toFixed(1)} MB`;
+    },
+    ocr: async () => {
+      const f = needPdf();
+      const bytes = new Uint8Array(await f.arrayBuffer());
+      const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      if (src.getPageCount() > 30) throw new Error("Limite de 30 páginas por vez para o OCR");
       const rasters = await rasterizePages(bytes, src.getPageIndices(), "image/jpeg", 2);
-      const images = await Promise.all(
-        rasters.map(
-          (r) =>
-            new Promise<string>((resolve) => {
-              const fr = new FileReader();
-              fr.onload = () => resolve(String(fr.result));
-              fr.readAsDataURL(r.blob);
-            }),
-        ),
-      );
+      const images = await Promise.all(rasters.map((r) => blobToDataUrl(r.blob)));
       const { texts } = await ocrPages({ data: { images } });
       const out = await PDFDocument.create();
       const font = await out.embedFont(StandardFonts.Helvetica);
@@ -326,10 +471,9 @@ function Tools() {
         const jpg = await out.embedJpg(new Uint8Array(await rasters[i]!.blob.arrayBuffer()));
         const page = out.addPage([jpg.width / 2, jpg.height / 2]);
         page.drawImage(jpg, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() });
-        const words = (texts[i] ?? "").split(/\s+/).filter(Boolean);
         let x = 4;
         let y = page.getHeight() - 12;
-        for (const word of words) {
+        for (const word of (texts[i] ?? "").split(/\s+/).filter(Boolean)) {
           const w = font.widthOfTextAtSize(word, 8) + 3;
           if (x + w > page.getWidth() - 4) {
             x = 4;
@@ -341,29 +485,16 @@ function Tools() {
         }
       }
       open(await out.save(), "idoc-pesquisavel");
-      return `PDF pesquisável gerado com ${rasters.length} página(s)`;
-    });
-
-  /** Converte PDF em texto editável para baixar como TXT, Word ou PDF. */
-  const toText = () =>
-    run(async () => {
-      const f = txtRef.current?.files?.[0];
-      if (!f) throw new Error("Selecione um PDF");
+      return `PDF pesquisável com ${rasters.length} página(s)`;
+    },
+    text: async () => {
+      const f = needPdf();
       const bytes = new Uint8Array(await f.arrayBuffer());
       let pages = await extractPdfText(bytes);
       if (pages.join("").trim().length < 20) {
         const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
         const rasters = await rasterizePages(bytes, src.getPageIndices().slice(0, 20), "image/jpeg", 2);
-        const images = await Promise.all(
-          rasters.map(
-            (r) =>
-              new Promise<string>((resolve) => {
-                const fr = new FileReader();
-                fr.onload = () => resolve(String(fr.result));
-                fr.readAsDataURL(r.blob);
-              }),
-          ),
-        );
+        const images = await Promise.all(rasters.map((r) => blobToDataUrl(r.blob)));
         pages = (await ocrPages({ data: { images } })).texts;
       }
       setTextResult({
@@ -371,7 +502,30 @@ function Tools() {
         content: pages.map((t, i) => `--- Página ${i + 1} ---\n${t}`).join("\n\n"),
       });
       return "Texto extraído — revise antes de baixar";
+    },
+    zip: async () => {
+      if (!files.length) throw new Error("Selecione os arquivos da pasta");
+      const folder = folderName.trim() || "Documentos IDOC";
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      const dir = zip.folder(folder)!;
+      for (const f of files) dir.file(f.name, await f.arrayBuffer());
+      downloadBlob(await zip.generateAsync({ type: "blob" }), `${folder}.zip`);
+      return `Pasta "${folder}" criada com ${files.length} arquivo(s)`;
+    },
+  };
+
+  async function submitFields(flatten: boolean) {
+    if (!first || !fields) return;
+    await run(async () => {
+      const values = Object.fromEntries(fields.map((f) => [f.name, f.value]));
+      open(
+        await fillFormFields(new Uint8Array(await first.arrayBuffer()), values, flatten),
+        first.name.replace(/\.pdf$/i, "-preenchido"),
+      );
+      return "Formulário preenchido";
     });
+  }
 
   async function downloadText() {
     if (!textResult) return;
@@ -387,241 +541,303 @@ function Tools() {
       downloadBlob(new Blob([html], { type: "application/msword" }), `${base}.doc`);
       return;
     }
-    const pdf = await PDFDocument.create();
-    const font = await pdf.embedFont(StandardFonts.Helvetica);
-    const size = 11;
-    const margin = 48;
-    let page = pdf.addPage([595.28, 841.89]);
-    let y = page.getHeight() - margin;
-    const maxWidth = page.getWidth() - margin * 2;
-    for (const paragraph of textResult.content.split("\n")) {
-      let line = "";
-      for (const word of paragraph.split(" ")) {
-        const test = line ? `${line} ${word}` : word;
-        if (font.widthOfTextAtSize(test, size) > maxWidth) {
-          page.drawText(line, { x: margin, y, size, font });
-          y -= size * 1.45;
-          line = word;
-          if (y < margin) {
-            page = pdf.addPage([595.28, 841.89]);
-            y = page.getHeight() - margin;
-          }
-        } else line = test;
-      }
-      page.drawText(line, { x: margin, y, size, font });
-      y -= size * 1.45;
-      if (y < margin) {
-        page = pdf.addPage([595.28, 841.89]);
-        y = page.getHeight() - margin;
-      }
-    }
-    downloadBlob(new Blob([new Uint8Array(await pdf.save())], { type: "application/pdf" }), `${base}.pdf`);
+    const { textToPdf } = await import("@/lib/pdf-tools");
+    const bytes = await textToPdf(textResult.content.split("\n"));
+    downloadBlob(new Blob([new Uint8Array(bytes)], { type: "application/pdf" }), `${base}.pdf`);
   }
 
-  /** Cria uma pasta ZIP com todos os arquivos enviados. */
-  const buildZip = () =>
-    run(async () => {
-      if (!zipFiles.length) throw new Error("Selecione os arquivos da pasta");
-      const folder = folderName.trim() || "Documentos IDOC";
-      const { default: JSZip } = await import("jszip");
-      const zip = new JSZip();
-      const dir = zip.folder(folder)!;
-      for (const f of zipFiles) dir.file(f.name, await f.arrayBuffer());
-      const blob = await zip.generateAsync({ type: "blob" });
-      downloadBlob(blob, `${folder}.zip`);
-      return `Pasta "${folder}" criada com ${zipFiles.length} arquivo(s)`;
-    });
+  const accept =
+    tool === "img2pdf"
+      ? "image/jpeg,image/png"
+      : tool === "office2pdf"
+        ? ".docx,.xlsx,.xls,.csv,.pptx,.html,.htm,.txt"
+        : tool === "zip"
+          ? "*/*"
+          : ".pdf,application/pdf";
 
-  async function inspect(files: File[]) {
-    const f = files[0];
-    if (!f) return setPageInfo(null);
-    try {
-      const pdf = await loadPdf(f);
-      setPageInfo(`${f.name} — ${pdf.getPageCount()} página(s)`);
-    } catch {
-      setPageInfo("Não foi possível ler este PDF");
-    }
-  }
+  const ICONS: Partial<Record<ToolId, typeof Combine>> = {
+    merge: Combine,
+    burst: SplitSquareVertical,
+    extract: Scissors,
+    order: Layers,
+    remove: Trash2,
+    rotate: RotateCw,
+    wm: Droplets,
+    num: Hash,
+    pdf2img: Images,
+    img2pdf: Images,
+    pdf2word: FileText,
+    pdf2excel: FileSpreadsheet,
+    pdf2ppt: Presentation,
+    office2pdf: Globe,
+    pdfa: Archive,
+    editor: PencilRuler,
+    forms: FormInput,
+    sign: PenLine,
+    protect: Lock,
+    unlock: Unlock,
+    redact: EyeOff,
+    compress: Gauge,
+    ocr: ScanText,
+    text: FileType2,
+    zip: FolderArchive,
+  };
+  const ToolIcon = ICONS[tool] ?? Wrench;
+  const label = activeCat.tools.find((t) => t.id === tool)?.label ?? "Executar";
 
   return (
-    <AppShell title="Ferramentas PDF">
-      <div className="card-soft p-4">
-        <div className="mb-3 flex items-start gap-2">
-          <Wrench className="mt-0.5 size-4 shrink-0 text-primary" />
-          <p className="text-xs text-muted-foreground">
-            Tudo é processado no seu dispositivo — os arquivos não são enviados ao servidor. Você
-            visualiza, escolhe as páginas, o nome e o formato antes de baixar.
-          </p>
-        </div>
-
-        <Tabs defaultValue="merge">
-          <TabsList className="grid h-auto w-full grid-cols-4 gap-1">
-            <TabsTrigger value="merge" className="text-[11px]">Unir</TabsTrigger>
-            <TabsTrigger value="split" className="text-[11px]">Extrair</TabsTrigger>
-            <TabsTrigger value="burst" className="text-[11px]">Dividir</TabsTrigger>
-            <TabsTrigger value="remove" className="text-[11px]">Remover</TabsTrigger>
-          </TabsList>
-          <TabsList className="mt-1 grid h-auto w-full grid-cols-4 gap-1">
-            <TabsTrigger value="rotate" className="text-[11px]">Girar</TabsTrigger>
-            <TabsTrigger value="wm" className="text-[11px]">Marca</TabsTrigger>
-            <TabsTrigger value="num" className="text-[11px]">Numerar</TabsTrigger>
-            <TabsTrigger value="img" className="text-[11px]">Imagens</TabsTrigger>
-          </TabsList>
-          <TabsList className="mt-1 grid h-auto w-full grid-cols-3 gap-1">
-            <TabsTrigger value="ocr" className="text-[11px]">Pesquisável</TabsTrigger>
-            <TabsTrigger value="txt" className="text-[11px]">Texto/Word</TabsTrigger>
-            <TabsTrigger value="zip" className="text-[11px]">Pasta ZIP</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="merge" className="mt-4 space-y-3">
-            <FileField id="fm" label="PDFs (2 ou mais, na ordem escolhida)" inputRef={mergeRef} multiple />
-            <Button className="w-full" disabled={busy} onClick={merge}>
-              <Combine className="mr-1 size-4" /> Unir PDFs
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="split" className="mt-4 space-y-3">
-            <FileField id="fs" label="PDF" inputRef={splitRef} onPick={inspect} />
-            {pageInfo && <p className="text-[11px] text-muted-foreground">{pageInfo}</p>}
-            <Label htmlFor="rg">Páginas (ex.: 1-3,5)</Label>
-            <Input id="rg" value={range} onChange={(e) => setRange(e.target.value)} />
-            <Button className="w-full" disabled={busy} onClick={extract}>
-              <Scissors className="mr-1 size-4" /> Extrair páginas
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="burst" className="mt-4 space-y-3">
-            <FileField id="fb" label="PDF para separar em 1 arquivo por página" inputRef={burstRef} />
-            <Button className="w-full" disabled={busy} onClick={burst}>
-              <SplitSquareVertical className="mr-1 size-4" /> Dividir em arquivos
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="remove" className="mt-4 space-y-3">
-            <FileField id="fd" label="PDF" inputRef={removeRef} />
-            <Label htmlFor="rm">Páginas a remover (ex.: 2,5-6)</Label>
-            <Input id="rm" value={removeSpec} onChange={(e) => setRemoveSpec(e.target.value)} />
-            <Button className="w-full" variant="destructive" disabled={busy} onClick={removePages}>
-              <Trash2 className="mr-1 size-4" /> Remover páginas
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="rotate" className="mt-4 space-y-3">
-            <FileField id="fr" label="PDF" inputRef={rotRef} />
-            <Label htmlFor="an">Ângulo (múltiplo de 90)</Label>
-            <Input id="an" type="number" step="90" value={angle} onChange={(e) => setAngle(e.target.value)} />
-            <Button className="w-full" disabled={busy} onClick={rotate}>
-              <RotateCw className="mr-1 size-4" /> Rotacionar
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="wm" className="mt-4 space-y-3">
-            <FileField id="fw" label="PDF" inputRef={wmRef} />
-            <Label htmlFor="tx">Texto da marca d'água</Label>
-            <Input id="tx" value={text} onChange={(e) => setText(e.target.value)} />
-            <Button className="w-full" disabled={busy} onClick={watermark}>
-              <Droplets className="mr-1 size-4" /> Aplicar marca d'água
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="num" className="mt-4 space-y-3">
-            <FileField id="fn" label="PDF" inputRef={numRef} />
-            <Button className="w-full" disabled={busy} onClick={numberPages}>
-              <Hash className="mr-1 size-4" /> Numerar páginas
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="img" className="mt-4 space-y-3">
-            <FileField
-              id="fi"
-              label="Imagens JPG/PNG"
-              inputRef={imgRef}
-              multiple
-              accept="image/jpeg,image/png"
-            />
-            <Button className="w-full" disabled={busy} onClick={imagesToPdf}>
-              <Images className="mr-1 size-4" /> Gerar PDF das imagens
-            </Button>
-          </TabsContent>
-          <TabsContent value="ocr" className="mt-4 space-y-3">
-            <FileField id="fo" label="PDF digitalizado (até 30 páginas)" inputRef={ocrRef} />
-            <p className="text-[11px] text-muted-foreground">
-              Aplica reconhecimento de texto e devolve um PDF em que é possível pesquisar qualquer
-              palavra, mantendo a aparência original.
+    <AppShell title="Ferramentas de PDF">
+      <div className="space-y-3">
+        <div className="card-soft p-4">
+          <div className="mb-3 flex items-start gap-2">
+            <Wrench className="mt-0.5 size-4 shrink-0 text-primary" />
+            <p className="text-xs text-muted-foreground">
+              Tudo é processado no seu dispositivo — os arquivos não são enviados ao servidor (exceto o
+              reconhecimento de texto). Você visualiza, escolhe as páginas, o nome e o formato antes de baixar.
             </p>
-            <Button className="w-full" disabled={busy} onClick={searchable}>
-              {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <ScanText className="mr-1 size-4" />}
-              Gerar PDF pesquisável
-            </Button>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="txt" className="mt-4 space-y-3">
-            <FileField id="ft" label="PDF para converter" inputRef={txtRef} />
-            <Button className="w-full" disabled={busy} onClick={toText}>
-              {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <FileType2 className="mr-1 size-4" />}
-              Extrair texto
-            </Button>
-            {textResult && (
-              <div className="space-y-2 rounded-lg border border-border p-3">
-                <Label htmlFor="tn">Nome do arquivo</Label>
-                <Input
-                  id="tn"
-                  value={textResult.name}
-                  onChange={(e) => setTextResult({ ...textResult, name: e.target.value })}
-                />
-                <Label htmlFor="tc">Conteúdo (edite antes de baixar)</Label>
-                <Textarea
-                  id="tc"
-                  rows={10}
-                  value={textResult.content}
-                  onChange={(e) => setTextResult({ ...textResult, content: e.target.value })}
-                />
-                <div className="flex flex-wrap gap-2">
-                  {(["txt", "doc", "pdf"] as const).map((f) => (
-                    <Button
-                      key={f}
-                      size="sm"
-                      variant={textFormat === f ? "default" : "outline"}
-                      onClick={() => setTextFormat(f)}
-                    >
-                      {f.toUpperCase()}
-                    </Button>
-                  ))}
-                  <Button size="sm" className="ml-auto" onClick={downloadText}>
-                    Baixar
-                  </Button>
-                </div>
+          <div className="grid grid-cols-4 gap-1 sm:grid-cols-7">
+            {CATS.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => {
+                  setCat(c.id);
+                  pickTool(c.tools[0]!.id as ToolId);
+                }}
+                className={`flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold ${
+                  cat === c.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                }`}
+              >
+                <c.icon className="size-4" />
+                {c.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-1">
+            {activeCat.tools.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => pickTool(t.id as ToolId)}
+                className={`rounded-full border px-3 py-1.5 text-[11px] font-medium ${
+                  tool === t.id
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {tool === "request" ? (
+              <div className="space-y-2 text-sm">
+                <p className="text-xs text-muted-foreground">
+                  Para coletar assinaturas de outras pessoas, envie o documento dentro da empresa: você define
+                  signatários, posiciona os campos de assinatura, inicial e texto, e envia o link seguro com
+                  registro de evidências.
+                </p>
+                <Button asChild className="w-full">
+                  <Link to="/app/empresas">
+                    <PenLine className="mr-1 size-4" /> Ir para empresas e enviar
+                  </Link>
+                </Button>
               </div>
+            ) : (
+              <>
+                <FileField
+                  label={
+                    tool === "merge"
+                      ? "PDFs (2 ou mais, na ordem escolhida)"
+                      : tool === "img2pdf"
+                        ? "Imagens JPG/PNG"
+                        : tool === "office2pdf"
+                          ? "Word, Excel, PowerPoint, HTML ou TXT"
+                          : tool === "zip"
+                            ? "Arquivos de qualquer formato"
+                            : "Arquivo PDF"
+                  }
+                  multiple={tool === "merge" || tool === "img2pdf" || tool === "zip"}
+                  accept={accept}
+                  files={files}
+                  onPick={(f) => {
+                    setFiles(f);
+                    setFields(null);
+                    setResult(null);
+                  }}
+                />
+
+                {tool === "extract" && (
+                  <>
+                    <Label htmlFor="rg">Páginas (ex.: 1-3,5)</Label>
+                    <Input id="rg" value={range} onChange={(e) => setRange(e.target.value)} />
+                  </>
+                )}
+                {tool === "remove" && (
+                  <>
+                    <Label htmlFor="rm">Páginas a excluir (ex.: 2,5-6)</Label>
+                    <Input id="rm" value={removeSpec} onChange={(e) => setRemoveSpec(e.target.value)} />
+                  </>
+                )}
+                {tool === "rotate" && (
+                  <>
+                    <Label htmlFor="an">Ângulo (múltiplo de 90)</Label>
+                    <Input id="an" type="number" step="90" value={angle} onChange={(e) => setAngle(e.target.value)} />
+                  </>
+                )}
+                {tool === "wm" && (
+                  <>
+                    <Label htmlFor="wt">Texto da marca d'água</Label>
+                    <Input id="wt" value={wmText} onChange={(e) => setWmText(e.target.value)} />
+                  </>
+                )}
+                {tool === "pdf2img" && (
+                  <div className="flex gap-2">
+                    {(["image/jpeg", "image/png"] as const).map((f) => (
+                      <Button
+                        key={f}
+                        size="sm"
+                        variant={imgFormat === f ? "default" : "outline"}
+                        onClick={() => setImgFormat(f)}
+                      >
+                        {f === "image/jpeg" ? "JPG" : "PNG"}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                {(tool === "protect" || tool === "unlock") && (
+                  <>
+                    <Label htmlFor="pw">{tool === "protect" ? "Nova senha" : "Senha atual do PDF"}</Label>
+                    <Input id="pw" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  </>
+                )}
+                {tool === "compress" && (
+                  <div className="flex gap-2">
+                    {(["leve", "media", "forte"] as const).map((l) => (
+                      <Button key={l} size="sm" variant={level === l ? "default" : "outline"} onClick={() => setLevel(l)}>
+                        {l === "media" ? "Média" : l === "leve" ? "Leve" : "Forte"}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                {tool === "zip" && (
+                  <>
+                    <Label htmlFor="fn">Nome da pasta</Label>
+                    <Input id="fn" value={folderName} onChange={(e) => setFolderName(e.target.value)} />
+                  </>
+                )}
+                {(tool === "editor" || tool === "sign" || tool === "redact") && (
+                  <p className="text-[11px] text-muted-foreground">
+                    {tool === "sign"
+                      ? "Use a ferramenta Desenhar para assinar à mão, ou Texto para digitar o nome. Depois aplique e baixe."
+                      : tool === "redact"
+                        ? "Use Forma/Destacar sobre os dados sensíveis com a cor escura e marque “Achatar” para tornar a tarja permanente."
+                        : "Adicione textos, imagens, formas, destaques e anotações à mão em qualquer página."}
+                  </p>
+                )}
+
+                {tool === "editor" || tool === "sign" || tool === "redact" ? (
+                  first ? (
+                    <PdfEditor
+                      key={first.name + first.size + tool}
+                      file={first}
+                      flattenDefault={tool === "redact"}
+                      onResult={(bytes, name) => open(bytes, name)}
+                    />
+                  ) : null
+                ) : (
+                  <Button className="w-full" disabled={busy} onClick={() => run(actions[tool]!)}>
+                    {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <ToolIcon className="mr-1 size-4" />}
+                    {label}
+                  </Button>
+                )}
+
+                {tool === "forms" && fields && (
+                  <div className="space-y-2 rounded-lg border border-border p-3">
+                    {fields.map((f, i) => (
+                      <div key={f.name} className="space-y-1">
+                        <Label htmlFor={`fl${i}`} className="text-[11px]">
+                          {f.name}
+                        </Label>
+                        <Input
+                          id={`fl${i}`}
+                          value={f.value}
+                          onChange={(e) =>
+                            setFields((prev) =>
+                              (prev ?? []).map((x, j) => (j === i ? { ...x, value: e.target.value } : x)),
+                            )
+                          }
+                        />
+                      </div>
+                    ))}
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" disabled={busy} onClick={() => submitFields(false)}>
+                        Salvar editável
+                      </Button>
+                      <Button size="sm" disabled={busy} onClick={() => submitFields(true)}>
+                        Salvar finalizado
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {tool === "text" && textResult && (
+                  <div className="space-y-2 rounded-lg border border-border p-3">
+                    <Label htmlFor="tn">Nome do arquivo</Label>
+                    <Input
+                      id="tn"
+                      value={textResult.name}
+                      onChange={(e) => setTextResult({ ...textResult, name: e.target.value })}
+                    />
+                    <Label htmlFor="tc">Conteúdo (edite antes de baixar)</Label>
+                    <Textarea
+                      id="tc"
+                      rows={10}
+                      value={textResult.content}
+                      onChange={(e) => setTextResult({ ...textResult, content: e.target.value })}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {(["txt", "doc", "pdf"] as const).map((f) => (
+                        <Button
+                          key={f}
+                          size="sm"
+                          variant={textFormat === f ? "default" : "outline"}
+                          onClick={() => setTextFormat(f)}
+                        >
+                          {f.toUpperCase()}
+                        </Button>
+                      ))}
+                      <Button size="sm" className="ml-auto" onClick={downloadText}>
+                        <Download className="mr-1 size-3.5" /> Baixar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
-          </TabsContent>
+          </div>
 
-          <TabsContent value="zip" className="mt-4 space-y-3">
-            <Label htmlFor="fnm">Nome da pasta</Label>
-            <Input id="fnm" value={folderName} onChange={(e) => setFolderName(e.target.value)} />
-            <FileField
-              id="fz"
-              label="Arquivos (PDF, imagens, planilhas, qualquer formato)"
-              inputRef={zipRef}
-              multiple
-              accept="*/*"
-              onPick={setZipFiles}
+          {result && (
+            <PdfWorkbench
+              key={result.name + result.bytes.byteLength}
+              bytes={result.bytes}
+              defaultName={result.name}
+              defaultFormat={result.format}
+              onClose={() => setResult(null)}
             />
-            <Button className="w-full" disabled={busy} onClick={buildZip}>
-              <FolderArchive className="mr-1 size-4" /> Baixar pasta em ZIP
-            </Button>
-          </TabsContent>
-        </Tabs>
-
-        {result && (
-          <PdfWorkbench
-            key={result.name + result.bytes.byteLength}
-            bytes={result.bytes}
-            defaultName={result.name}
-            defaultFormat={result.format}
-            onClose={() => setResult(null)}
-          />
-        )}
+          )}
+        </div>
       </div>
     </AppShell>
   );
+}
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve(String(fr.result));
+    fr.readAsDataURL(blob);
+  });
 }

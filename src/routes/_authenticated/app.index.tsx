@@ -11,7 +11,16 @@ import {
   CalendarClock,
   Activity,
   BellRing,
+  Layers,
+  RefreshCw,
+  PencilRuler,
+  ShieldCheck,
+  Gauge,
+  ScanText,
+  ArrowRight,
+  Upload,
 } from "lucide-react";
+
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, Cell } from "recharts";
 
 import { AppShell, StatCard } from "@/components/AppShell";
@@ -22,8 +31,36 @@ import { PushSetup } from "@/components/PushSetup";
 import { fmtDateTime as fmtDT } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/")({
+  head: () => ({
+    meta: [
+      { title: "Painel — documentos, contratos e ferramentas de PDF | IDOC BUSINESS" },
+      {
+        name: "description",
+        content:
+          "Acompanhe empresas, documentos, contratos e assinaturas, e acesse as ferramentas de PDF: organizar, converter, editar, assinar, proteger, comprimir e OCR.",
+      },
+      { property: "og:title", content: "Painel IDOC BUSINESS" },
+      {
+        property: "og:description",
+        content: "Visão geral do seu escritório digital: documentos, contratos, assinaturas e ferramentas de PDF.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Dashboard,
 });
+
+const TOOL_GROUPS = [
+  { icon: Layers, label: "Organizar PDFs", desc: "Juntar, dividir, extrair, reordenar, excluir e girar páginas" },
+  { icon: RefreshCw, label: "Converter", desc: "Word, Excel, PowerPoint, JPG, HTML e PDF/A" },
+  { icon: PencilRuler, label: "Editar", desc: "Textos, imagens, formas, desenho, destaques e formulários" },
+  { icon: PenLine, label: "Assinatura", desc: "Assinar e solicitar assinaturas com campos posicionados" },
+  { icon: ShieldCheck, label: "Segurança", desc: "Senha, criptografia e redação de dados sensíveis" },
+  { icon: Gauge, label: "Otimização", desc: "Comprimir para enviar por e-mail e WhatsApp" },
+  { icon: ScanText, label: "OCR", desc: "PDF pesquisável e extração de texto de digitalizações" },
+] as const;
+
 
 function Dashboard() {
   const { data } = useQuery({
@@ -94,20 +131,59 @@ function Dashboard() {
 
   return (
     <AppShell title="Visão geral">
-      <div className="card-soft gradient-brand mb-4 p-4 text-primary-foreground">
-        <p className="text-xs opacity-90">Fluxo principal</p>
-        <p className="mt-1 text-base font-bold leading-snug">
-          Cadastre a empresa, envie o documento e colete assinaturas com trilha de auditoria.
+      <section className="card-soft gradient-brand mb-4 p-5 text-primary-foreground">
+        <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">Escritório digital</p>
+        <h1 className="mt-1 text-lg font-bold leading-snug">
+          Organize, converta, edite, assine e proteja seus documentos em um só lugar.
+        </h1>
+        <p className="mt-1 text-xs opacity-90">
+          Cadastre a empresa, envie o documento na pasta certa e colete assinaturas com evidências e trilha de
+          auditoria.
         </p>
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
           <Button asChild size="sm" variant="secondary">
-            <Link to="/app/empresas">Enviar documento</Link>
+            <Link to="/app/empresas">
+              <Upload className="mr-1 size-4" /> Enviar documento
+            </Link>
           </Button>
           <Button asChild size="sm" variant="outline" className="bg-transparent text-primary-foreground">
-            <Link to="/app/empresas">Nova empresa</Link>
+            <Link to="/app/ferramentas">Ferramentas de PDF</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline" className="bg-transparent text-primary-foreground">
+            <Link to="/app/contratos">Contratos</Link>
           </Button>
         </div>
-      </div>
+      </section>
+
+      <section className="card-soft mb-4 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="flex-1 text-sm font-bold">Ferramentas disponíveis</h2>
+          <Button asChild size="sm" variant="ghost" className="text-xs">
+            <Link to="/app/ferramentas">
+              Abrir <ArrowRight className="ml-1 size-3.5" />
+            </Link>
+          </Button>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {TOOL_GROUPS.map((g) => (
+            <Link
+              key={g.label}
+              to="/app/ferramentas"
+              className="flex items-start gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-secondary"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <g.icon className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs font-semibold">{g.label}</span>
+                <span className="block text-[11px] leading-tight text-muted-foreground">{g.desc}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <StatCard label="Empresas" value={data?.companies.length ?? 0} icon={Building2} />
