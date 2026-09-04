@@ -328,6 +328,43 @@ function Landing() {
           </div>
         </section>
 
+        <section id="manual" className="mt-10 scroll-mt-20 card-soft gradient-brand p-5 text-primary-foreground sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="max-w-2xl">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-3 py-1 text-[11px] font-semibold">
+                <BookOpen className="size-3.5" /> Manual prático ilustrado
+              </span>
+              <h2 className="mt-3 text-xl font-bold tracking-tight sm:text-2xl">
+                Passo a passo ilustrado de todas as ferramentas
+              </h2>
+              <p className="mt-2 text-xs leading-relaxed opacity-90 sm:text-sm">
+                Um guia em PDF com telas ilustradas de cada função: criar empresa e pastas, enviar
+                documentos, posicionar assinaturas, organizar, converter, editar, proteger com senha,
+                comprimir para WhatsApp e reconhecer texto com OCR.
+              </p>
+              <ul className="mt-3 grid gap-1 text-xs opacity-90 sm:grid-cols-2">
+                {[
+                  "9 capítulos com telas ilustradas",
+                  "Passos numerados e dicas práticas",
+                  "Verificação pública explicada",
+                  "Lembretes e notificações",
+                ].map((i) => (
+                  <li key={i} className="flex gap-1.5">
+                    <Check className="mt-0.5 size-3 shrink-0" /> {i}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <a
+              href="/manual-idoc-business.pdf"
+              download="Manual-IDOC-BUSINESS.pdf"
+              className="inline-flex items-center gap-2 rounded-xl bg-card px-5 py-3 text-sm font-semibold text-primary"
+            >
+              <Download className="size-4" /> Baixar o manual em PDF
+            </a>
+          </div>
+        </section>
+
 
         <section className="mt-10 card-soft p-5">
           <h2 className="text-lg font-bold">Como funciona em 6 passos</h2>
