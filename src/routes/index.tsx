@@ -18,7 +18,13 @@ import {
   Smartphone,
   Lock,
   Sparkles,
+  Layers,
+  RefreshCw,
+  PencilRuler,
+  Gauge,
+  ScanText,
 } from "lucide-react";
+
 
 const SITE = "https://idoc.business";
 
