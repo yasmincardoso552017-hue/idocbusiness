@@ -124,6 +124,7 @@ function CompanyDetail() {
         supabase.from("contracts").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
         supabase.from("folders").select("*").eq("company_id", companyId).order("name"),
         supabase.from("audit_events").select("*").order("created_at", { ascending: false }).limit(50),
+        supabase.from("folder_shares").select("id, folder_id, member_email, sku").is("revoked_at", null),
       ]);
       return {
         company: company.data,
@@ -131,6 +132,7 @@ function CompanyDetail() {
         contracts: contracts.data ?? [],
         folders: (folders.data ?? []) as FolderRec[],
         events: events.data ?? [],
+        shares: (shares.data ?? []) as ShareRec[],
       };
     },
   });
