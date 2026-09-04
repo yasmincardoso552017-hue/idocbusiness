@@ -57,6 +57,45 @@ const features = [
   { icon: Scale, t: "Auditor jurídico com IA", d: "Envie o contrato e receba análise linha a linha com riscos, brechas e sugestões de blindagem." },
 ];
 
+const toolCategories = [
+  {
+    icon: Layers,
+    t: "Organizar PDFs",
+    items: ["Juntar vários PDFs", "Dividir e extrair páginas", "Reordenar e excluir páginas", "Girar páginas"],
+  },
+  {
+    icon: RefreshCw,
+    t: "Converter arquivos",
+    items: ["PDF para Word, Excel e PowerPoint", "PDF para JPG e JPG para PDF", "Word, Excel, PPT e HTML para PDF", "PDF/A para arquivamento"],
+  },
+  {
+    icon: PencilRuler,
+    t: "Editar PDF",
+    items: ["Adicionar textos e imagens", "Formas, destaques e anotações", "Desenhar à mão", "Preencher formulários"],
+  },
+  {
+    icon: PenLine,
+    t: "Assinatura",
+    items: ["Assinar você mesmo", "Solicitar assinaturas de outras pessoas", "Campos de assinatura, inicial e texto"],
+  },
+  {
+    icon: Lock,
+    t: "Segurança",
+    items: ["Colocar senha e criptografar", "Remover senha quando possível", "Redigir dados sensíveis"],
+  },
+  {
+    icon: Gauge,
+    t: "Otimização",
+    items: ["Comprimir PDF", "Reduzir para enviar por e-mail e WhatsApp", "Três níveis de compressão"],
+  },
+  {
+    icon: ScanText,
+    t: "OCR",
+    items: ["Reconhecer texto de digitalizações", "Gerar PDF pesquisável", "Extrair texto de imagens e documentos"],
+  },
+];
+
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
