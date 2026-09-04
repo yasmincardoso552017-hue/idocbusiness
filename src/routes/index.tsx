@@ -208,6 +208,10 @@ function Landing() {
           <a href="#recursos" className="hidden text-xs font-medium text-muted-foreground sm:block">
             Recursos
           </a>
+          <a href="#ferramentas" className="hidden text-xs font-medium text-muted-foreground sm:block">
+            Ferramentas
+          </a>
+
           <a href="#planos" className="hidden text-xs font-medium text-muted-foreground sm:block">
             Planos
           </a>
