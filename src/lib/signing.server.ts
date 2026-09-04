@@ -255,7 +255,7 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
       const cap = place(bx, byTop + bh + 2, bw, capH);
       page.drawLine({
         start: { x: baseline.x, y: baseline.y },
-        end: toPdf(...(rotated ? ([bx + bw, byTop + bh] as const) : ([bx + bw, byTop + bh] as const))),
+        end: toPdf(bx + bw, byTop + bh),
         thickness: 0.5,
         color: rgb(0.4, 0.4, 0.45),
       });
