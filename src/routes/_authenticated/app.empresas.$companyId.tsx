@@ -140,6 +140,7 @@ function CompanyDetail() {
   const c = data?.company;
   const docs = data?.docs ?? [];
   const folders = data?.folders ?? [];
+  const shares = data?.shares ?? [];
   const docIds = new Set(docs.map((d) => d.id));
   const refresh = () => {
     refetch();
