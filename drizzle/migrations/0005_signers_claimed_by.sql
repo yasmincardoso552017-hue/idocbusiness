@@ -1,0 +1,1 @@
+ALTER TABLE public.signers ADD COLUMN IF NOT EXISTS claimed_by uuid;
