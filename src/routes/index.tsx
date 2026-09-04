@@ -249,12 +249,20 @@ function Landing() {
               Criar conta grátis <ArrowRight className="size-4" />
             </Link>
             <InstallAppButton className="px-5 py-3" />
+            <a
+              href="/manual-idoc-business.pdf"
+              download="Manual-IDOC-BUSINESS.pdf"
+              className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-5 py-3 text-sm font-semibold text-primary"
+            >
+              <BookOpen className="size-4" /> Baixar manual ilustrado (PDF)
+            </a>
             <Link
               to="/verify"
               className="inline-flex items-center gap-2 rounded-xl border border-input px-5 py-3 text-sm font-semibold"
             >
               Verificar documento
             </Link>
+
           </div>
           <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
