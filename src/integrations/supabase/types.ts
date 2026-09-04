@@ -785,6 +785,7 @@ export type Database = {
         Row: {
           accepted_terms: boolean
           auth_method: string
+          claimed_by: string | null
           cpf: string | null
           created_at: string
           device: string | null
@@ -810,6 +811,7 @@ export type Database = {
         Insert: {
           accepted_terms?: boolean
           auth_method?: string
+          claimed_by?: string | null
           cpf?: string | null
           created_at?: string
           device?: string | null
@@ -835,6 +837,7 @@ export type Database = {
         Update: {
           accepted_terms?: boolean
           auth_method?: string
+          claimed_by?: string | null
           cpf?: string | null
           created_at?: string
           device?: string | null
