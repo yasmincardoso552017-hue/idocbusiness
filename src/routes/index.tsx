@@ -23,6 +23,9 @@ import {
   PencilRuler,
   Gauge,
   ScanText,
+  BookOpen,
+  Download,
+
 } from "lucide-react";
 
 
