@@ -2,6 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest, getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
 import {
   admin,
   finalizeDocument,
@@ -404,4 +406,45 @@ export const getSignedDocument = createServerFn({ method: "POST" })
       hash: ev?.final_hash ?? null,
       mySignature: signer.status === "signed",
     };
+  });
+
+/** Vincula a via assinada à conta do signatário (login Google) e devolve o download. */
+export const claimSignedCopy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ token: z.string().min(8) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const db = await admin();
+    const { data: signer } = await db
+      .from("signers")
+      .select("id, name, email, status, request_id, signing_requests(document_id)")
+      .eq("token", data.token)
+      .maybeSingle();
+    if (!signer) return { ready: false as const, error: "Link inválido" };
+    const rel = signer.signing_requests as unknown as { document_id: string } | null;
+    if (!rel) return { ready: false as const, error: "Documento não encontrado" };
+    const { data: doc } = await db
+      .from("documents")
+      .select("id, name, owner_id, signed_storage_path")
+      .eq("id", rel.document_id)
+      .single();
+    if (!doc) return { ready: false as const, error: "Documento não encontrado" };
+
+    await db.from("signers").update({ claimed_by: context.userId }).eq("id", signer.id);
+    await logEvent(db, {
+      owner_id: doc.owner_id,
+      document_id: doc.id,
+      request_id: signer.request_id,
+      actor: signer.email,
+      action: "Signatário acessou a via assinada com conta Google",
+      meta: { user_id: context.userId },
+    });
+
+    let url: string | null = null;
+    if (doc.signed_storage_path) {
+      const res = await db.storage.from("documents").createSignedUrl(doc.signed_storage_path, 3600, {
+        download: `assinado-${doc.name.replace(/[^\w.-]+/g, "_")}`,
+      });
+      url = res.data?.signedUrl ?? null;
+    }
+    return { ready: !!url, name: doc.name, url, error: null as string | null };
   });
