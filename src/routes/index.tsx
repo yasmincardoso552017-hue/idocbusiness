@@ -443,6 +443,8 @@ function Landing() {
           <Link to="/privacidade">Privacidade</Link>
           <Link to="/ajuda">Ajuda</Link>
           <Link to="/verify">Verificar documento</Link>
+          <a href="/manual-idoc-business.pdf" download="Manual-IDOC-BUSINESS.pdf">Manual em PDF</a>
+
           <Link to="/auth">Entrar</Link>
         </div>
       </footer>
