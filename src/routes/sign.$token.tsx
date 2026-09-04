@@ -76,6 +76,9 @@ function SignPage() {
   const [mode, setMode] = useState<"draw" | "type">("draw");
   const [geo, setGeo] = useState<string | null>(null);
   const [geoAsking, setGeoAsking] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [geoTries, setGeoTries] = useState(0);
+
   const [selfie, setSelfie] = useState<string | null>(null);
   const [photoId, setPhotoId] = useState<string | null>(null);
   const [pages, setPages] = useState<RenderedPage[]>([]);
@@ -134,30 +137,59 @@ function SignPage() {
     hasDrawn.current = false;
   }, [data?.signer.id, mode]);
 
-  // Solicita a localização em tempo real quando exigido pelo remetente.
+  /**
+   * Localização em tempo real.
+   * No iPhone/Safari o pedido só aparece após um toque do usuário e falha muito
+   * com alta precisão, por isso tentamos alta precisão e caímos para precisão
+   * normal antes de mostrar erro.
+   */
   function askGeo() {
-    if (!navigator.geolocation) {
-      toast.error("Dispositivo sem GPS disponível");
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setGeoError("Este navegador não permite compartilhar a localização.");
+      toast.error("Navegador sem suporte à localização");
+      return;
+    }
+    if (!window.isSecureContext) {
+      setGeoError("Abra o link em conexão segura (https) para liberar a localização.");
       return;
     }
     setGeoAsking(true);
+    setGeoError(null);
+    const ok = (p: GeolocationPosition) => {
+      setGeo(`${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`);
+      setGeoAsking(false);
+      setGeoError(null);
+      toast.success("Localização autorizada");
+    };
+    const fail = (err: GeolocationPositionError) => {
+      setGeoAsking(false);
+      setGeoTries((n) => n + 1);
+      if (err.code === err.PERMISSION_DENIED) {
+        setGeoError(
+          "Permissão bloqueada. No iPhone: Ajustes > Privacidade e Segurança > Serviços de Localização (ativado) e, em Ajustes > Safari > Localização, escolha Perguntar ou Permitir. Depois recarregue esta página e toque em Permitir.",
+        );
+        toast.error("Permissão de localização bloqueada");
+      } else {
+        setGeoError(
+          "Não conseguimos obter o sinal agora. Vá para um local com melhor sinal e toque em Tentar novamente.",
+        );
+        toast.error("Não foi possível obter a localização");
+      }
+    };
     navigator.geolocation.getCurrentPosition(
-      (p) => {
-        setGeo(`${p.coords.latitude.toFixed(5)},${p.coords.longitude.toFixed(5)}`);
-        setGeoAsking(false);
-        toast.success("Localização autorizada");
-      },
-      () => {
-        setGeoAsking(false);
-        toast.error("Permissão de localização negada");
-      },
-      { enableHighAccuracy: true, timeout: 12000 },
+      ok,
+      () =>
+        navigator.geolocation.getCurrentPosition(ok, fail, {
+          enableHighAccuracy: false,
+          timeout: 25000,
+          maximumAge: 300000,
+        }),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 },
     );
   }
 
-  useEffect(() => {
-    if (data?.request.requireGeo && !geo && !geoAsking) askGeo();
-  }, [data?.request.requireGeo]);
+  // O iOS ignora (ou bloqueia) pedidos automáticos: só pedimos após toque do usuário.
+
 
   function pos(e: React.PointerEvent<HTMLCanvasElement>) {
     const r = e.currentTarget.getBoundingClientRect();
@@ -318,25 +350,33 @@ function SignPage() {
             <h2 className="text-sm font-bold">Verificações solicitadas</h2>
 
             {data.request.requireGeo ? (
-              <div className="flex items-center justify-between gap-2 rounded-md border border-border p-3">
-                <div className="flex items-start gap-2 text-xs">
-                  <MapPin className="mt-0.5 size-4 text-primary" />
-                  <div>
-                    <p className="font-semibold">Localização em tempo real</p>
-                    <p className="text-muted-foreground">
-                      {geo ? `Autorizada (${geo})` : "Permita o acesso para registrar a evidência."}
-                    </p>
+              <div className="space-y-2 rounded-md border border-border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-start gap-2 text-xs">
+                    <MapPin className="mt-0.5 size-4 text-primary" />
+                    <div>
+                      <p className="font-semibold">Localização em tempo real</p>
+                      <p className="text-muted-foreground">
+                        {geo
+                          ? `Autorizada (${geo})`
+                          : "Toque em Permitir e confirme o aviso do seu celular."}
+                      </p>
+                    </div>
                   </div>
+                  {geo ? (
+                    <CheckCircle2 className="size-5 text-primary" />
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={askGeo} disabled={geoAsking}>
+                      {geoAsking ? "Aguardando…" : geoTries ? "Tentar novamente" : "Permitir"}
+                    </Button>
+                  )}
                 </div>
-                {geo ? (
-                  <CheckCircle2 className="size-5 text-primary" />
-                ) : (
-                  <Button size="sm" variant="outline" onClick={askGeo} disabled={geoAsking}>
-                    {geoAsking ? "Aguardando…" : "Permitir"}
-                  </Button>
-                )}
+                {!geo && geoError ? (
+                  <p className="text-xs text-destructive">{geoError}</p>
+                ) : null}
               </div>
             ) : null}
+
 
             {data.request.requireSelfie ? (
               <CaptureRow
