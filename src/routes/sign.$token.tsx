@@ -76,6 +76,9 @@ function SignPage() {
   const [mode, setMode] = useState<"draw" | "type">("draw");
   const [geo, setGeo] = useState<string | null>(null);
   const [geoAsking, setGeoAsking] = useState(false);
+  const [geoError, setGeoError] = useState<string | null>(null);
+  const [geoTries, setGeoTries] = useState(0);
+
   const [selfie, setSelfie] = useState<string | null>(null);
   const [photoId, setPhotoId] = useState<string | null>(null);
   const [pages, setPages] = useState<RenderedPage[]>([]);
