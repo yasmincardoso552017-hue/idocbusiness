@@ -11,7 +11,16 @@ import {
   CalendarClock,
   Activity,
   BellRing,
+  Layers,
+  RefreshCw,
+  PencilRuler,
+  ShieldCheck,
+  Gauge,
+  ScanText,
+  ArrowRight,
+  Upload,
 } from "lucide-react";
+
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, Cell } from "recharts";
 
 import { AppShell, StatCard } from "@/components/AppShell";
