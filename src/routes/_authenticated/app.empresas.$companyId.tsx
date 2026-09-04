@@ -20,6 +20,7 @@ import {
   Building2,
   BellRing,
   Plus,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -61,7 +62,14 @@ type Doc = {
   page_count: number | null;
   created_at: string;
 };
-type FolderRec = { id: string; name: string; parent_id: string | null; public_token: string | null };
+type FolderRec = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  public_token: string | null;
+  sku: string;
+};
+type ShareRec = { id: string; folder_id: string; member_email: string | null; sku: string };
 
 const EDIT_FIELDS: Array<[string, string]> = [
   ["razao_social", "Razão social / Nome"],
@@ -107,7 +115,7 @@ function CompanyDetail() {
   const { data, refetch } = useQuery({
     queryKey: ["company", companyId],
     queryFn: async () => {
-      const [company, docs, contracts, folders, events] = await Promise.all([
+      const [company, docs, contracts, folders, events, shares] = await Promise.all([
         supabase.from("companies").select("*").eq("id", companyId).single(),
         supabase
           .from("documents")
@@ -117,6 +125,7 @@ function CompanyDetail() {
         supabase.from("contracts").select("*").eq("company_id", companyId).order("created_at", { ascending: false }),
         supabase.from("folders").select("*").eq("company_id", companyId).order("name"),
         supabase.from("audit_events").select("*").order("created_at", { ascending: false }).limit(50),
+        supabase.from("folder_shares").select("id, folder_id, member_email, sku").is("revoked_at", null),
       ]);
       return {
         company: company.data,
@@ -124,6 +133,7 @@ function CompanyDetail() {
         contracts: contracts.data ?? [],
         folders: (folders.data ?? []) as FolderRec[],
         events: events.data ?? [],
+        shares: (shares.data ?? []) as ShareRec[],
       };
     },
   });
@@ -131,6 +141,7 @@ function CompanyDetail() {
   const c = data?.company;
   const docs = data?.docs ?? [];
   const folders = data?.folders ?? [];
+  const shares = data?.shares ?? [];
   const docIds = new Set(docs.map((d) => d.id));
   const refresh = () => {
     refetch();
@@ -186,6 +197,20 @@ function CompanyDetail() {
     if (error) toast.error(error.message);
     else toast.success("Pasta excluída");
     if (cwd === f.id) setCwd(f.parent_id);
+    refresh();
+  };
+
+  /** Remove o acesso de um convidado ao SKU da pasta. */
+  const revokeShare = async (s: ShareRec) => {
+    const ok = await confirm({
+      title: `Remover o acesso de ${s.member_email ?? "convidado"}?`,
+      description: "O usuário perde o acesso à pasta imediatamente.",
+      confirmText: "Remover",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("folder_shares").delete().eq("id", s.id);
+    if (error) toast.error(error.message);
+    else toast.success("Acesso removido");
     refresh();
   };
 
@@ -481,6 +506,16 @@ function CompanyDetail() {
                   <Button
                     size="sm"
                     variant="outline"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(current.sku);
+                      toast.success(`SKU ${current.sku} copiado — envie para o convidado`);
+                    }}
+                  >
+                    <KeyRound className="mr-1 size-4" /> Copiar SKU
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     className="text-destructive"
                     onClick={() => deleteFolder(current)}
                   >
@@ -491,8 +526,28 @@ function CompanyDetail() {
             </div>
             <p className="mt-2 text-[10px] text-muted-foreground">
               Abra uma pasta para organizar em árvore, enviar documentos e escolher a ação (assinar, editar,
-              baixar).
+              baixar). Cada pasta tem um SKU único: quem receber o SKU trabalha junto só nessa pasta.
             </p>
+            {current && (
+              <div className="mt-2 space-y-1 border-t border-border pt-2">
+                <p className="text-[10px] font-semibold">SKU desta pasta: {current.sku}</p>
+                {shares
+                  .filter((s) => s.folder_id === current.id)
+                  .map((s) => (
+                    <div key={s.id} className="flex items-center gap-2 rounded-md bg-muted/40 p-2">
+                      <span className="min-w-0 flex-1 truncate text-[11px]">{s.member_email ?? "Convidado"}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive"
+                        onClick={() => revokeShare(s)}
+                      >
+                        Remover acesso
+                      </Button>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-2">

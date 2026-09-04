@@ -423,6 +423,50 @@ export type Database = {
           },
         ]
       }
+      folder_shares: {
+        Row: {
+          can_edit: boolean
+          created_at: string
+          folder_id: string
+          id: string
+          member_email: string | null
+          member_id: string
+          owner_id: string
+          revoked_at: string | null
+          sku: string
+        }
+        Insert: {
+          can_edit?: boolean
+          created_at?: string
+          folder_id: string
+          id?: string
+          member_email?: string | null
+          member_id: string
+          owner_id: string
+          revoked_at?: string | null
+          sku: string
+        }
+        Update: {
+          can_edit?: boolean
+          created_at?: string
+          folder_id?: string
+          id?: string
+          member_email?: string | null
+          member_id?: string
+          owner_id?: string
+          revoked_at?: string | null
+          sku?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_shares_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folders: {
         Row: {
           company_id: string
@@ -433,6 +477,7 @@ export type Database = {
           parent_id: string | null
           public_shared_at: string | null
           public_token: string | null
+          sku: string
         }
         Insert: {
           company_id: string
@@ -443,6 +488,7 @@ export type Database = {
           parent_id?: string | null
           public_shared_at?: string | null
           public_token?: string | null
+          sku?: string
         }
         Update: {
           company_id?: string
@@ -453,6 +499,7 @@ export type Database = {
           parent_id?: string | null
           public_shared_at?: string | null
           public_token?: string | null
+          sku?: string
         }
         Relationships: [
           {
@@ -949,6 +996,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gen_folder_sku: { Args: never; Returns: string }
+      has_folder_access: {
+        Args: { _folder: string; _user: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -956,6 +1008,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      redeem_folder_sku: { Args: { _sku: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"
