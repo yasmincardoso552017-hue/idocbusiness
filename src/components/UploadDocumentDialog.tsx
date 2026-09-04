@@ -111,6 +111,16 @@ export function UploadDocumentDialog({
       const path = `${u.user.id}/${id}/original-${finalName.replace(/[^\w.\-]/g, "_")}`;
       const up = await supabase.storage.from("documents").upload(path, file, { upsert: true });
       if (up.error) throw up.error;
+      let pageCount: number | null = null;
+      if ((file.type || "").includes("pdf") || finalName.toLowerCase().endsWith(".pdf")) {
+        try {
+          const { PDFDocument } = await import("pdf-lib");
+          const pdf = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true });
+          pageCount = pdf.getPageCount();
+        } catch {
+          pageCount = null;
+        }
+      }
       const { error } = await supabase.from("documents").insert({
         id,
         owner_id: u.user.id,
@@ -120,10 +130,12 @@ export function UploadDocumentDialog({
         storage_path: path,
         mime_type: file.type || "application/octet-stream",
         size_bytes: file.size,
+        page_count: pageCount,
         hash: file.size <= 200 * 1024 * 1024 ? await sha256(file) : null,
         status: "draft",
       });
       if (error) throw error;
+
       toast.success("Documento enviado para a pasta escolhida");
       await qc.invalidateQueries({ queryKey: ["company", companyId] });
       qc.invalidateQueries({ queryKey: ["companies"] });

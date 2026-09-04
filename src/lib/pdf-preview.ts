@@ -1,16 +1,18 @@
-let libPromise: Promise<typeof import("pdfjs-dist")> | null = null;
+// Build "legacy": compatível com Safari/iOS e navegadores mais antigos.
+let libPromise: Promise<typeof import("pdfjs-dist/legacy/build/pdf.mjs")> | null = null;
 
 async function getLib() {
   if (!libPromise) {
     libPromise = (async () => {
-      const lib = await import("pdfjs-dist");
-      const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+      const lib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const worker = await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url");
       lib.GlobalWorkerOptions.workerSrc = worker.default;
       return lib;
     })();
   }
   return libPromise;
 }
+
 
 export type RenderedPage = { index: number; width: number; height: number; url: string };
 
