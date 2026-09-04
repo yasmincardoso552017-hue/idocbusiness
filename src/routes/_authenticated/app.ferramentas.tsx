@@ -208,9 +208,15 @@ function FileField({
         type="file"
         accept={accept}
         multiple={multiple}
-        onChange={(e) => onPick(Array.from(e.target.files ?? []))}
+        onChange={(e) => {
+          const picked = Array.from(e.target.files ?? []);
+          if (picked.length) onPick(picked);
+          // libera o campo para permitir escolher o mesmo arquivo novamente
+          e.target.value = "";
+        }}
         className="file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-2 file:py-1 file:text-xs file:font-semibold"
       />
+
       {files.length > 0 && (
         <p className="truncate text-[11px] text-muted-foreground">
           {files.length} arquivo(s): {files.map((f) => f.name).join(", ")}
