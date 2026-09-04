@@ -114,7 +114,7 @@ function CompanyDetail() {
   const { data, refetch } = useQuery({
     queryKey: ["company", companyId],
     queryFn: async () => {
-      const [company, docs, contracts, folders, events] = await Promise.all([
+      const [company, docs, contracts, folders, events, shares] = await Promise.all([
         supabase.from("companies").select("*").eq("id", companyId).single(),
         supabase
           .from("documents")
