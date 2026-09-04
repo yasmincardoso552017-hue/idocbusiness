@@ -20,6 +20,7 @@ import {
   Building2,
   BellRing,
   Plus,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -196,6 +197,20 @@ function CompanyDetail() {
     if (error) toast.error(error.message);
     else toast.success("Pasta excluída");
     if (cwd === f.id) setCwd(f.parent_id);
+    refresh();
+  };
+
+  /** Remove o acesso de um convidado ao SKU da pasta. */
+  const revokeShare = async (s: ShareRec) => {
+    const ok = await confirm({
+      title: `Remover o acesso de ${s.member_email ?? "convidado"}?`,
+      description: "O usuário perde o acesso à pasta imediatamente.",
+      confirmText: "Remover",
+    });
+    if (!ok) return;
+    const { error } = await supabase.from("folder_shares").delete().eq("id", s.id);
+    if (error) toast.error(error.message);
+    else toast.success("Acesso removido");
     refresh();
   };
 

@@ -1,4 +1,5 @@
-import { Brand } from "@/components/Brand";
+import {
+  KeyRound, Brand } from "@/components/Brand";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
@@ -38,6 +39,7 @@ const tabs = [
 const menu = [
   { to: "/app/perfil", label: "Perfil", icon: User },
   { to: "/app/meus-contratos", label: "Meus contratos assinados", icon: FileSignature },
+  { to: "/app/compartilhadas", label: "Pastas compartilhadas (SKU)", icon: KeyRound },
   { to: "/app/lembretes", label: "Lembretes e notificações", icon: BellRing },
   { to: "/app/ferramentas", label: "Ferramentas PDF", icon: Wrench },
   { to: "/app/configuracoes", label: "Configurações", icon: Settings },
