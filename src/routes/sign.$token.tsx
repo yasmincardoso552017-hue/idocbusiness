@@ -350,25 +350,33 @@ function SignPage() {
             <h2 className="text-sm font-bold">Verificações solicitadas</h2>
 
             {data.request.requireGeo ? (
-              <div className="flex items-center justify-between gap-2 rounded-md border border-border p-3">
-                <div className="flex items-start gap-2 text-xs">
-                  <MapPin className="mt-0.5 size-4 text-primary" />
-                  <div>
-                    <p className="font-semibold">Localização em tempo real</p>
-                    <p className="text-muted-foreground">
-                      {geo ? `Autorizada (${geo})` : "Permita o acesso para registrar a evidência."}
-                    </p>
+              <div className="space-y-2 rounded-md border border-border p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-start gap-2 text-xs">
+                    <MapPin className="mt-0.5 size-4 text-primary" />
+                    <div>
+                      <p className="font-semibold">Localização em tempo real</p>
+                      <p className="text-muted-foreground">
+                        {geo
+                          ? `Autorizada (${geo})`
+                          : "Toque em Permitir e confirme o aviso do seu celular."}
+                      </p>
+                    </div>
                   </div>
+                  {geo ? (
+                    <CheckCircle2 className="size-5 text-primary" />
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={askGeo} disabled={geoAsking}>
+                      {geoAsking ? "Aguardando…" : geoTries ? "Tentar novamente" : "Permitir"}
+                    </Button>
+                  )}
                 </div>
-                {geo ? (
-                  <CheckCircle2 className="size-5 text-primary" />
-                ) : (
-                  <Button size="sm" variant="outline" onClick={askGeo} disabled={geoAsking}>
-                    {geoAsking ? "Aguardando…" : "Permitir"}
-                  </Button>
-                )}
+                {!geo && geoError ? (
+                  <p className="text-xs text-destructive">{geoError}</p>
+                ) : null}
               </div>
             ) : null}
+
 
             {data.request.requireSelfie ? (
               <CaptureRow
