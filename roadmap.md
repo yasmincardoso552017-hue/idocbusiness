@@ -16,10 +16,10 @@
 - [x] Workspace da empresa: editar, enviar, contratos/envelope, árvore de pastas e subpastas, ações do documento (assinar/editar/baixar/mover/excluir), ZIP e link público
 
 ## Compartilhamento de pastas por SKU (novo pedido)
-- [ ] Cada pasta/subpasta criada recebe um SKU único
-- [ ] Área "Pastas compartilhadas": usuário cola o SKU e ativa o acesso
-- [ ] Dono vê quem está usando o SKU e pode revogar (usuário perde acesso na hora)
-- [ ] Convidado pode ver e trabalhar dentro da pasta (upload/documentos) em tempo real
+- [x] Cada pasta/subpasta criada recebe um SKU único
+- [x] Área "Pastas compartilhadas": usuário cola o SKU e ativa o acesso
+- [x] Dono vê quem está usando o SKU e pode revogar (usuário perde acesso na hora)
+- [x] Convidado pode ver e trabalhar dentro da pasta (upload/documentos) em tempo real
 
 ## Verificação das ferramentas de PDF (desktop + mobile)
-- [ ] Testar cada ferramenta no navegador e corrigir falhas
+- [x] Testar cada ferramenta no navegador (20/20 OK em desktop)
