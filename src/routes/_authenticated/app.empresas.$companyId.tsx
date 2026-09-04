@@ -239,7 +239,9 @@ function CompanyDetail() {
       const a = document.createElement("a");
       a.href = url;
       a.download = `${rootName}.zip`;
+      document.body.appendChild(a);
       a.click();
+      a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
       toast.success(`${items.length} arquivo(s) no ZIP`);
     } catch (e) {

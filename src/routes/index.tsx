@@ -18,7 +18,13 @@ import {
   Smartphone,
   Lock,
   Sparkles,
+  Layers,
+  RefreshCw,
+  PencilRuler,
+  Gauge,
+  ScanText,
 } from "lucide-react";
+
 
 const SITE = "https://idoc.business";
 
@@ -56,6 +62,45 @@ const features = [
   { icon: FileStack, t: "Ferramentas de PDF", d: "Unir, dividir, girar, numerar, marca d'água, converter para imagens, texto, Word e PDF pesquisável." },
   { icon: Scale, t: "Auditor jurídico com IA", d: "Envie o contrato e receba análise linha a linha com riscos, brechas e sugestões de blindagem." },
 ];
+
+const toolCategories = [
+  {
+    icon: Layers,
+    t: "Organizar PDFs",
+    items: ["Juntar vários PDFs", "Dividir e extrair páginas", "Reordenar e excluir páginas", "Girar páginas"],
+  },
+  {
+    icon: RefreshCw,
+    t: "Converter arquivos",
+    items: ["PDF para Word, Excel e PowerPoint", "PDF para JPG e JPG para PDF", "Word, Excel, PPT e HTML para PDF", "PDF/A para arquivamento"],
+  },
+  {
+    icon: PencilRuler,
+    t: "Editar PDF",
+    items: ["Adicionar textos e imagens", "Formas, destaques e anotações", "Desenhar à mão", "Preencher formulários"],
+  },
+  {
+    icon: PenLine,
+    t: "Assinatura",
+    items: ["Assinar você mesmo", "Solicitar assinaturas de outras pessoas", "Campos de assinatura, inicial e texto"],
+  },
+  {
+    icon: Lock,
+    t: "Segurança",
+    items: ["Colocar senha e criptografar", "Remover senha quando possível", "Redigir dados sensíveis"],
+  },
+  {
+    icon: Gauge,
+    t: "Otimização",
+    items: ["Comprimir PDF", "Reduzir para enviar por e-mail e WhatsApp", "Três níveis de compressão"],
+  },
+  {
+    icon: ScanText,
+    t: "OCR",
+    items: ["Reconhecer texto de digitalizações", "Gerar PDF pesquisável", "Extrair texto de imagens e documentos"],
+  },
+];
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -163,6 +208,10 @@ function Landing() {
           <a href="#recursos" className="hidden text-xs font-medium text-muted-foreground sm:block">
             Recursos
           </a>
+          <a href="#ferramentas" className="hidden text-xs font-medium text-muted-foreground sm:block">
+            Ferramentas
+          </a>
+
           <a href="#planos" className="hidden text-xs font-medium text-muted-foreground sm:block">
             Planos
           </a>
@@ -242,6 +291,32 @@ function Landing() {
             ))}
           </div>
         </section>
+
+        <section id="ferramentas" className="mt-10 scroll-mt-20">
+          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Central completa de ferramentas de PDF</h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Organize, converta, edite, assine, proteja, comprima e reconheça texto — tudo no navegador, com
+            pré-visualização e escolha do nome e do formato antes de baixar.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {toolCategories.map((c) => (
+              <article key={c.t} className="card-soft p-4">
+                <div className="mb-3 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <c.icon className="size-4" />
+                </div>
+                <h3 className="text-sm font-bold">{c.t}</h3>
+                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                  {c.items.map((i) => (
+                    <li key={i} className="flex gap-1.5">
+                      <Check className="mt-0.5 size-3 shrink-0 text-primary" /> {i}
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+
 
         <section className="mt-10 card-soft p-5">
           <h2 className="text-lg font-bold">Como funciona em 6 passos</h2>
