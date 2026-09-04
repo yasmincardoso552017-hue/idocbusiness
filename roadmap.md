@@ -14,3 +14,12 @@
 - [x] Exclusão com confirmação de empresas (dupla confirmação) e documentos
 - [x] Zoom (100–400%) na prévia de assinatura para posicionamento preciso
 - [x] Workspace da empresa: editar, enviar, contratos/envelope, árvore de pastas e subpastas, ações do documento (assinar/editar/baixar/mover/excluir), ZIP e link público
+
+## Compartilhamento de pastas por SKU (novo pedido)
+- [ ] Cada pasta/subpasta criada recebe um SKU único
+- [ ] Área "Pastas compartilhadas": usuário cola o SKU e ativa o acesso
+- [ ] Dono vê quem está usando o SKU e pode revogar (usuário perde acesso na hora)
+- [ ] Convidado pode ver e trabalhar dentro da pasta (upload/documentos) em tempo real
+
+## Verificação das ferramentas de PDF (desktop + mobile)
+- [ ] Testar cada ferramenta no navegador e corrigir falhas
