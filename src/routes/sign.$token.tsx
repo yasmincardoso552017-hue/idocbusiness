@@ -136,7 +136,10 @@ function SignPage() {
 
   // Solicita a localização em tempo real quando exigido pelo remetente.
   function askGeo() {
-    if (!navigator.geolocation) return toast.error("Dispositivo sem GPS disponível");
+    if (!navigator.geolocation) {
+      toast.error("Dispositivo sem GPS disponível");
+      return;
+    }
     setGeoAsking(true);
     navigator.geolocation.getCurrentPosition(
       (p) => {
