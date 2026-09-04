@@ -22,8 +22,36 @@ import { PushSetup } from "@/components/PushSetup";
 import { fmtDateTime as fmtDT } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/")({
+  head: () => ({
+    meta: [
+      { title: "Painel — documentos, contratos e ferramentas de PDF | IDOC BUSINESS" },
+      {
+        name: "description",
+        content:
+          "Acompanhe empresas, documentos, contratos e assinaturas, e acesse as ferramentas de PDF: organizar, converter, editar, assinar, proteger, comprimir e OCR.",
+      },
+      { property: "og:title", content: "Painel IDOC BUSINESS" },
+      {
+        property: "og:description",
+        content: "Visão geral do seu escritório digital: documentos, contratos, assinaturas e ferramentas de PDF.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Dashboard,
 });
+
+const TOOL_GROUPS = [
+  { icon: Layers, label: "Organizar PDFs", desc: "Juntar, dividir, extrair, reordenar, excluir e girar páginas" },
+  { icon: RefreshCw, label: "Converter", desc: "Word, Excel, PowerPoint, JPG, HTML e PDF/A" },
+  { icon: PencilRuler, label: "Editar", desc: "Textos, imagens, formas, desenho, destaques e formulários" },
+  { icon: PenLine, label: "Assinatura", desc: "Assinar e solicitar assinaturas com campos posicionados" },
+  { icon: ShieldCheck, label: "Segurança", desc: "Senha, criptografia e redação de dados sensíveis" },
+  { icon: Gauge, label: "Otimização", desc: "Comprimir para enviar por e-mail e WhatsApp" },
+  { icon: ScanText, label: "OCR", desc: "PDF pesquisável e extração de texto de digitalizações" },
+] as const;
+
 
 function Dashboard() {
   const { data } = useQuery({
