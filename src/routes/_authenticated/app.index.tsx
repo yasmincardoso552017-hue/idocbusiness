@@ -152,6 +152,9 @@ function Dashboard() {
           <Button asChild size="sm" variant="outline" className="bg-transparent text-primary-foreground">
             <Link to="/app/contratos">Contratos</Link>
           </Button>
+          <Button asChild size="sm" variant="outline" className="bg-transparent text-primary-foreground">
+            <Link to="/app/auditor">Auditor jurídico com IA</Link>
+          </Button>
         </div>
       </section>
 
