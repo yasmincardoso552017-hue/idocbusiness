@@ -18,6 +18,7 @@ import {
   Users,
   BellRing,
   KeyRound,
+  Scale,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -38,6 +39,7 @@ const tabs = [
 const menu = [
   { to: "/app/perfil", label: "Perfil", icon: User },
   { to: "/app/meus-contratos", label: "Meus contratos assinados", icon: FileSignature },
+  { to: "/app/auditor", label: "Auditor jurídico com IA", icon: Scale },
   { to: "/app/compartilhadas", label: "Pastas compartilhadas (SKU)", icon: KeyRound },
   { to: "/app/lembretes", label: "Lembretes e notificações", icon: BellRing },
   { to: "/app/ferramentas", label: "Ferramentas PDF", icon: Wrench },
