@@ -310,7 +310,7 @@ function AuditorPage() {
       </div>
 
       <div className="mt-4 text-[11px] text-muted-foreground">
-        <Input className="hidden" readOnly value={text.slice(0, 1)} />
+        
         Análise informativa gerada por IA. Não substitui parecer de advogado responsável.
       </div>
     </AppShell>
