@@ -40,6 +40,7 @@ type Share = {
   member_id: string;
   member_email: string | null;
   sku: string;
+  can_edit: boolean;
   created_at: string;
   folders: { id: string; name: string; company_id: string } | null;
 };
@@ -228,13 +229,16 @@ function SharedFolders() {
                       {s.folders?.name ?? "Pasta"}
                     </span>
                     <span className="block text-[10px] text-muted-foreground">
-                      SKU {s.sku} • {files.length} arquivo(s)
+                      SKU {s.sku} • {files.length} arquivo(s) •{" "}
+                      {s.can_edit ? "pode enviar arquivos" : "somente leitura"}
                     </span>
                   </span>
                 </button>
-                <Button size="sm" variant="outline" disabled={busy} onClick={() => pickUpload(s)}>
-                  <Upload className="mr-1 size-4" /> Enviar
-                </Button>
+                {s.can_edit && (
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => pickUpload(s)}>
+                    <Upload className="mr-1 size-4" /> Enviar
+                  </Button>
+                )}
                 <Button size="sm" variant="ghost" className="text-destructive" onClick={() => revoke(s, true)}>
                   <LogOut className="size-4" />
                 </Button>

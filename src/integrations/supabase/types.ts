@@ -1001,6 +1001,10 @@ export type Database = {
         Args: { _folder: string; _user: string }
         Returns: boolean
       }
+      has_folder_edit_access: {
+        Args: { _folder: string; _user: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
