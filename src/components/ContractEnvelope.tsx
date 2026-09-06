@@ -131,7 +131,14 @@ export function ContractEnvelopeDialog({
     mutationFn: async () => {
       if (!docId) throw new Error("Selecione o documento (PDF) do contrato");
       const clean = signers
-        .map((s) => ({ name: s.name.trim(), email: s.email.trim(), cpf: s.cpf.trim() || undefined }))
+        .map((s) => ({
+          name: s.name.trim(),
+          email: s.email.trim(),
+          cpf: s.cpf.trim() || undefined,
+          requireGeo: s.requireGeo ?? geo,
+          requirePhotoId: s.requirePhotoId ?? photo,
+          requireSelfie: s.requireSelfie ?? selfie,
+        }))
         .filter((s) => s.name && s.email);
       if (!clean.length) throw new Error("Informe ao menos um signatário");
       return sendContractEnvelope({
