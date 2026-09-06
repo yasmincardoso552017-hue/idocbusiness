@@ -75,7 +75,14 @@ function StageTrack({ stage }: { stage: string }) {
   );
 }
 
-type SignerDraft = { name: string; email: string; cpf: string };
+type SignerDraft = {
+  name: string;
+  email: string;
+  cpf: string;
+  requireGeo?: boolean;
+  requirePhotoId?: boolean;
+  requireSelfie?: boolean;
+};
 
 export function ContractEnvelopeDialog({
   contractId,
