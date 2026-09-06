@@ -18,6 +18,9 @@ const signerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   cpf: z.string().optional(),
+  requireGeo: z.boolean().optional(),
+  requirePhotoId: z.boolean().optional(),
+  requireSelfie: z.boolean().optional(),
 });
 
 /** Cria e envia o envelope de assinatura a partir de um contrato. */
