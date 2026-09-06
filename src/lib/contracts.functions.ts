@@ -98,6 +98,9 @@ export const sendContractEnvelope = createServerFn({ method: "POST" })
           order_index: i + 1,
           token,
           status: "pending",
+          require_geo: s.requireGeo ?? null,
+          require_photo_id: s.requirePhotoId ?? null,
+          require_selfie: s.requireSelfie ?? null,
         })
         .select("id")
         .single();
