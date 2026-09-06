@@ -344,31 +344,61 @@ function Prepare() {
           <h2 className="text-sm font-bold">Signatários</h2>
           <div className="mt-3 space-y-2">
             {signers.map((s) => (
-              <div key={s.id} className="flex items-center gap-2 rounded-lg border border-border p-2">
-                <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
-                  {s.order_index}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-semibold">{s.name}</div>
-                  <div className="truncate text-[11px] text-muted-foreground">{s.email}</div>
+              <div key={s.id} className="space-y-2 rounded-lg border border-border p-2">
+                <div className="flex items-center gap-2">
+                  <span className="flex size-6 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary">
+                    {s.order_index}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{s.name}</div>
+                    <div className="truncate text-[11px] text-muted-foreground">{s.email}</div>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {allFields.filter((f) => f.signer_id === s.id).length} campo(s)
+                  </span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    aria-label="Copiar link"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(`${window.location.origin}/sign/${s.token}`);
+                      toast.success("Link copiado");
+                    }}
+                  >
+                    <Copy className="size-4" />
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label="Remover" onClick={() => removeSigner(s.id)}>
+                    <Trash2 className="size-4 text-destructive" />
+                  </Button>
                 </div>
-                <span className="text-[10px] text-muted-foreground">
-                  {allFields.filter((f) => f.signer_id === s.id).length} campo(s)
-                </span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  aria-label="Copiar link"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(`${window.location.origin}/sign/${s.token}`);
-                    toast.success("Link copiado");
-                  }}
-                >
-                  <Copy className="size-4" />
-                </Button>
-                <Button size="icon" variant="ghost" aria-label="Remover" onClick={() => removeSigner(s.id)}>
-                  <Trash2 className="size-4 text-destructive" />
-                </Button>
+                <div className="grid gap-1 sm:grid-cols-3">
+                  {(
+                    [
+                      ["require_geo", "Localização"],
+                      ["require_photo_id", "Documento com foto"],
+                      ["require_selfie", "Selfie"],
+                    ] as const
+                  ).map(([key, label]) => {
+                    const row = s as unknown as Record<string, boolean | null>;
+                    const reqRow = (data?.request ?? {}) as unknown as Record<string, boolean | null>;
+                    const checked = row[key] ?? Boolean(reqRow[key]);
+                    return (
+                      <label key={key} className="flex items-center gap-2 text-[11px]">
+                        <Switch
+                          checked={checked}
+                          onCheckedChange={async (v) => {
+                            await supabase
+                              .from("signers")
+                              .update({ [key]: v } as Record<typeof key, boolean>)
+                              .eq("id", s.id);
+                            refresh();
+                          }}
+                        />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </div>

@@ -64,6 +64,13 @@
       "when": 1788636313423,
       "tag": "0008_enforce_can_edit_folder_shares",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788696783046,
+      "tag": "0009_signer_requirements",
+      "breakpoints": true
     }
   ]
 }
