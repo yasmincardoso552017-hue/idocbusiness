@@ -172,10 +172,13 @@ export const submitSignature = createServerFn({ method: "POST" })
       require_selfie?: boolean;
       documents: { id: string; name: string; owner_id: string };
     };
-    if (req.require_geo && !data.geo) throw new Error("É obrigatório permitir a localização");
-    if (req.require_photo_id && !data.photoId)
+    const needGeo = signer.require_geo ?? !!req.require_geo;
+    const needPhoto = signer.require_photo_id ?? !!req.require_photo_id;
+    const needSelfie = signer.require_selfie ?? !!req.require_selfie;
+    if (needGeo && !data.geo) throw new Error("É obrigatório permitir a localização");
+    if (needPhoto && !data.photoId)
       throw new Error("Envie a foto do documento de identificação");
-    if (req.require_selfie && !data.selfie) throw new Error("Envie a selfie de verificação");
+    if (needSelfie && !data.selfie) throw new Error("Envie a selfie de verificação");
     if (req.expires_at && new Date(req.expires_at) < new Date()) throw new Error("Link expirado");
 
     const { data: others } = await db
