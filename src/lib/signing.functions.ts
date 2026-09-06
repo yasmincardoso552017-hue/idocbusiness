@@ -119,9 +119,9 @@ export const getSigningSession = createServerFn({ method: "POST" })
         mode: req.mode,
         status: req.status,
         message: req.message,
-        requireGeo: !!req.require_geo,
-        requirePhotoId: !!req.require_photo_id,
-        requireSelfie: !!req.require_selfie,
+        requireGeo: signer.require_geo ?? !!req.require_geo,
+        requirePhotoId: signer.require_photo_id ?? !!req.require_photo_id,
+        requireSelfie: signer.require_selfie ?? !!req.require_selfie,
       },
       document: {
         id: req.documents.id,
