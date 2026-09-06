@@ -242,28 +242,49 @@ export function ContractEnvelopeDialog({
               <div className="space-y-2">
                 <Label className="text-xs">Signatários (destinatários)</Label>
                 {signers.map((s, i) => (
-                  <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-                    <Input
-                      placeholder="Nome"
-                      value={s.name}
-                      onChange={(e) =>
-                        setSigners((p) => p.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
-                      }
-                    />
-                    <Input
-                      placeholder="E-mail"
-                      value={s.email}
-                      onChange={(e) =>
-                        setSigners((p) => p.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))
-                      }
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSigners((p) => p.filter((_, j) => j !== i))}
-                    >
-                      <Trash2 className="size-4 text-destructive" />
-                    </Button>
+                  <div key={i} className="space-y-2 rounded-lg border border-border p-2">
+                    <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                      <Input
+                        placeholder="Nome"
+                        value={s.name}
+                        onChange={(e) =>
+                          setSigners((p) => p.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
+                        }
+                      />
+                      <Input
+                        placeholder="E-mail"
+                        value={s.email}
+                        onChange={(e) =>
+                          setSigners((p) => p.map((x, j) => (j === i ? { ...x, email: e.target.value } : x)))
+                        }
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setSigners((p) => p.filter((_, j) => j !== i))}
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    </div>
+                    <div className="grid gap-1 sm:grid-cols-3">
+                      {(
+                        [
+                          ["requireGeo", "Localização", geo],
+                          ["requirePhotoId", "Documento com foto", photo],
+                          ["requireSelfie", "Selfie", selfie],
+                        ] as const
+                      ).map(([key, label, fallback]) => (
+                        <label key={key} className="flex items-center gap-2 text-[11px]">
+                          <Switch
+                            checked={s[key] ?? fallback}
+                            onCheckedChange={(v) =>
+                              setSigners((p) => p.map((x, j) => (j === i ? { ...x, [key]: v } : x)))
+                            }
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 ))}
                 <Button
@@ -276,7 +297,10 @@ export function ContractEnvelopeDialog({
               </div>
 
               <div className="space-y-2 rounded-lg border border-border p-3">
-                <span className="text-xs font-bold">Autenticação e provas</span>
+                <span className="text-xs font-bold">Padrão para novos signatários</span>
+                <p className="text-[11px] text-muted-foreground">
+                  Vale para quem você não marcar individualmente acima.
+                </p>
                 {[
                   ["Solicitar localização", geo, setGeo],
                   ["Documento com foto", photo, setPhoto],
