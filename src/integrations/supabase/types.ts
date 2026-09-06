@@ -846,6 +846,9 @@ export type Database = {
           phone: string | null
           photo_id_path: string | null
           request_id: string
+          require_geo: boolean | null
+          require_photo_id: boolean | null
+          require_selfie: boolean | null
           required: boolean
           revoked: boolean
           selfie_path: string | null
@@ -872,6 +875,9 @@ export type Database = {
           phone?: string | null
           photo_id_path?: string | null
           request_id: string
+          require_geo?: boolean | null
+          require_photo_id?: boolean | null
+          require_selfie?: boolean | null
           required?: boolean
           revoked?: boolean
           selfie_path?: string | null
@@ -898,6 +904,9 @@ export type Database = {
           phone?: string | null
           photo_id_path?: string | null
           request_id?: string
+          require_geo?: boolean | null
+          require_photo_id?: boolean | null
+          require_selfie?: boolean | null
           required?: boolean
           revoked?: boolean
           selfie_path?: string | null
