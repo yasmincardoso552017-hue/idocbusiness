@@ -347,7 +347,7 @@ function Landing() {
               </p>
               <ul className="mt-3 grid gap-1 text-xs opacity-90 sm:grid-cols-2">
                 {[
-                  "9 capítulos com telas ilustradas",
+                  "19 capítulos com telas ilustradas",
                   "Passos numerados e dicas práticas",
                   "Verificação pública explicada",
                   "Lembretes e notificações",
