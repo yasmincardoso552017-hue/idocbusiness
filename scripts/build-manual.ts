@@ -470,6 +470,9 @@ for (const [q, a] of faq) {
 }
 tip("Ainda com dúvida? Escreva para suporte@docflow.app informando o nome do documento e o código de verificação, se houver.", "Suporte");
 
+// remove a página vazia criada na inicialização do contexto
+pdf.removePage(0);
+
 // ------------------------------------------------------- sumário (página 2)
 const toc = pdf.insertPage(1, [W, H]);
 toc.drawRectangle({ x: 0, y: H - 90, width: W, height: 90, color: SOFT });
