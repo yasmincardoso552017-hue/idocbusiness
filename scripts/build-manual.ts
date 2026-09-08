@@ -47,7 +47,7 @@ function newPage(chapterTitle?: string) {
   // topo
   ctx.page.drawRectangle({ x: 0, y: H - 26, width: W, height: 26, color: SOFT });
   ctx.page.drawText("IDOC BUSINESS — Manual prático", { x: M, y: H - 18, size: 8, font, color: GREY });
-  const label = `${ctx.n + 1}`;
+  const label = `${ctx.n + 2}`;
   ctx.page.drawText(label, { x: W - M - font.widthOfTextAtSize(label, 8), y: H - 18, size: 8, font, color: GREY });
   ctx.y = H - 52;
   if (chapterTitle) ctx.page.drawText("", { x: M, y: ctx.y, size: 1, font });
