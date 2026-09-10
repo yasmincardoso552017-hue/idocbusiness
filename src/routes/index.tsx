@@ -440,6 +440,7 @@ function Landing() {
             ))}
           </div>
         </section>
+        </div>
       </main>
 
       <footer className="border-t border-border px-4 py-6">
