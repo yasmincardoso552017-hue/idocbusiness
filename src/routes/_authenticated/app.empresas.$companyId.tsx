@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useDialogs } from "@/components/Dialogs";
 import { UploadDocumentDialog } from "@/components/UploadDocumentDialog";
+import { FolderTree } from "@/components/FolderTree";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
