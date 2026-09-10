@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { useDialogs } from "@/components/Dialogs";
 import { UploadDocumentDialog } from "@/components/UploadDocumentDialog";
+import { FolderTree } from "@/components/FolderTree";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -159,15 +160,15 @@ function CompanyDetail() {
     walk = walk.parent_id ? folders.find((f) => f.id === walk!.parent_id) ?? null : null;
   }
 
-  /** Cria pasta ou subpasta dentro da pasta aberta. */
-  const addFolder = async () => {
-    const name = await promptText({ title: cwd ? "Nome da subpasta" : "Nome da pasta" });
+  /** Cria pasta ou subpasta dentro da pasta indicada. */
+  const addFolder = async (parentId: string | null = cwd) => {
+    const name = await promptText({ title: parentId ? "Nome da subpasta" : "Nome da pasta" });
     if (!name?.trim()) return;
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("folders").insert({
       name: name.trim(),
       company_id: companyId,
-      parent_id: cwd,
+      parent_id: parentId,
       owner_id: u.user!.id,
     });
     if (error) toast.error(error.message);
@@ -467,137 +468,171 @@ function CompanyDetail() {
           <TabsTrigger value="history">Histórico</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="files" className="mt-3 space-y-3">
-          <div className="card-soft p-3">
-            <div className="flex flex-wrap items-center gap-2">
-              {cwd && (
-                <Button size="icon" variant="ghost" aria-label="Voltar" onClick={() => setCwd(current?.parent_id ?? null)}>
-                  <ChevronLeft className="size-4" />
-                </Button>
-              )}
-              <div className="min-w-0 flex-1 truncate text-xs font-semibold">
-                {c?.nome_fantasia || c?.razao_social}
-                {path.map((p) => (
-                  <span key={p.id} className="text-muted-foreground">
-                    {" / "}
-                    {p.name}
-                  </span>
-                ))}
-              </div>
-              <Button size="sm" variant="outline" onClick={addFolder}>
-                <FolderPlus className="mr-1 size-4" /> {cwd ? "Subpasta" : "Pasta"}
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => openUpload(cwd)} disabled={busy}>
-                {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Upload className="mr-1 size-4" />}
-                {cwd ? "Enviar nesta pasta" : "Documento"}
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => zipFolder(cwd)} disabled={busy}>
-                <FolderArchive className="mr-1 size-4" /> ZIP
-              </Button>
-              {current && (
-                <>
-                  <Button size="sm" variant="outline" onClick={() => renameFolder(current)}>
-                    <Pencil className="mr-1 size-4" /> Renomear
+        <TabsContent value="files" className="mt-3">
+          <div className="grid gap-3 md:grid-cols-[290px_1fr]">
+            <FolderTree
+              rootLabel={c?.nome_fantasia || c?.razao_social || "Empresa"}
+              folders={folders}
+              docCount={(id) => docs.filter((d) => (d.folder_id ?? null) === id).length}
+              selected={cwd}
+              onSelect={setCwd}
+              onCreate={(parentId) => void addFolder(parentId)}
+              onRename={(f) => void renameFolder(f)}
+              onDelete={(f) => void deleteFolder(f)}
+              onUpload={(id) => openUpload(id)}
+              onTogglePublic={(f) => void togglePublic(f)}
+            />
+
+            <div className="space-y-3">
+              <div className="card-soft p-3">
+                <div className="flex items-center gap-2">
+                  {cwd && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Voltar"
+                      onClick={() => setCwd(current?.parent_id ?? null)}
+                    >
+                      <ChevronLeft className="size-4" />
+                    </Button>
+                  )}
+                  <div className="min-w-0 flex-1 truncate text-xs font-semibold">
+                    <button className="hover:underline" onClick={() => setCwd(null)}>
+                      {c?.nome_fantasia || c?.razao_social}
+                    </button>
+                    {path.map((p) => (
+                      <span key={p.id}>
+                        <span className="text-muted-foreground"> / </span>
+                        <button className="hover:underline" onClick={() => setCwd(p.id)}>
+                          {p.name}
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => void addFolder(cwd)}>
+                    <FolderPlus className="mr-1 size-4" /> {cwd ? "Nova subpasta" : "Nova pasta"}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => togglePublic(current)}>
-                    <Link2 className={`mr-1 size-4 ${current.public_token ? "text-success" : ""}`} />
-                    {current.public_token ? "Link ativo" : "Link público"}
+                  <Button size="sm" onClick={() => openUpload(cwd)} disabled={busy}>
+                    {busy ? <Loader2 className="mr-1 size-4 animate-spin" /> : <Upload className="mr-1 size-4" />}
+                    Enviar documento
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      void navigator.clipboard?.writeText(current.sku);
-                      toast.success(`SKU ${current.sku} copiado — envie para o convidado`);
-                    }}
-                  >
-                    <KeyRound className="mr-1 size-4" /> Copiar SKU
+                  <Button size="sm" variant="outline" onClick={() => zipFolder(cwd)} disabled={busy}>
+                    <FolderArchive className="mr-1 size-4" /> Baixar ZIP
                   </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="text-destructive"
-                    onClick={() => deleteFolder(current)}
-                  >
-                    <Trash2 className="mr-1 size-4" /> Excluir pasta
-                  </Button>
-                </>
-              )}
-            </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">
-              Abra uma pasta para organizar em árvore, enviar documentos e escolher a ação (assinar, editar,
-              baixar). Cada pasta tem um SKU único: quem receber o SKU trabalha junto só nessa pasta.
-            </p>
-            {current && (
-              <div className="mt-2 space-y-1 border-t border-border pt-2">
-                <p className="text-[10px] font-semibold">SKU desta pasta: {current.sku}</p>
-                {shares
-                  .filter((s) => s.folder_id === current.id)
-                  .map((s) => (
-                    <div key={s.id} className="flex items-center gap-2 rounded-md bg-muted/40 p-2">
-                      <span className="min-w-0 flex-1 truncate text-[11px]">{s.member_email ?? "Convidado"}</span>
+                  {current && (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => renameFolder(current)}>
+                        <Pencil className="mr-1 size-4" /> Renomear
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => togglePublic(current)}>
+                        <Link2 className={`mr-1 size-4 ${current.public_token ? "text-success" : ""}`} />
+                        {current.public_token ? "Link ativo" : "Link público"}
+                      </Button>
                       <Button
                         size="sm"
-                        variant="ghost"
-                        className="text-destructive"
-                        onClick={() => revokeShare(s)}
+                        variant="outline"
+                        onClick={() => {
+                          void navigator.clipboard?.writeText(current.sku);
+                          toast.success(`SKU ${current.sku} copiado — envie para o convidado`);
+                        }}
                       >
-                        Remover acesso
+                        <KeyRound className="mr-1 size-4" /> Copiar SKU
                       </Button>
-                    </div>
-                  ))}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive"
+                        onClick={() => deleteFolder(current)}
+                      >
+                        <Trash2 className="mr-1 size-4" /> Excluir pasta
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {current && (
+                  <div className="mt-2 space-y-1 border-t border-border pt-2">
+                    <p className="text-[10px] font-semibold">SKU desta pasta: {current.sku}</p>
+                    {shares
+                      .filter((s) => s.folder_id === current.id)
+                      .map((s) => (
+                        <div key={s.id} className="flex items-center gap-2 rounded-md bg-muted/40 p-2">
+                          <span className="min-w-0 flex-1 truncate text-[11px]">
+                            {s.member_email ?? "Convidado"}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-destructive"
+                            onClick={() => revokeShare(s)}
+                          >
+                            Remover acesso
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {children.map((f) => (
-              <div key={f.id} className="card-soft flex items-center gap-2 p-3">
-                <button className="flex min-w-0 flex-1 items-center gap-2 text-left" onClick={() => setCwd(f.id)}>
-                  <Folder className="size-4 shrink-0 text-primary" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-xs font-semibold">{f.name}</span>
-                    <span className="block text-[10px] text-muted-foreground">
-                      {folders.filter((x) => x.parent_id === f.id).length} subpasta(s) •{" "}
-                      {docs.filter((d) => d.folder_id === f.id).length} arquivo(s)
+              <div className="card-soft divide-y divide-border">
+                {children.map((f) => (
+                  <div key={f.id} className="flex items-center gap-3 p-3">
+                    <button
+                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      onDoubleClick={() => setCwd(f.id)}
+                      onClick={() => setCwd(f.id)}
+                    >
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                        <Folder className="size-4 text-primary" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">{f.name}</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {folders.filter((x) => x.parent_id === f.id).length} subpasta(s) •{" "}
+                          {docs.filter((d) => d.folder_id === f.id).length} arquivo(s)
+                        </span>
+                      </span>
+                    </button>
+                    {f.public_token && <Link2 className="size-3.5 shrink-0 text-success" />}
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Enviar documento para ${f.name}`}
+                      disabled={busy}
+                      onClick={() => openUpload(f.id)}
+                    >
+                      <Upload className="size-4 text-primary" />
+                    </Button>
+                  </div>
+                ))}
+                {filesHere.map((d) => (
+                  <button
+                    key={d.id}
+                    className="flex w-full items-center gap-3 p-3 text-left hover:bg-secondary/60"
+                    onClick={() => setActionDoc(d)}
+                  >
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                      <FileText className="size-4 text-primary" />
                     </span>
-                  </span>
-                </button>
-                {f.public_token && <Link2 className="size-3 shrink-0 text-success" />}
-                <button
-                  aria-label={`Enviar documento para ${f.name}`}
-                  className="shrink-0 rounded-md border border-border p-1.5"
-                  disabled={busy}
-                  onClick={() => openUpload(f.id)}
-                >
-                  <Upload className="size-3.5 text-primary" />
-                </button>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">{d.name}</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {fmtSize(d.size_bytes)} • {fmtDateTime(d.created_at)}
+                      </span>
+                    </span>
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] ${statusClass(d.status)}`}>
+                      {STATUS_LABEL[d.status] ?? d.status}
+                    </span>
+                  </button>
+                ))}
+                {filesHere.length === 0 && children.length === 0 && (
+                  <p className="py-10 text-center text-xs text-muted-foreground">
+                    Pasta vazia. Crie uma subpasta ou envie um documento.
+                  </p>
+                )}
               </div>
-            ))}
-          </div>
-
-          <div className="space-y-2">
-            {filesHere.map((d) => (
-              <button key={d.id} className="card-soft flex w-full items-center gap-3 p-3 text-left" onClick={() => setActionDoc(d)}>
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <FileText className="size-4 text-primary" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold">{d.name}</span>
-                  <span className="block text-[11px] text-muted-foreground">
-                    {fmtSize(d.size_bytes)} • {fmtDateTime(d.created_at)}
-                  </span>
-                </span>
-                <span className={`rounded-full border px-2 py-0.5 text-[10px] ${statusClass(d.status)}`}>
-                  {STATUS_LABEL[d.status] ?? d.status}
-                </span>
-              </button>
-            ))}
-            {filesHere.length === 0 && children.length === 0 && (
-              <p className="py-8 text-center text-xs text-muted-foreground">
-                Pasta vazia. Crie uma subpasta ou envie um documento.
-              </p>
-            )}
+            </div>
           </div>
         </TabsContent>
 
