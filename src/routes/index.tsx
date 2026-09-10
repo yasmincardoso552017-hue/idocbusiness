@@ -234,25 +234,48 @@ function Landing() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-16">
-        <section className="py-10 sm:py-16">
+        <section className="relative overflow-hidden py-12 sm:py-20">
+          <div aria-hidden className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
+
+          {/* ATENÇÃO */}
           <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
-            <ShieldCheck className="size-3.5" /> MP 2.200-2/2001 • Lei 14.063/2020 • LGPD
+            <Sparkles className="size-3.5" /> 100% gratuito • Sem instalação • Funciona no celular e no computador
           </span>
-          <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl">
-            Assinatura eletrônica e gestão de contratos para a sua empresa
+          <h1 className="mt-4 max-w-3xl text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
+            Tudo que um PDF precisa —{" "}
+            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              editar, converter, assinar e proteger
+            </span>{" "}
+            em um só lugar
           </h1>
-          <p className="mt-3 max-w-2xl text-sm text-muted-foreground sm:text-base">
-            O IDOC BUSINESS centraliza documentos de todas as suas empresas, envia contratos para
-            assinatura em minutos, coleta provas de autoria completas (IP, dispositivo, localização,
-            documento com foto e selfie) e entrega um PDF final assinado com página de evidências e
-            verificação pública.
+
+          {/* INTERESSE */}
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-lg">
+            Junte, divida, comprima, converta para Word, Excel, PowerPoint e imagens, edite textos,
+            coloque senha, reconheça texto com OCR e colete assinaturas com validade jurídica — sem
+            pagar nada e sem instalar nada.
           </p>
-          <div className="mt-6 flex flex-wrap gap-3">
+          <ul className="mt-5 grid max-w-2xl gap-2 text-sm sm:grid-cols-2">
+            {[
+              "28 ferramentas de PDF prontas para usar agora",
+              "Assinatura eletrônica com selfie, documento e localização",
+              "PDF final com página de provas, QR Code e hash SHA-256",
+              "Pastas por empresa, compartilhamento e lembretes automáticos",
+            ].map((i) => (
+              <li key={i} className="flex items-start gap-2">
+                <Check className="mt-0.5 size-4 shrink-0 text-success" />
+                <span className="font-medium">{i}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* AÇÃO */}
+          <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link
               to="/auth"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03]"
             >
-              Criar conta grátis <ArrowRight className="size-4" />
+              Começar grátis agora <ArrowRight className="size-4" />
             </Link>
             <InstallAppButton className="px-5 py-3" />
             <a
@@ -260,7 +283,7 @@ function Landing() {
               download="Manual-IDOC-BUSINESS.pdf"
               className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-5 py-3 text-sm font-semibold text-primary"
             >
-              <BookOpen className="size-4" /> Baixar manual ilustrado (PDF)
+              <BookOpen className="size-4" /> Baixar manual ilustrado
             </a>
             <Link
               to="/verify"
@@ -268,16 +291,20 @@ function Landing() {
             >
               Verificar documento
             </Link>
-
           </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            Grátis para começar • Sem cartão de crédito • Conforme MP 2.200-2/2001, Lei 14.063/2020 e LGPD
+          </p>
+
+          {/* DESEJO — prova de valor */}
           <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              ["Sem instalação", "Funciona no navegador e como app"],
-              ["Provas completas", "Trilha de auditoria imutável"],
-              ["Multiempresa", "PF e PJ na mesma conta"],
-              ["Verificação pública", "Código + hash SHA-256"],
+              ["28 ferramentas", "Organizar, converter, editar, OCR e mais"],
+              ["Grátis p/ começar", "Sem cartão, sem instalação"],
+              ["Validade jurídica", "Provas completas e trilha imutável"],
+              ["Verificação pública", "Código + hash SHA-256 sem login"],
             ].map(([t, d]) => (
-              <div key={t} className="card-soft p-3">
+              <div key={t} className="card-soft p-3 transition-colors hover:border-primary/40">
                 <dt className="text-xs font-bold">{t}</dt>
                 <dd className="mt-1 text-[11px] text-muted-foreground">{d}</dd>
               </div>
