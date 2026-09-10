@@ -1,5 +1,13 @@
 import { Brand } from "@/components/Brand";
 import { InstallAppButton } from "@/components/InstallAppButton";
+import heroWorkspace from "@/assets/idoc-hero-workspace.jpg";
+import toolOrganize from "@/assets/tool-organize.jpg";
+import toolConvert from "@/assets/tool-convert.jpg";
+import toolEdit from "@/assets/tool-edit.jpg";
+import toolSign from "@/assets/tool-sign.jpg";
+import toolSecurity from "@/assets/tool-security.jpg";
+import toolCompress from "@/assets/tool-compress.jpg";
+import toolOcr from "@/assets/tool-ocr.jpg";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,36 +77,43 @@ const features = [
 const toolCategories = [
   {
     icon: Layers,
+    image: toolOrganize,
     t: "Organizar PDFs",
     items: ["Juntar vários PDFs", "Dividir e extrair páginas", "Reordenar e excluir páginas", "Girar páginas"],
   },
   {
     icon: RefreshCw,
+    image: toolConvert,
     t: "Converter arquivos",
     items: ["PDF para Word, Excel e PowerPoint", "PDF para JPG e JPG para PDF", "Word, Excel, PPT e HTML para PDF", "PDF/A para arquivamento"],
   },
   {
     icon: PencilRuler,
+    image: toolEdit,
     t: "Editar PDF",
     items: ["Adicionar textos e imagens", "Formas, destaques e anotações", "Desenhar à mão", "Preencher formulários"],
   },
   {
     icon: PenLine,
+    image: toolSign,
     t: "Assinatura",
     items: ["Assinar você mesmo", "Solicitar assinaturas de outras pessoas", "Campos de assinatura, inicial e texto"],
   },
   {
     icon: Lock,
+    image: toolSecurity,
     t: "Segurança",
     items: ["Colocar senha e criptografar", "Remover senha quando possível", "Redigir dados sensíveis"],
   },
   {
     icon: Gauge,
+    image: toolCompress,
     t: "Otimização",
     items: ["Comprimir PDF", "Reduzir para enviar por e-mail e WhatsApp", "Três níveis de compressão"],
   },
   {
     icon: ScanText,
+    image: toolOcr,
     t: "OCR",
     items: ["Reconhecer texto de digitalizações", "Gerar PDF pesquisável", "Extrair texto de imagens e documentos"],
   },
@@ -206,7 +221,7 @@ function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
           <Brand className="h-7 flex-1" />
           <a href="#recursos" className="hidden text-xs font-medium text-muted-foreground sm:block">
             Recursos
@@ -233,86 +248,47 @@ function Landing() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 pb-16">
-        <section className="relative overflow-hidden py-12 sm:py-20">
-          <div aria-hidden className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-72 w-[42rem] -translate-x-1/2 rounded-full bg-primary/10 blur-3xl" />
-
-          {/* ATENÇÃO */}
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
-            <Sparkles className="size-3.5" /> 100% gratuito • Sem instalação • Funciona no celular e no computador
-          </span>
-          <h1 className="mt-4 max-w-3xl text-3xl font-extrabold leading-[1.08] tracking-tight sm:text-6xl">
-            Tudo que um PDF precisa —{" "}
-            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              editar, converter, assinar e proteger
-            </span>{" "}
-            em um só lugar
-          </h1>
-
-          {/* INTERESSE */}
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-lg">
-            Junte, divida, comprima, converta para Word, Excel, PowerPoint e imagens, edite textos,
-            coloque senha, reconheça texto com OCR e colete assinaturas com validade jurídica — sem
-            pagar nada e sem instalar nada.
-          </p>
-          <ul className="mt-5 grid max-w-2xl gap-2 text-sm sm:grid-cols-2">
-            {[
-              "28 ferramentas de PDF prontas para usar agora",
-              "Assinatura eletrônica com selfie, documento e localização",
-              "PDF final com página de provas, QR Code e hash SHA-256",
-              "Pastas por empresa, compartilhamento e lembretes automáticos",
-            ].map((i) => (
-              <li key={i} className="flex items-start gap-2">
-                <Check className="mt-0.5 size-4 shrink-0 text-success" />
-                <span className="font-medium">{i}</span>
-              </li>
-            ))}
-          </ul>
-
-          {/* AÇÃO */}
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            <Link
-              to="/auth"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-transform hover:scale-[1.03]"
-            >
-              Começar grátis agora <ArrowRight className="size-4" />
-            </Link>
-            <InstallAppButton className="px-5 py-3" />
-            <a
-              href="/manual-idoc-business.pdf"
-              download="Manual-IDOC-BUSINESS.pdf"
-              className="inline-flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-5 py-3 text-sm font-semibold text-primary"
-            >
-              <BookOpen className="size-4" /> Baixar manual ilustrado
-            </a>
-            <Link
-              to="/verify"
-              className="inline-flex items-center gap-2 rounded-xl border border-input px-5 py-3 text-sm font-semibold"
-            >
-              Verificar documento
-            </Link>
+      <main className="pb-16">
+        <section className="relative isolate min-h-[650px] overflow-hidden border-b border-border sm:min-h-[700px]">
+          <img src={heroWorkspace} alt="Documentos digitais organizados, convertidos, protegidos e assinados" className="absolute inset-0 -z-20 size-full object-cover object-[68%_center] sm:object-center" width={1920} height={1100} fetchPriority="high" />
+          <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-r from-background via-background/95 to-background/10 sm:via-background/80" />
+          <div className="mx-auto flex min-h-[650px] max-w-7xl items-center px-4 py-14 sm:min-h-[700px] sm:px-6">
+            <div className="max-w-2xl">
+              <span className="inline-flex items-center gap-2 border-l-2 border-accent bg-background/70 px-3 py-2 text-xs font-bold uppercase text-primary backdrop-blur-sm">
+                <Sparkles className="size-4" /> 28 ferramentas profissionais, grátis para começar
+              </span>
+              <h1 className="mt-6 text-4xl font-extrabold leading-[1.06] sm:text-6xl lg:text-7xl">
+                Seus documentos.<br />Todas as soluções.<br /><span className="text-primary">Um só lugar.</span>
+              </h1>
+              <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-xl">
+                Edite, converta, organize, proteja e assine PDFs com validade jurídica. Trabalhe com contratos e arquivos sem instalar nada.
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <Link to="/auth" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-4 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-transform hover:-translate-y-0.5">
+                  Usar grátis agora <ArrowRight className="size-4" />
+                </Link>
+                <InstallAppButton className="justify-center px-5 py-4" />
+                <a href="/manual-idoc-business.pdf" download="Manual-IDOC-BUSINESS.pdf" className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background/90 px-5 py-4 text-sm font-semibold backdrop-blur-sm">
+                  <BookOpen className="size-4 text-primary" /> Manual ilustrado
+                </a>
+              </div>
+              <div className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-foreground">
+                {["Sem cartão", "Celular e computador", "Conforme LGPD"].map((item) => <span key={item} className="flex items-center gap-1.5"><Check className="size-4 text-success" />{item}</span>)}
+              </div>
+            </div>
           </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">
-            Grátis para começar • Sem cartão de crédito • Conforme MP 2.200-2/2001, Lei 14.063/2020 e LGPD
-          </p>
+        </section>
 
-          {/* DESEJO — prova de valor */}
-          <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              ["28 ferramentas", "Organizar, converter, editar, OCR e mais"],
-              ["Grátis p/ começar", "Sem cartão, sem instalação"],
-              ["Validade jurídica", "Provas completas e trilha imutável"],
-              ["Verificação pública", "Código + hash SHA-256 sem login"],
-            ].map(([t, d]) => (
-              <div key={t} className="card-soft p-3 transition-colors hover:border-primary/40">
-                <dt className="text-xs font-bold">{t}</dt>
-                <dd className="mt-1 text-[11px] text-muted-foreground">{d}</dd>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <dl className="grid border-x border-b border-border bg-card sm:grid-cols-4">
+            {[["28 ferramentas", "Para trabalhar com PDFs"], ["Assinatura válida", "Com evidências completas"], ["Gestão por empresa", "Pastas e contratos organizados"], ["Verificação pública", "Código e hash SHA-256"]].map(([t, d]) => (
+              <div key={t} className="border-b border-border p-5 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0">
+                <dt className="text-sm font-extrabold">{t}</dt><dd className="mt-1 text-xs text-muted-foreground">{d}</dd>
               </div>
             ))}
           </dl>
-        </section>
 
-        <section id="recursos" className="scroll-mt-20">
+        <section id="recursos" className="scroll-mt-20 py-16 sm:py-24">
           <h2 className="text-xl font-bold tracking-tight sm:text-2xl">
             Tudo que você precisa para assinar e organizar documentos
           </h2>
@@ -333,26 +309,29 @@ function Landing() {
           </div>
         </section>
 
-        <section id="ferramentas" className="mt-10 scroll-mt-20">
-          <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Central completa de ferramentas de PDF</h2>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+        <section id="ferramentas" className="scroll-mt-20 border-t border-border py-16 sm:py-24">
+          <span className="text-xs font-bold uppercase text-primary">Central de produtividade</span>
+          <h2 className="mt-2 max-w-3xl text-2xl font-extrabold sm:text-4xl">Uma ferramenta profissional para cada tarefa</h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             Organize, converta, edite, assine, proteja, comprima e reconheça texto — tudo no navegador, com
             pré-visualização e escolha do nome e do formato antes de baixar.
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {toolCategories.map((c) => (
-              <article key={c.t} className="card-soft p-4">
-                <div className="mb-3 flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <c.icon className="size-4" />
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {toolCategories.map((c, index) => (
+              <article key={c.t} className={`group overflow-hidden rounded-lg border border-border bg-card shadow-soft ${index === 0 ? "lg:col-span-2" : ""}`}>
+                <div className={`overflow-hidden bg-muted ${index === 0 ? "aspect-[2/1]" : "aspect-[3/2]"}`}>
+                  <img src={c.image} alt={`Ferramentas para ${c.t.toLowerCase()}`} loading="lazy" width={900} height={600} className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
                 </div>
-                <h3 className="text-sm font-bold">{c.t}</h3>
-                <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <div className="p-5">
+                  <div className="flex items-center gap-3"><span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary"><c.icon className="size-4" /></span><h3 className="text-base font-extrabold">{c.t}</h3></div>
+                  <ul className="mt-4 grid gap-2 text-xs text-muted-foreground">
                   {c.items.map((i) => (
                     <li key={i} className="flex gap-1.5">
                       <Check className="mt-0.5 size-3 shrink-0 text-primary" /> {i}
                     </li>
                   ))}
-                </ul>
+                  </ul>
+                </div>
               </article>
             ))}
           </div>
