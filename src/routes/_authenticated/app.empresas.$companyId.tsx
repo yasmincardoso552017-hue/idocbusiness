@@ -159,15 +159,15 @@ function CompanyDetail() {
     walk = walk.parent_id ? folders.find((f) => f.id === walk!.parent_id) ?? null : null;
   }
 
-  /** Cria pasta ou subpasta dentro da pasta aberta. */
-  const addFolder = async () => {
-    const name = await promptText({ title: cwd ? "Nome da subpasta" : "Nome da pasta" });
+  /** Cria pasta ou subpasta dentro da pasta indicada. */
+  const addFolder = async (parentId: string | null = cwd) => {
+    const name = await promptText({ title: parentId ? "Nome da subpasta" : "Nome da pasta" });
     if (!name?.trim()) return;
     const { data: u } = await supabase.auth.getUser();
     const { error } = await supabase.from("folders").insert({
       name: name.trim(),
       company_id: companyId,
-      parent_id: cwd,
+      parent_id: parentId,
       owner_id: u.user!.id,
     });
     if (error) toast.error(error.message);
