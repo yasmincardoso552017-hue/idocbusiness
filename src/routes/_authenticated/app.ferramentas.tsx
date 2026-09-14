@@ -47,6 +47,8 @@ import { ocrPages } from "@/lib/audit.functions";
 import {
   compressPdf,
   fillFormFields,
+  fileToPdf,
+  normalizePdf,
   officeToPdf,
   pdfToDocx,
   pdfToPptx,
@@ -172,7 +174,8 @@ function parseRange(spec: string, total: number) {
 }
 
 async function loadPdf(file: File) {
-  const pdf = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true });
+  const normalized = await normalizePdf(new Uint8Array(await file.arrayBuffer()), file.name);
+  const pdf = await PDFDocument.load(normalized, { ignoreEncryption: true });
   if (!pdf.getPageCount()) throw new Error("O PDF não possui páginas");
   return pdf;
 }
@@ -280,10 +283,17 @@ function Tools() {
 
   const actions: Record<string, () => Promise<string>> = {
     merge: async () => {
-      if (files.length < 2) throw new Error("Selecione ao menos 2 PDFs");
+      if (files.length < 2) throw new Error("Selecione ao menos 2 arquivos");
       const out = await PDFDocument.create();
       for (const f of files) {
-        const src = await loadPdf(f);
+        let converted: Uint8Array;
+        try {
+          converted = await fileToPdf(f);
+        } catch (error) {
+          const detail = error instanceof Error ? error.message : "arquivo incompatível";
+          throw new Error(`Não foi possível adicionar “${f.name}”: ${detail}`);
+        }
+        const src = await PDFDocument.load(converted, { ignoreEncryption: true });
         (await out.copyPages(src, src.getPageIndices())).forEach((p) => out.addPage(p));
       }
       open(await out.save(), "idoc-unido");
@@ -555,7 +565,9 @@ function Tools() {
   }
 
   const accept =
-    tool === "img2pdf"
+    tool === "merge"
+      ? ".pdf,.jpg,.jpeg,.png,.webp,.gif,.bmp,.docx,.xlsx,.xls,.csv,.pptx,.html,.htm,.txt,application/pdf,image/*"
+      : tool === "img2pdf"
       ? "image/jpeg,image/png"
       : tool === "office2pdf"
         ? ".docx,.xlsx,.xls,.csv,.pptx,.html,.htm,.txt"
@@ -658,7 +670,7 @@ function Tools() {
                 <FileField
                   label={
                     tool === "merge"
-                      ? "PDFs (2 ou mais, na ordem escolhida)"
+                      ? "Arquivos para juntar (PDF, imagens ou documentos, na ordem escolhida)"
                       : tool === "img2pdf"
                         ? "Imagens JPG/PNG"
                         : tool === "office2pdf"

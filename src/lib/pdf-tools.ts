@@ -14,6 +14,103 @@ async function plain() {
   return (await import("pdf-lib")).PDFDocument;
 }
 
+const OFFICE_EXTENSIONS = new Set(["docx", "xlsx", "xls", "csv", "pptx", "html", "htm", "txt"]);
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "bmp"]);
+
+function extension(name: string) {
+  return name.toLowerCase().split(".").pop() ?? "";
+}
+
+function startsWith(bytes: Uint8Array, signature: number[]) {
+  return signature.every((value, index) => bytes[index] === value);
+}
+
+function detectInput(file: File, bytes: Uint8Array) {
+  const ext = extension(file.name);
+  if (startsWith(bytes, [0x25, 0x50, 0x44, 0x46]) || file.type === "application/pdf" || ext === "pdf") return "pdf";
+  if (
+    file.type.startsWith("image/") ||
+    IMAGE_EXTENSIONS.has(ext) ||
+    startsWith(bytes, [0xff, 0xd8, 0xff]) ||
+    startsWith(bytes, [0x89, 0x50, 0x4e, 0x47]) ||
+    startsWith(bytes, [0x47, 0x49, 0x46, 0x38]) ||
+    (startsWith(bytes, [0x52, 0x49, 0x46, 0x46]) && String.fromCharCode(...bytes.slice(8, 12)) === "WEBP")
+  ) return "image";
+  if (OFFICE_EXTENSIONS.has(ext)) return "office";
+  return "unsupported";
+}
+
+async function imageFileToPdf(file: File): Promise<Bytes> {
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error(`A imagem “${file.name}” está danificada ou usa uma codificação não reconhecida`);
+  }
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error(`Não foi possível ler a imagem “${file.name}”`);
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0);
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Falha ao converter imagem")), "image/jpeg", 0.94),
+    );
+    const PDFDocument = await plain();
+    const pdf = await PDFDocument.create();
+    const jpg = await pdf.embedJpg(new Uint8Array(await blob.arrayBuffer()));
+    const maxWidth = 595.28;
+    const maxHeight = 841.89;
+    const scale = Math.min(maxWidth / jpg.width, maxHeight / jpg.height, 1);
+    const width = jpg.width * scale;
+    const height = jpg.height * scale;
+    const page = pdf.addPage([maxWidth, maxHeight]);
+    page.drawImage(jpg, { x: (maxWidth - width) / 2, y: (maxHeight - height) / 2, width, height });
+    return pdf.save();
+  } finally {
+    bitmap.close();
+  }
+}
+
+/** Normaliza PDFs difíceis e, se necessário, reconstrói páginas legíveis como imagem. */
+export async function normalizePdf(bytes: Bytes, fileName = "arquivo.pdf"): Promise<Bytes> {
+  const PDFDocument = await plain();
+  try {
+    const pdf = await PDFDocument.load(bytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+    if (!pdf.getPageCount()) throw new Error("sem páginas");
+    return pdf.save({ useObjectStreams: false });
+  } catch (initialError) {
+    try {
+      const rasters = await rasterizePages(bytes, undefined, "image/jpeg", 1.6);
+      if (!rasters.length) throw initialError;
+      const rebuilt = await PDFDocument.create();
+      for (const raster of rasters) {
+        const jpg = await rebuilt.embedJpg(new Uint8Array(await raster.blob.arrayBuffer()));
+        const page = rebuilt.addPage([jpg.width / 1.6, jpg.height / 1.6]);
+        page.drawImage(jpg, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() });
+      }
+      return rebuilt.save({ useObjectStreams: false });
+    } catch {
+      throw new Error(`O PDF “${fileName}” está protegido por senha, corrompido ou incompleto`);
+    }
+  }
+}
+
+/** Converte uma entrada comum em PDF para uso nas ferramentas de organização. */
+export async function fileToPdf(file: File): Promise<Bytes> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const kind = detectInput(file, bytes);
+  if (kind === "pdf") return normalizePdf(bytes, file.name);
+  if (kind === "image") return imageFileToPdf(file);
+  if (kind === "office") return officeToPdf(file);
+  throw new Error(
+    `O formato de “${file.name}” não pode ser convertido. Use PDF, JPG, PNG, WEBP, GIF, BMP, DOCX, XLS/XLSX, CSV, PPTX, HTML ou TXT`,
+  );
+}
+
 /** Reconstrói o PDF a partir das páginas rasterizadas (achata tudo: texto vira imagem). */
 export async function flattenToImages(bytes: Bytes, scale = 2, quality = 0.85): Promise<Bytes> {
   const PDFDocument = await plain();
