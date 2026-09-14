@@ -566,7 +566,7 @@ function Tools() {
 
   const accept =
     tool === "merge"
-      ? ".pdf,.jpg,.jpeg,.png,.webp,.gif,.bmp,.docx,.xlsx,.xls,.csv,.pptx,.html,.htm,.txt,application/pdf,image/*"
+      ? "*/*"
       : tool === "img2pdf"
       ? "image/jpeg,image/png"
       : tool === "office2pdf"
