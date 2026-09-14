@@ -60,14 +60,15 @@ export async function renderPdfPages(
 /** Renders selected pages as image blobs in the requested raster format. */
 export async function rasterizePages(
   bytes: Uint8Array,
-  pages: number[],
+  pages: number[] | undefined,
   mime: string,
   scale = 2,
 ): Promise<{ index: number; blob: Blob }[]> {
   const lib = await getLib();
   const doc = await lib.getDocument({ data: bytes.slice(0) }).promise;
   const out: { index: number; blob: Blob }[] = [];
-  for (const p of pages) {
+  const selectedPages = pages ?? Array.from({ length: doc.numPages }, (_, index) => index);
+  for (const p of selectedPages) {
     const page = await doc.getPage(p + 1);
     const viewport = page.getViewport({ scale });
     const canvas = document.createElement("canvas");
