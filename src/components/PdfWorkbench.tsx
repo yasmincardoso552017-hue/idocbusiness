@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { renderPdfPages, rasterizePages, type RenderedPage } from "@/lib/pdf-preview";
+import { PdfPreviewError, renderPdfPages, rasterizePages, type RenderedPage } from "@/lib/pdf-preview";
 
 type PageState = { src: number; rotation: number; selected: boolean };
 
@@ -58,6 +58,8 @@ export function PdfWorkbench({
   const [thumbs, setThumbs] = useState<RenderedPage[]>([]);
   const [pages, setPages] = useState<PageState[]>([]);
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState({ loaded: 0, total: 0 });
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState(defaultName);
   const [format, setFormat] = useState<(typeof FORMATS)[number]["value"]>(defaultFormat);
@@ -65,21 +67,41 @@ export function PdfWorkbench({
 
   useEffect(() => {
     let alive = true;
+    const generatedUrls: string[] = [];
     setLoading(true);
-    renderPdfPages(bytes)
+    setProgress({ loaded: 0, total: 0 });
+    setPreviewError(null);
+    setThumbs([]);
+    setPages([]);
+    renderPdfPages(bytes, 260, (page, total) => {
+      generatedUrls.push(page.url);
+      if (!alive) return;
+      setThumbs((current) => current.some((item) => item.index === page.index) ? current : [...current, page]);
+      setPages((current) => current.some((item) => item.src === page.index)
+        ? current
+        : [...current, { src: page.index, rotation: 0, selected: true }]);
+      setProgress((current) => ({ loaded: current.loaded + 1, total }));
+    })
       .then((res) => {
         if (!alive) return;
         setThumbs(res);
         setPages(res.map((r) => ({ src: r.index, rotation: 0, selected: true })));
+        setProgress((current) => ({ loaded: res.length, total: current.total || res.length }));
       })
-      .catch(() => toast.error("Não foi possível gerar a pré-visualização"))
+      .catch((error) => {
+        if (!alive) return;
+        const message = error instanceof PdfPreviewError
+          ? error.message
+          : "Não foi possível gerar a pré-visualização deste arquivo.";
+        setPreviewError(message);
+        toast.error(message);
+      })
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
+      generatedUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [bytes]);
-
-  useEffect(() => () => thumbs.forEach((t) => URL.revokeObjectURL(t.url)), [thumbs]);
 
   const selectedCount = useMemo(() => pages.filter((p) => p.selected).length, [pages]);
 
@@ -192,7 +214,11 @@ export function PdfWorkbench({
         <div>
           <p className="text-sm font-semibold">Pré-visualizar e editar</p>
           <p className="text-[11px] text-muted-foreground">
-            {loading ? "Renderizando páginas…" : `${selectedCount} de ${pages.length} página(s) selecionada(s)`}
+            {loading
+              ? progress.total
+                ? `Carregando página ${Math.min(progress.loaded + 1, progress.total)} de ${progress.total}…`
+                : "Analisando e recuperando o PDF…"
+              : `${selectedCount} de ${pages.length} página(s) selecionada(s)`}
           </p>
         </div>
         <Button variant="ghost" size="icon" aria-label="Fechar" onClick={onClose}>
@@ -200,12 +226,30 @@ export function PdfWorkbench({
         </Button>
       </div>
 
-      {loading ? (
+      {loading && pages.length === 0 ? (
         <div className="flex h-32 items-center justify-center text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
         </div>
+      ) : previewError && pages.length === 0 ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          <p className="font-semibold">Pré-visualização indisponível</p>
+          <p className="mt-1 text-xs">{previewError}</p>
+        </div>
       ) : (
         <>
+          {loading && (
+            <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${progress.total ? (progress.loaded / progress.total) * 100 : 8}%` }}
+              />
+            </div>
+          )}
+          {!loading && progress.total > pages.length && (
+            <p className="mb-3 rounded-lg border border-border bg-secondary/50 p-2 text-xs text-muted-foreground">
+              {pages.length} de {progress.total} páginas puderam ser recuperadas e estão disponíveis abaixo.
+            </p>
+          )}
           <div className="mb-3 flex flex-wrap items-end gap-2">
             <Button size="sm" variant="secondary" onClick={() => setAll(true)}>
               Selecionar todas

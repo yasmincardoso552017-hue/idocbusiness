@@ -81,7 +81,15 @@ export async function normalizePdf(bytes: Bytes, fileName = "arquivo.pdf"): Prom
   try {
     const pdf = await PDFDocument.load(bytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
     if (!pdf.getPageCount()) throw new Error("sem páginas");
-    return pdf.save({ useObjectStreams: false });
+    const saved = await pdf.save({ useObjectStreams: false, addDefaultPage: false, updateFieldAppearances: false });
+    // Confirma também a leitura visual: há PDFs que a biblioteca estrutural aceita,
+    // mas o navegador não consegue desenhar sem reconstrução.
+    try {
+      await rasterizePages(saved, [0], "image/jpeg", 0.5);
+      return saved;
+    } catch {
+      throw new Error("requer reconstrução visual");
+    }
   } catch (initialError) {
     try {
       const rasters = await rasterizePages(bytes, undefined, "image/jpeg", 1.6);
