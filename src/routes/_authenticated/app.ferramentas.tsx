@@ -406,7 +406,7 @@ function Tools() {
     },
     pdf2img: async () => {
       const f = needPdf();
-      const bytes = new Uint8Array(await f.arrayBuffer());
+      const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
       const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
       const rasters = await rasterizePages(bytes, src.getPageIndices(), imgFormat, 2);
       const ext = imgFormat === "image/png" ? "png" : "jpg";
@@ -424,17 +424,20 @@ function Tools() {
     },
     pdf2word: async () => {
       const f = needPdf();
-      downloadBlob(await pdfToDocx(new Uint8Array(await f.arrayBuffer())), `${f.name.replace(/\.pdf$/i, "")}.doc`);
+      const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
+      downloadBlob(await pdfToDocx(bytes), `${f.name.replace(/\.pdf$/i, "")}.doc`);
       return "Documento do Word gerado";
     },
     pdf2excel: async () => {
       const f = needPdf();
-      downloadBlob(await pdfToXlsx(new Uint8Array(await f.arrayBuffer())), `${f.name.replace(/\.pdf$/i, "")}.xlsx`);
+      const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
+      downloadBlob(await pdfToXlsx(bytes), `${f.name.replace(/\.pdf$/i, "")}.xlsx`);
       return "Planilha do Excel gerada";
     },
     pdf2ppt: async () => {
       const f = needPdf();
-      downloadBlob(await pdfToPptx(new Uint8Array(await f.arrayBuffer())), `${f.name.replace(/\.pdf$/i, "")}.pptx`);
+      const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
+      downloadBlob(await pdfToPptx(bytes), `${f.name.replace(/\.pdf$/i, "")}.pptx`);
       return "Apresentação gerada";
     },
     office2pdf: async () => {
@@ -507,7 +510,7 @@ function Tools() {
     },
     text: async () => {
       const f = needPdf();
-      const bytes = new Uint8Array(await f.arrayBuffer());
+      const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
       let pages = await extractPdfText(bytes);
       if (pages.join("").trim().length < 20) {
         const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
