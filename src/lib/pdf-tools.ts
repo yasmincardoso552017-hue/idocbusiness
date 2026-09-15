@@ -85,8 +85,7 @@ export async function normalizePdf(bytes: Bytes, fileName = "arquivo.pdf"): Prom
     // Confirma também a leitura visual: há PDFs que a biblioteca estrutural aceita,
     // mas o navegador não consegue desenhar sem reconstrução.
     try {
-      const pages = await rasterizePages(saved, [0], "image/jpeg", 0.5);
-      for (const page of pages) URL.revokeObjectURL?.((page.blob as unknown as { url?: string }).url ?? "");
+      await rasterizePages(saved, [0], "image/jpeg", 0.5);
       return saved;
     } catch {
       throw new Error("requer reconstrução visual");

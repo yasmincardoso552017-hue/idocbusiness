@@ -67,12 +67,14 @@ export function PdfWorkbench({
 
   useEffect(() => {
     let alive = true;
+    const generatedUrls: string[] = [];
     setLoading(true);
     setProgress({ loaded: 0, total: 0 });
     setPreviewError(null);
     setThumbs([]);
     setPages([]);
     renderPdfPages(bytes, 260, (page, total) => {
+      generatedUrls.push(page.url);
       if (!alive) return;
       setThumbs((current) => current.some((item) => item.index === page.index) ? current : [...current, page]);
       setPages((current) => current.some((item) => item.src === page.index)
@@ -84,7 +86,7 @@ export function PdfWorkbench({
         if (!alive) return;
         setThumbs(res);
         setPages(res.map((r) => ({ src: r.index, rotation: 0, selected: true })));
-        setProgress({ loaded: res.length, total: res.length });
+        setProgress((current) => ({ loaded: res.length, total: current.total || res.length }));
       })
       .catch((error) => {
         if (!alive) return;
@@ -97,10 +99,9 @@ export function PdfWorkbench({
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
+      generatedUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [bytes]);
-
-  useEffect(() => () => thumbs.forEach((t) => URL.revokeObjectURL(t.url)), [thumbs]);
 
   const selectedCount = useMemo(() => pages.filter((p) => p.selected).length, [pages]);
 
