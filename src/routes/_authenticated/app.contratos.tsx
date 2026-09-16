@@ -21,8 +21,19 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { ContractEnvelopeDialog, StageBadge, STAGE_LABEL } from "@/components/ContractEnvelope";
 import { fmtDate, fmtMoney, statusClass, STATUS_LABEL } from "@/lib/format";
+import { useDialogs } from "@/components/Dialogs";
 
 export const Route = createFileRoute("/_authenticated/app/contratos")({
+  head: () => ({
+    meta: [
+      { title: "Gestão de contratos | IDOC BUSINESS" },
+      { name: "description", content: "Crie, acompanhe e envie contratos para assinatura eletrônica." },
+      { property: "og:title", content: "Gestão de contratos | IDOC BUSINESS" },
+      { property: "og:description", content: "Contratos, vencimentos e assinaturas em uma única gestão." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Contracts,
 });
 
@@ -55,6 +66,7 @@ function Contracts() {
   const [form, setForm] = useState(empty);
   const [stage, setStage] = useState("all");
   const [envelope, setEnvelope] = useState<{ id: string; name: string; documentId: string | null } | null>(null);
+  const { confirm, dialog } = useDialogs();
 
   const { data: companies } = useQuery({
     queryKey: ["companies-min"],
@@ -237,7 +249,12 @@ function Contracts() {
                     size="sm"
                     variant="ghost"
                     onClick={async () => {
-                      if (!confirm(`Excluir o contrato "${c.name}"?`)) return;
+                       const approved = await confirm({
+                         title: `Excluir o contrato "${c.name}"?`,
+                         description: "Esta ação remove o cadastro do contrato e não pode ser desfeita.",
+                         confirmText: "Excluir contrato",
+                       });
+                       if (!approved) return;
                       const res = await supabase.from("contracts").delete().eq("id", c.id);
                       if (res.error) { toast.error(res.error.message); return; }
                       toast.success("Contrato excluído");
@@ -360,6 +377,7 @@ function Contracts() {
           }}
         />
       ) : null}
+      {dialog}
     </AppShell>
   );
 }
