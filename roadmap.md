@@ -24,3 +24,4 @@
 ## Verificação das ferramentas de PDF (desktop + mobile)
 - [x] Testar cada ferramenta no navegador (20/20 OK em desktop)
 - [x] Reforçar recuperação e pré-visualização de PDFs difíceis, com progresso e falhas claras
+- [x] Atualizar os ícones das ferramentas com identidade visual própria por categoria
