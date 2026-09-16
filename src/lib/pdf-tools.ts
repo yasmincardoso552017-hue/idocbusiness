@@ -2,7 +2,7 @@
  * Ferramentas de PDF executadas no próprio dispositivo: compressão, senha,
  * PDF/A, redação e conversões entre PDF e formatos do Office.
  */
-import { extractPdfText, rasterizePages } from "@/lib/pdf-preview";
+import { extractPdfText, inspectPdfVisuals, rasterizePages, type PdfPageVisual } from "@/lib/pdf-preview";
 
 export type Bytes = Uint8Array;
 
@@ -25,7 +25,7 @@ function startsWith(bytes: Uint8Array, signature: number[]) {
   return signature.every((value, index) => bytes[index] === value);
 }
 
-function preparePdfBytes(bytes: Uint8Array) {
+export function preparePdfBytes(bytes: Uint8Array) {
   if (!bytes.length) throw new Error("O arquivo está vazio");
   const limit = Math.min(bytes.length - 4, 4096);
   for (let index = 0; index <= limit; index++) {
@@ -40,6 +40,37 @@ function preparePdfBytes(bytes: Uint8Array) {
   }
   return bytes;
 }
+
+function hasVisualRegression(before: PdfPageVisual[], after: PdfPageVisual[]) {
+  if (before.length !== after.length) return true;
+  return before.some((source, index) => {
+    const rebuilt = after[index];
+    if (!rebuilt) return true;
+    // Páginas realmente vazias permanecem válidas. Só consideramos falha quando
+    // havia conteúdo visível e ele praticamente desapareceu após a cópia.
+    return source.inkRatio >= 0.00008 && rebuilt.inkRatio < Math.max(0.00004, source.inkRatio * 0.18);
+  });
+}
+
+async function rebuildPdfFromRenderedPages(bytes: Bytes): Promise<Bytes> {
+  const PDFDocument = await plain();
+  const rasters = await rasterizePages(bytes, undefined, "image/jpeg", 1.7);
+  if (!rasters.length) throw new Error("Nenhuma página pôde ser recuperada");
+  const rebuilt = await PDFDocument.create();
+  for (const raster of rasters) {
+    const jpg = await rebuilt.embedJpg(new Uint8Array(await raster.blob.arrayBuffer()));
+    const page = rebuilt.addPage([jpg.width / 1.7, jpg.height / 1.7]);
+    page.drawImage(jpg, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() });
+  }
+  return rebuilt.save({ useObjectStreams: false });
+}
+
+export type PreparedMergeFile = {
+  bytes: Bytes;
+  pageCount: number;
+  recovered: boolean;
+  visuals: PdfPageVisual[];
+};
 
 function detectInput(file: File, bytes: Uint8Array) {
   const ext = extension(file.name);
@@ -96,28 +127,16 @@ export async function normalizePdf(bytes: Bytes, fileName = "arquivo.pdf"): Prom
   const PDFDocument = await plain();
   const prepared = preparePdfBytes(bytes);
   try {
+    const originalVisuals = await inspectPdfVisuals(prepared, 260);
     const pdf = await PDFDocument.load(prepared.slice(0), { ignoreEncryption: true, updateMetadata: false });
     if (!pdf.getPageCount()) throw new Error("sem páginas");
     const saved = await pdf.save({ useObjectStreams: false, addDefaultPage: false, updateFieldAppearances: false });
-    // Confirma também a leitura visual: há PDFs que a biblioteca estrutural aceita,
-    // mas o navegador não consegue desenhar sem reconstrução.
-    try {
-      await rasterizePages(saved, undefined, "image/jpeg", 0.35);
-      return saved;
-    } catch {
-      throw new Error("requer reconstrução visual");
-    }
+    const savedVisuals = await inspectPdfVisuals(saved, 260);
+    if (hasVisualRegression(originalVisuals, savedVisuals)) return rebuildPdfFromRenderedPages(prepared);
+    return saved;
   } catch (initialError) {
     try {
-      const rasters = await rasterizePages(prepared, undefined, "image/jpeg", 1.6);
-      if (!rasters.length) throw initialError;
-      const rebuilt = await PDFDocument.create();
-      for (const raster of rasters) {
-        const jpg = await rebuilt.embedJpg(new Uint8Array(await raster.blob.arrayBuffer()));
-        const page = rebuilt.addPage([jpg.width / 1.6, jpg.height / 1.6]);
-        page.drawImage(jpg, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() });
-      }
-      return rebuilt.save({ useObjectStreams: false });
+      return await rebuildPdfFromRenderedPages(prepared);
     } catch {
       throw new Error(`O PDF “${fileName}” está protegido por senha, corrompido ou incompleto`);
     }
@@ -134,6 +153,64 @@ export async function fileToPdf(file: File): Promise<Bytes> {
   throw new Error(
     `O formato de “${file.name}” não pode ser convertido. Use PDF, JPG, PNG, WEBP, GIF, BMP, DOCX, XLS/XLSX, CSV, PPTX, HTML ou TXT`,
   );
+}
+
+/** Prepara e valida visualmente um item antes de adicioná-lo ao PDF unido. */
+export async function prepareFileForMerge(file: File): Promise<PreparedMergeFile> {
+  const sourceBytes = new Uint8Array(await file.arrayBuffer());
+  const kind = detectInput(file, sourceBytes);
+  if (kind !== "pdf") {
+    const converted = await fileToPdf(file);
+    const visuals = await inspectPdfVisuals(converted, 260);
+    return { bytes: converted, pageCount: visuals.length, recovered: false, visuals };
+  }
+
+  const prepared = preparePdfBytes(sourceBytes);
+  const sourceVisuals = await inspectPdfVisuals(prepared, 260);
+  const PDFDocument = await plain();
+  try {
+    const source = await PDFDocument.load(prepared.slice(0), { ignoreEncryption: true, updateMetadata: false });
+    if (!source.getPageCount()) throw new Error("O PDF não possui páginas");
+    const staged = await PDFDocument.create();
+    const copied = await staged.copyPages(source, source.getPageIndices());
+    copied.forEach((page) => staged.addPage(page));
+    const stagedBytes = await staged.save({ useObjectStreams: false });
+    const stagedVisuals = await inspectPdfVisuals(stagedBytes, 260);
+    if (!hasVisualRegression(sourceVisuals, stagedVisuals)) {
+      return { bytes: stagedBytes, pageCount: stagedVisuals.length, recovered: false, visuals: stagedVisuals };
+    }
+  } catch {
+    // A reconstrução visual abaixo é a segunda estratégia para PDFs malformados.
+  }
+
+  const rebuilt = await rebuildPdfFromRenderedPages(prepared);
+  const recoveredVisuals = await inspectPdfVisuals(rebuilt, 260);
+  if (hasVisualRegression(sourceVisuals, recoveredVisuals)) {
+    throw new Error(`O PDF “${file.name}” perdeu conteúdo durante a recuperação`);
+  }
+  return { bytes: rebuilt, pageCount: recoveredVisuals.length, recovered: true, visuals: recoveredVisuals };
+}
+
+/** Retorna as páginas que perderam conteúdo visível no PDF unido. */
+export async function findMergedVisualRegressions(bytes: Bytes, expected: PdfPageVisual[]) {
+  const actual = await inspectPdfVisuals(bytes, 260);
+  if (actual.length !== expected.length) {
+    return Array.from({ length: Math.max(actual.length, expected.length) }, (_, index) => index);
+  }
+  return expected.flatMap((source, index) => {
+    const merged = actual[index];
+    if (!merged) return [index];
+    return source.inkRatio >= 0.00008 && merged.inkRatio < Math.max(0.00004, source.inkRatio * 0.18)
+      ? [index]
+      : [];
+  });
+}
+
+/** Reconstrução visual de último recurso para um arquivo que perdeu conteúdo ao ser unido. */
+export async function rasterizePdfForMerge(bytes: Bytes) {
+  const rebuilt = await rebuildPdfFromRenderedPages(bytes);
+  const visuals = await inspectPdfVisuals(rebuilt, 260);
+  return { bytes: rebuilt, pageCount: visuals.length, recovered: true, visuals } satisfies PreparedMergeFile;
 }
 
 /** Reconstrói o PDF a partir das páginas rasterizadas (achata tudo: texto vira imagem). */

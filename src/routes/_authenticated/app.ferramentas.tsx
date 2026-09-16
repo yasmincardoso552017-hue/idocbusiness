@@ -46,13 +46,15 @@ import { ocrPages } from "@/lib/audit.functions";
 import {
   compressPdf,
   fillFormFields,
-  fileToPdf,
+  findMergedVisualRegressions,
   normalizePdf,
   officeToPdf,
   pdfToDocx,
   pdfToPptx,
   pdfToXlsx,
+  prepareFileForMerge,
   protectPdf,
+  rasterizePdfForMerge,
   readFormFields,
   toPdfA,
   unlockPdf,
@@ -87,6 +89,12 @@ type ToolId =
   | "protect" | "unlock" | "redact"
   | "compress"
   | "ocr" | "text" | "zip";
+
+type MergeFileStatus = {
+  state: "waiting" | "processing" | "ready" | "recovered" | "error";
+  pages?: number;
+  message?: string;
+};
 
 const CATS = [
   {
@@ -205,6 +213,7 @@ function FileField({
   onRemove,
   onClear,
   files,
+  statuses,
 }: {
   label: string;
   multiple?: boolean;
@@ -214,6 +223,7 @@ function FileField({
   onRemove?: (index: number) => void;
   onClear?: () => void;
   files: File[];
+  statuses?: MergeFileStatus[] | undefined;
 }) {
   return (
     <div className="space-y-2">
@@ -253,6 +263,25 @@ function FileField({
               <div key={`${file.name}-${file.size}-${file.lastModified}-${index}`} className="flex items-center gap-2 rounded-md bg-secondary/50 px-2 py-1.5">
                 <span className="w-5 shrink-0 text-center text-[11px] text-muted-foreground">{index + 1}</span>
                 <span className="min-w-0 flex-1 truncate text-xs">{file.name}</span>
+                {statuses?.[index] && (
+                  <span className={`shrink-0 text-[10px] font-medium ${
+                    statuses[index]?.state === "error"
+                      ? "text-destructive"
+                      : statuses[index]?.state === "recovered"
+                        ? "text-primary"
+                        : "text-muted-foreground"
+                  }`}>
+                    {statuses[index]?.state === "processing"
+                      ? "Analisando…"
+                      : statuses[index]?.state === "ready"
+                        ? `${statuses[index]?.pages ?? 0} pág.`
+                        : statuses[index]?.state === "recovered"
+                          ? `${statuses[index]?.pages ?? 0} pág. recuperada(s)`
+                          : statuses[index]?.state === "error"
+                            ? "Problema"
+                            : "Aguardando"}
+                  </span>
+                )}
                 <span className="shrink-0 text-[10px] text-muted-foreground">
                   {file.size < 1_048_576 ? `${Math.max(1, Math.round(file.size / 1024))} KB` : `${(file.size / 1_048_576).toFixed(1)} MB`}
                 </span>
@@ -289,6 +318,7 @@ function Tools() {
   const [result, setResult] = useState<{ bytes: Uint8Array; name: string; format: "pdf" | "pdf-zip" } | null>(
     null,
   );
+  const [mergeStatuses, setMergeStatuses] = useState<MergeFileStatus[]>([]);
 
   const first = files[0];
   const activeCat = CATS.find((c) => c.id === cat)!;
@@ -299,6 +329,7 @@ function Tools() {
     setResult(null);
     setFields(null);
     setTextResult(null);
+    setMergeStatuses([]);
   }
 
   function open(bytes: Uint8Array, name: string, format: "pdf" | "pdf-zip" = "pdf") {
@@ -325,20 +356,71 @@ function Tools() {
   const actions: Record<string, () => Promise<string>> = {
     merge: async () => {
       if (files.length < 2) throw new Error("Selecione ao menos 2 arquivos");
-      const out = await PDFDocument.create();
-      for (const f of files) {
-        let converted: Uint8Array;
+      setMergeStatuses(files.map(() => ({ state: "waiting" })));
+      let recoveredCount = 0;
+      const preparedFiles: Awaited<ReturnType<typeof prepareFileForMerge>>[] = [];
+      for (const [index, f] of files.entries()) {
+        setMergeStatuses((current) => current.map((status, itemIndex) =>
+          itemIndex === index ? { state: "processing" } : status,
+        ));
         try {
-          converted = await fileToPdf(f);
+          const prepared = await prepareFileForMerge(f);
+          preparedFiles.push(prepared);
+          if (prepared.recovered) recoveredCount += 1;
+          setMergeStatuses((current) => current.map((status, itemIndex) =>
+            itemIndex === index
+              ? { state: prepared.recovered ? "recovered" : "ready", pages: prepared.pageCount }
+              : status,
+          ));
         } catch (error) {
           const detail = error instanceof Error ? error.message : "arquivo incompatível";
+          setMergeStatuses((current) => current.map((status, itemIndex) =>
+            itemIndex === index ? { state: "error", message: detail } : status,
+          ));
           throw new Error(`Não foi possível adicionar “${f.name}”: ${detail}`);
         }
-        const src = await PDFDocument.load(converted, { ignoreEncryption: true });
-        (await out.copyPages(src, src.getPageIndices())).forEach((p) => out.addPage(p));
       }
-      open(await out.save(), "idoc-unido");
-      return `PDF unido com ${out.getPageCount()} páginas`;
+
+      async function buildMerged(items: typeof preparedFiles) {
+        const output = await PDFDocument.create();
+        for (const item of items) {
+          const source = await PDFDocument.load(item.bytes, { ignoreEncryption: true });
+          const copied = await output.copyPages(source, source.getPageIndices());
+          copied.forEach((page) => output.addPage(page));
+        }
+        return { output, bytes: await output.save({ useObjectStreams: false }) };
+      }
+
+      let merged = await buildMerged(preparedFiles);
+      const expected = preparedFiles.flatMap((item) => item.visuals);
+      const regressions = await findMergedVisualRegressions(merged.bytes, expected);
+      if (regressions.length) {
+        let pageOffset = 0;
+        for (let index = 0; index < preparedFiles.length; index++) {
+          const item = preparedFiles[index];
+          if (!item) continue;
+          const end = pageOffset + item.pageCount;
+          const affected = regressions.some((pageIndex) => pageIndex >= pageOffset && pageIndex < end);
+          if (affected && !item.recovered) {
+            preparedFiles[index] = await rasterizePdfForMerge(item.bytes);
+            recoveredCount += 1;
+            setMergeStatuses((current) => current.map((status, itemIndex) =>
+              itemIndex === index ? { state: "recovered", pages: item.pageCount } : status,
+            ));
+          }
+          pageOffset = end;
+        }
+        merged = await buildMerged(preparedFiles);
+        const finalRegressions = await findMergedVisualRegressions(
+          merged.bytes,
+          preparedFiles.flatMap((item) => item.visuals),
+        );
+        if (finalRegressions.length) {
+          throw new Error(`A união foi interrompida porque ${finalRegressions.length} página(s) perderiam conteúdo visual`);
+        }
+      }
+      open(merged.bytes, "idoc-unido");
+      return `PDF unido com ${merged.output.getPageCount()} páginas${recoveredCount ? `; ${recoveredCount} arquivo(s) recuperado(s)` : ""}`;
     },
     burst: async () => {
       const src = await loadPdf(needPdf());
@@ -740,18 +822,24 @@ function Tools() {
                   append={tool === "merge"}
                   accept={accept}
                   files={files}
+                   statuses={tool === "merge" ? mergeStatuses : undefined}
                   onPick={(f) => {
-                    setFiles((current) => tool === "merge" ? [...current, ...f] : f);
+                     setFiles((current) => tool === "merge" ? [...current, ...f] : f);
+                     setMergeStatuses((current) => tool === "merge"
+                       ? [...current, ...f.map(() => ({ state: "waiting" as const }))]
+                       : []);
                     setFields(null);
                     setResult(null);
                   }}
                   {...(tool === "merge" ? {
                     onRemove: (index: number) => {
                       setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
+                       setMergeStatuses((current) => current.filter((_, itemIndex) => itemIndex !== index));
                       setResult(null);
                     },
                     onClear: () => {
                       setFiles([]);
+                       setMergeStatuses([]);
                       setResult(null);
                     },
                   } : {})}

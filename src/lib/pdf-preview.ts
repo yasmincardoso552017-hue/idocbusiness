@@ -16,6 +16,13 @@ async function getLib() {
 
 export type RenderedPage = { index: number; width: number; height: number; url: string };
 
+export type PdfPageVisual = {
+  index: number;
+  width: number;
+  height: number;
+  inkRatio: number;
+};
+
 export type RenderPdfProgress = {
   page: RenderedPage;
   total: number;
@@ -75,6 +82,37 @@ async function openPdf(bytes: Uint8Array) {
   throw friendlyPdfError(lastError);
 }
 
+function canvasInkRatio(canvas: HTMLCanvasElement) {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return 0;
+  const step = Math.max(1, Math.floor(Math.max(canvas.width, canvas.height) / 320));
+  const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+  let sampled = 0;
+  let ink = 0;
+  for (let y = 0; y < canvas.height; y += step) {
+    for (let x = 0; x < canvas.width; x += step) {
+      const offset = (y * canvas.width + x) * 4;
+      const red = pixels[offset] ?? 255;
+      const green = pixels[offset + 1] ?? 255;
+      const blue = pixels[offset + 2] ?? 255;
+      sampled += 1;
+      if (red < 248 || green < 248 || blue < 248) ink += 1;
+    }
+  }
+  return sampled ? ink / sampled : 0;
+}
+
+function createPageCanvas(viewport: { width: number; height: number }) {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.ceil(viewport.width));
+  canvas.height = Math.max(1, Math.ceil(viewport.height));
+  const context = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
+  if (!context) throw new Error("O navegador não disponibilizou a área de desenho");
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  return { canvas, context };
+}
+
 async function renderPageWithFallback(
   page: Awaited<ReturnType<Awaited<ReturnType<typeof openPdf>>["getPage"]>>,
   targetWidth: number,
@@ -89,27 +127,58 @@ async function renderPageWithFallback(
   const pixelScale = Math.sqrt(maxPixels / (base.width * base.height));
   const scale = Math.max(0.05, Math.min(requestedScale, pixelScale));
   const viewport = page.getViewport({ scale });
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.ceil(viewport.width));
-  canvas.height = Math.max(1, Math.ceil(viewport.height));
-  const context = canvas.getContext("2d", { alpha: false });
-  if (!context) throw new Error("O navegador não disponibilizou a área de desenho");
-  context.fillStyle = "#ffffff";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  try {
-    await page.render({
-      canvas,
-      canvasContext: context,
-      viewport,
-      intent: "display",
-      annotationMode: 0,
-    } as never).promise;
-  } catch {
-    context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    await page.render({ canvas, canvasContext: context, viewport, intent: "display" } as never).promise;
+  const attempts = [
+    { intent: "display", annotationMode: 2 },
+    { intent: "print", annotationMode: 2 },
+    { intent: "display" },
+  ] as const;
+  let best: HTMLCanvasElement | null = null;
+  let bestInk = -1;
+  let lastError: unknown;
+  for (const options of attempts) {
+    const { canvas, context } = createPageCanvas(viewport);
+    try {
+      await page.render({ canvas, canvasContext: context, viewport, ...options } as never).promise;
+      const ink = canvasInkRatio(canvas);
+      if (ink > bestInk) {
+        best = canvas;
+        bestInk = ink;
+      }
+      // Uma página com conteúdo visível já está pronta; tentativas extras só são
+      // necessárias para formulários/anotações que alguns PDFs desenham em branco.
+      if (ink >= 0.00008) return canvas;
+    } catch (error) {
+      lastError = error;
+    }
   }
-  return canvas;
+  if (best) return best;
+  throw lastError instanceof Error ? lastError : new Error("Não foi possível desenhar a página");
+}
+
+/** Mede visualmente cada página; usado para detectar regressões brancas após uma reconstrução. */
+export async function inspectPdfVisuals(bytes: Uint8Array, targetWidth = 260): Promise<PdfPageVisual[]> {
+  const doc = await openPdf(bytes);
+  const visuals: PdfPageVisual[] = [];
+  if (!doc.numPages) throw new PdfPreviewError("empty", "Este PDF não possui páginas visíveis.");
+  try {
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      try {
+        const canvas = await renderPageWithFallback(page, targetWidth);
+        visuals.push({
+          index: i - 1,
+          width: canvas.width,
+          height: canvas.height,
+          inkRatio: canvasInkRatio(canvas),
+        });
+      } finally {
+        page.cleanup();
+      }
+    }
+  } finally {
+    doc.cleanup();
+  }
+  return visuals;
 }
 
 /** Renders every page of a PDF to object URLs for preview. */
@@ -157,23 +226,23 @@ export async function rasterizePages(
   const doc = await openPdf(bytes);
   const out: { index: number; blob: Blob }[] = [];
   const selectedPages = pages ?? Array.from({ length: doc.numPages }, (_, index) => index);
-  for (const p of selectedPages) {
-    const page = await doc.getPage(p + 1);
-    const viewport = page.getViewport({ scale });
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.ceil(viewport.width);
-    canvas.height = Math.ceil(viewport.height);
-    const ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) throw new Error("O navegador não disponibilizou a área de desenho");
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    await page.render({ canvas, canvasContext: ctx, viewport } as never).promise;
-    const blob = await new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Falha ao gerar a imagem da página")), mime, 0.92),
-    );
-    out.push({ index: p, blob });
+  try {
+    for (const p of selectedPages) {
+      const page = await doc.getPage(p + 1);
+      try {
+        const base = page.getViewport({ scale: 1 });
+        const canvas = await renderPageWithFallback(page, Math.max(120, base.width * scale));
+        const blob = await new Promise<Blob>((resolve, reject) =>
+          canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Falha ao gerar a imagem da página")), mime, 0.92),
+        );
+        out.push({ index: p, blob });
+      } finally {
+        page.cleanup();
+      }
+    }
+  } finally {
+    doc.cleanup();
   }
-  doc.cleanup();
   return out;
 }
 
