@@ -14,7 +14,6 @@ import {
   Wrench,
   FolderInput,
   FolderArchive,
-  Link2,
   ChevronLeft,
   Loader2,
   Building2,
@@ -44,7 +43,6 @@ import {
 import { ContractEnvelopeDialog, StageBadge } from "@/components/ContractEnvelope";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime, fmtSize, statusClass, STATUS_LABEL } from "@/lib/format";
-import { shareFolder } from "@/lib/vault.functions";
 
 export const Route = createFileRoute("/_authenticated/app/empresas/$companyId")({
   validateSearch: (s: Record<string, unknown>): { folder?: string } =>
@@ -213,20 +211,6 @@ function CompanyDetail() {
     if (error) toast.error(error.message);
     else toast.success("Acesso removido");
     refresh();
-  };
-
-  const togglePublic = async (f: FolderRec) => {
-    try {
-      const res = await shareFolder({ data: { folderId: f.id, enabled: !f.public_token } });
-      if (res.token) {
-        const link = `${window.location.origin}/pasta/${res.token}`;
-        await navigator.clipboard?.writeText(link).catch(() => null);
-        toast.success("Link público copiado");
-      } else toast.success("Link público desativado");
-      refresh();
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
   };
 
   /** Baixa a pasta (com subpastas) em ZIP organizado. */
@@ -480,7 +464,6 @@ function CompanyDetail() {
               onRename={(f) => void renameFolder(f)}
               onDelete={(f) => void deleteFolder(f)}
               onUpload={(id) => openUpload(id)}
-              onTogglePublic={(f) => void togglePublic(f)}
             />
 
             <div className="space-y-3">
@@ -525,10 +508,6 @@ function CompanyDetail() {
                     <>
                       <Button size="sm" variant="outline" onClick={() => renameFolder(current)}>
                         <Pencil className="mr-1 size-4" /> Renomear
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => togglePublic(current)}>
-                        <Link2 className={`mr-1 size-4 ${current.public_token ? "text-success" : ""}`} />
-                        {current.public_token ? "Link ativo" : "Link público"}
                       </Button>
                       <Button
                         size="sm"
@@ -594,7 +573,6 @@ function CompanyDetail() {
                         </span>
                       </span>
                     </button>
-                    {f.public_token && <Link2 className="size-3.5 shrink-0 text-success" />}
                     <Button
                       size="icon"
                       variant="ghost"

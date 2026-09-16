@@ -321,9 +321,10 @@ export const verifyDocument = createServerFn({ method: "POST" })
 
 /** Envia o documento para assinatura: gera tokens seguros, registra auditoria e notificações. */
 export const dispatchSigningRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ requestId: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const db = await admin();
+  .handler(async ({ data, context }) => {
+    const db = context.supabase;
     const { data: req } = await db
       .from("signing_requests")
       .select("*, documents(id, name, owner_id)")
@@ -331,6 +332,7 @@ export const dispatchSigningRequest = createServerFn({ method: "POST" })
       .single();
     if (!req) throw new Error("Processo não encontrado");
     const doc = req.documents as unknown as { id: string; name: string; owner_id: string };
+    if (doc.owner_id !== context.userId) throw new Error("Processo não encontrado ou sem acesso");
     const { data: signers } = await db
       .from("signers")
       .select("id, name, email, token, order_index")
