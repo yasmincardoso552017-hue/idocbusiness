@@ -17,6 +17,7 @@ export const CONTRACT_STAGES = [
 const signerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
+  phone: z.string().max(30).optional(),
   cpf: z.string().optional(),
   requireGeo: z.boolean().optional(),
   requirePhotoId: z.boolean().optional(),
@@ -82,7 +83,7 @@ export const sendContractEnvelope = createServerFn({ method: "POST" })
 
     const page = Math.max(1, doc.page_count ?? 1);
     const origin = new URL(getRequest().url).origin;
-    const links: { name: string; email: string; url: string }[] = [];
+    const links: { name: string; email: string; phone: string | null; url: string }[] = [];
 
     for (let i = 0; i < data.signers.length; i++) {
       const s = data.signers[i]!;
@@ -94,6 +95,7 @@ export const sendContractEnvelope = createServerFn({ method: "POST" })
           owner_id: owner,
           name: s.name,
           email: s.email.toLowerCase(),
+          phone: s.phone || null,
           cpf: s.cpf || null,
           order_index: i + 1,
           token,
@@ -117,7 +119,7 @@ export const sendContractEnvelope = createServerFn({ method: "POST" })
         type: "signature",
         required: true,
       });
-      links.push({ name: s.name, email: s.email, url: `${origin}/sign/${token}` });
+      links.push({ name: s.name, email: s.email, phone: s.phone || null, url: `${origin}/sign/${token}` });
     }
 
     await db.from("documents").update({ status: "signing" }).eq("id", doc.id);
@@ -191,7 +193,7 @@ export const getContractEnvelope = createServerFn({ method: "POST" })
       .maybeSingle();
     const { data: signers } = await db
       .from("signers")
-      .select("id, name, email, status, order_index, token, revoked, viewed_at, signed_at, ip, device, geo")
+      .select("id, name, email, phone, status, order_index, token, revoked, viewed_at, signed_at, ip, device, geo")
       .eq("request_id", contract.request_id)
       .order("order_index");
     const { data: evidence } = await db
@@ -301,16 +303,16 @@ export const resendContractEnvelope = createServerFn({ method: "POST" })
 
     const { data: signers } = await db
       .from("signers")
-      .select("id, name, email, status")
+      .select("id, name, email, phone, status")
       .eq("request_id", contract.request_id)
       .order("order_index");
     const origin = new URL(getRequest().url).origin;
-    const links: { name: string; email: string; url: string }[] = [];
+    const links: { name: string; email: string; phone: string | null; url: string }[] = [];
     for (const s of signers ?? []) {
       if (s.status === "signed") continue;
       const token = randomToken(24);
       await db.from("signers").update({ token, revoked: false }).eq("id", s.id);
-      links.push({ name: s.name, email: s.email, url: `${origin}/sign/${token}` });
+      links.push({ name: s.name, email: s.email, phone: s.phone, url: `${origin}/sign/${token}` });
     }
     await db.from("signing_requests").update({ status: "sent" }).eq("id", contract.request_id);
     await db
