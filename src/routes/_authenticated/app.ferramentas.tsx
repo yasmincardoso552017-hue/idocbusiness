@@ -199,36 +199,72 @@ function downloadBlob(blob: Blob, name: string) {
 function FileField({
   label,
   multiple,
+  append,
   accept = ".pdf,application/pdf",
   onPick,
+  onRemove,
+  onClear,
   files,
 }: {
   label: string;
   multiple?: boolean;
+  append?: boolean;
   accept?: string;
   onPick: (files: File[]) => void;
+  onRemove?: (index: number) => void;
+  onClear?: () => void;
   files: File[];
 }) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <Input
-        type="file"
-        accept={accept}
-        multiple={multiple}
-        onChange={(e) => {
-          const picked = Array.from(e.target.files ?? []);
-          if (picked.length) onPick(picked);
-          // libera o campo para permitir escolher o mesmo arquivo novamente
-          e.target.value = "";
-        }}
-        className="file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-2 file:py-1 file:text-xs file:font-semibold"
-      />
+      <div className="rounded-lg border border-dashed border-border bg-secondary/20 p-3">
+        <Input
+          type="file"
+          accept={accept}
+          multiple={multiple}
+          onChange={(e) => {
+            const picked = Array.from(e.target.files ?? []);
+            if (picked.length) onPick(picked);
+            // libera o campo para adicionar outro lote, inclusive de outra pasta
+            e.target.value = "";
+          }}
+          className="file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-2 file:py-1 file:text-xs file:font-semibold"
+        />
+        {append && files.length > 0 && (
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Selecione novamente para adicionar mais arquivos de outra pasta ou da galeria.
+          </p>
+        )}
+      </div>
 
       {files.length > 0 && (
-        <p className="truncate text-[11px] text-muted-foreground">
-          {files.length} arquivo(s): {files.map((f) => f.name).join(", ")}
-        </p>
+        <div className="space-y-2 rounded-lg border border-border p-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-medium">{files.length} arquivo(s) na fila</p>
+            {onClear && (
+              <Button type="button" size="sm" variant="ghost" className="h-7" onClick={onClear}>
+                Limpar todos
+              </Button>
+            )}
+          </div>
+          <div className="max-h-44 space-y-1 overflow-y-auto">
+            {files.map((file, index) => (
+              <div key={`${file.name}-${file.size}-${file.lastModified}-${index}`} className="flex items-center gap-2 rounded-md bg-secondary/50 px-2 py-1.5">
+                <span className="w-5 shrink-0 text-center text-[11px] text-muted-foreground">{index + 1}</span>
+                <span className="min-w-0 flex-1 truncate text-xs">{file.name}</span>
+                <span className="shrink-0 text-[10px] text-muted-foreground">
+                  {file.size < 1_048_576 ? `${Math.max(1, Math.round(file.size / 1024))} KB` : `${(file.size / 1_048_576).toFixed(1)} MB`}
+                </span>
+                {onRemove && (
+                  <Button type="button" size="icon" variant="ghost" className="size-7" aria-label={`Remover ${file.name}`} onClick={() => onRemove(index)}>
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -701,13 +737,22 @@ function Tools() {
                             : "Arquivo PDF"
                   }
                   multiple={tool === "merge" || tool === "img2pdf" || tool === "zip"}
+                  append={tool === "merge"}
                   accept={accept}
                   files={files}
                   onPick={(f) => {
-                    setFiles(f);
+                    setFiles((current) => tool === "merge" ? [...current, ...f] : f);
                     setFields(null);
                     setResult(null);
                   }}
+                  onRemove={tool === "merge" ? (index) => {
+                    setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
+                    setResult(null);
+                  } : undefined}
+                  onClear={tool === "merge" ? () => {
+                    setFiles([]);
+                    setResult(null);
+                  } : undefined}
                 />
 
                 {tool === "extract" && (

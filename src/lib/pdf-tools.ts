@@ -25,6 +25,22 @@ function startsWith(bytes: Uint8Array, signature: number[]) {
   return signature.every((value, index) => bytes[index] === value);
 }
 
+function preparePdfBytes(bytes: Uint8Array) {
+  if (!bytes.length) throw new Error("O arquivo está vazio");
+  const limit = Math.min(bytes.length - 4, 4096);
+  for (let index = 0; index <= limit; index++) {
+    if (
+      bytes[index] === 0x25 &&
+      bytes[index + 1] === 0x50 &&
+      bytes[index + 2] === 0x44 &&
+      bytes[index + 3] === 0x46
+    ) {
+      return index === 0 ? bytes : bytes.slice(index);
+    }
+  }
+  return bytes;
+}
+
 function detectInput(file: File, bytes: Uint8Array) {
   const ext = extension(file.name);
   if (startsWith(bytes, [0x25, 0x50, 0x44, 0x46]) || file.type === "application/pdf" || ext === "pdf") return "pdf";
@@ -78,21 +94,22 @@ async function imageFileToPdf(file: File): Promise<Bytes> {
 /** Normaliza PDFs difíceis e, se necessário, reconstrói páginas legíveis como imagem. */
 export async function normalizePdf(bytes: Bytes, fileName = "arquivo.pdf"): Promise<Bytes> {
   const PDFDocument = await plain();
+  const prepared = preparePdfBytes(bytes);
   try {
-    const pdf = await PDFDocument.load(bytes.slice(0), { ignoreEncryption: true, updateMetadata: false });
+    const pdf = await PDFDocument.load(prepared.slice(0), { ignoreEncryption: true, updateMetadata: false });
     if (!pdf.getPageCount()) throw new Error("sem páginas");
     const saved = await pdf.save({ useObjectStreams: false, addDefaultPage: false, updateFieldAppearances: false });
     // Confirma também a leitura visual: há PDFs que a biblioteca estrutural aceita,
     // mas o navegador não consegue desenhar sem reconstrução.
     try {
-      await rasterizePages(saved, [0], "image/jpeg", 0.5);
+      await rasterizePages(saved, undefined, "image/jpeg", 0.35);
       return saved;
     } catch {
       throw new Error("requer reconstrução visual");
     }
   } catch (initialError) {
     try {
-      const rasters = await rasterizePages(bytes, undefined, "image/jpeg", 1.6);
+      const rasters = await rasterizePages(prepared, undefined, "image/jpeg", 1.6);
       if (!rasters.length) throw initialError;
       const rebuilt = await PDFDocument.create();
       for (const raster of rasters) {

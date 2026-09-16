@@ -29,6 +29,7 @@
 - [x] Testar cada ferramenta no navegador (20/20 OK em desktop)
 - [x] Reforçar recuperação e pré-visualização de PDFs difíceis, com progresso e falhas claras
 - [x] Atualizar os ícones das ferramentas com identidade visual própria por categoria
+- [x] Permitir vários lotes no Juntar PDF e normalizar PDFs exportados pelo Microsoft Edge
 
 ## Evolução geral da plataforma
 - [x] Corrigir acesso autenticado a downloads compartilhados e padronizar exclusão de contratos
