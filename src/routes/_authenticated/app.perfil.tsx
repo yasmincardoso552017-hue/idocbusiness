@@ -58,8 +58,8 @@ function Profile() {
       });
     const config = (data?.communication?.config ?? {}) as Record<string, unknown>;
     setChannels({
-      whatsapp: typeof config.whatsapp === "string" ? config.whatsapp : data?.profile?.phone ?? "",
-      emailProvider: config.emailProvider === "outlook" ? "outlook" : "gmail",
+      whatsapp: typeof config["whatsapp"] === "string" ? config["whatsapp"] : data?.profile?.phone ?? "",
+      emailProvider: config["emailProvider"] === "outlook" ? "outlook" : "gmail",
     });
   }, [data]);
 
