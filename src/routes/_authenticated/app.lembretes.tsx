@@ -22,6 +22,14 @@ import { fmtDateTime } from "@/lib/format";
 import { createReminder, sendReminderNow } from "@/lib/reminders.functions";
 
 export const Route = createFileRoute("/_authenticated/app/lembretes")({
+  head: () => ({ meta: [
+    { title: "Lembretes e notificações | IDOC BUSINESS" },
+    { name: "description", content: "Agende e acompanhe notificações de documentos e assinaturas." },
+    { property: "og:title", content: "Lembretes e notificações | IDOC BUSINESS" },
+    { property: "og:description", content: "Envie alertas imediatos ou programados aos signatários." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: Reminders,
 });
 

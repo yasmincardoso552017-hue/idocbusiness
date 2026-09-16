@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 
+const MAX_UPLOAD_BYTES = 2 * 1024 * 1024 * 1024;
+
 type FolderRec = { id: string; name: string; parent_id: string | null; company_id: string };
 
 async function sha256(file: File) {
@@ -99,6 +101,10 @@ export function UploadDocumentDialog({
       toast.error("Selecione o documento");
       return;
     }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast.error("O arquivo ultrapassa o limite de 2 GB");
+      return;
+    }
     setBusy(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -121,7 +127,7 @@ export function UploadDocumentDialog({
           pageCount = null;
         }
       }
-      const { error } = await supabase.from("documents").insert({
+       const { error } = await supabase.from("documents").insert({
         id,
         owner_id: u.user.id,
         name: finalName,
@@ -134,7 +140,10 @@ export function UploadDocumentDialog({
         hash: file.size <= 200 * 1024 * 1024 ? await sha256(file) : null,
         status: "draft",
       });
-      if (error) throw error;
+       if (error) {
+         await supabase.storage.from("documents").remove([path]);
+         throw error;
+       }
 
       toast.success("Documento enviado para a pasta escolhida");
       await qc.invalidateQueries({ queryKey: ["company", companyId] });
@@ -206,6 +215,13 @@ export function UploadDocumentDialog({
                 if (f && !name.trim()) setName(f.name);
               }}
             />
+            <p className="mt-1 text-[10px] text-muted-foreground">Até 2 GB por arquivo. O envio fica privado na pasta escolhida.</p>
+            {file && (
+              <div className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs">
+                <p className="truncate font-medium">{file.name}</p>
+                <p className="text-muted-foreground">{(file.size / 1024 / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} MB</p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1">

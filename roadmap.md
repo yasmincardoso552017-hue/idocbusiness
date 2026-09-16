@@ -25,3 +25,11 @@
 - [x] Testar cada ferramenta no navegador (20/20 OK em desktop)
 - [x] Reforçar recuperação e pré-visualização de PDFs difíceis, com progresso e falhas claras
 - [x] Atualizar os ícones das ferramentas com identidade visual própria por categoria
+
+## Evolução geral da plataforma
+- [x] Corrigir acesso autenticado a downloads compartilhados e padronizar exclusão de contratos
+- [x] Criar navegação lateral recolhível no computador sem alterar a navegação móvel
+- [x] Adicionar busca geral por empresa, pasta, documento e contrato
+- [x] Criar primeiros passos guiados e ação única de upload no painel
+- [x] Reforçar upload com limite visível, resumo do arquivo e limpeza em caso de falha
+- [ ] Modelos reutilizáveis, versionamento, colaboração avançada e planos comerciais

@@ -19,7 +19,6 @@ import {
   BellRing,
   KeyRound,
   Scale,
-  Search,
 } from "lucide-react";
 import type { ReactNode } from "react";
 

@@ -12,6 +12,14 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/app/integracoes")({
+  head: () => ({ meta: [
+    { title: "Integrações | IDOC BUSINESS" },
+    { name: "description", content: "Conecte serviços de armazenamento ao IDOC BUSINESS." },
+    { property: "og:title", content: "Integrações | IDOC BUSINESS" },
+    { property: "og:description", content: "Central de integrações do seu espaço documental." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: Integrations,
 });
 

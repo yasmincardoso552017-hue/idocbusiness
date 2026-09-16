@@ -11,6 +11,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime, statusClass, STATUS_LABEL } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/assinaturas")({
+  head: () => ({
+    meta: [
+      { title: "Assinaturas eletrônicas | IDOC BUSINESS" },
+      { name: "description", content: "Acompanhe solicitações, signatários, evidências e PDFs assinados." },
+      { property: "og:title", content: "Assinaturas eletrônicas | IDOC BUSINESS" },
+      { property: "og:description", content: "Acompanhe assinaturas e evidências dos seus documentos." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Signatures,
 });
 
@@ -140,7 +150,7 @@ function Signatures() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => download(doc.signed_storage_path!, `assinado-${doc.name}`)}
+                     onClick={() => doc.signed_storage_path && download(doc.signed_storage_path, `assinado-${doc.name}`)}
                     >
                       <Download className="mr-1 size-3.5" /> PDF assinado
                     </Button>
@@ -158,7 +168,7 @@ function Signatures() {
           })}
           {reqs.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Nenhum processo de assinatura. Envie um documento em Docs.
+               Nenhum processo de assinatura. Abra uma empresa, escolha um documento e envie para assinatura.
             </p>
           )}
         </div>
