@@ -745,14 +745,16 @@ function Tools() {
                     setFields(null);
                     setResult(null);
                   }}
-                  onRemove={tool === "merge" ? (index) => {
-                    setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
-                    setResult(null);
-                  } : undefined}
-                  onClear={tool === "merge" ? () => {
-                    setFiles([]);
-                    setResult(null);
-                  } : undefined}
+                  {...(tool === "merge" ? {
+                    onRemove: (index: number) => {
+                      setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index));
+                      setResult(null);
+                    },
+                    onClear: () => {
+                      setFiles([]);
+                      setResult(null);
+                    },
+                  } : {})}
                 />
 
                 {tool === "extract" && (
