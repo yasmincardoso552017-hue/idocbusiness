@@ -20,7 +20,6 @@ import {
   PenLine,
   ShieldCheck,
   Gauge,
-  Eye,
   FileSpreadsheet,
   Presentation,
   FileText,
@@ -637,7 +636,7 @@ function Tools() {
                   pickTool(c.tools[0]!.id as ToolId);
                 }}
                 aria-pressed={cat === c.id}
-                className={`group h-auto min-w-0 flex-col gap-2 whitespace-normal rounded-lg px-1 py-1.5 text-center text-[10px] font-bold sm:text-xs ${
+                className={`group h-auto min-w-0 flex-col gap-2 whitespace-normal rounded-lg px-1 py-1.5 text-center text-[10px] font-bold [&_svg]:size-8 sm:text-xs sm:[&_svg]:size-10 ${
                   cat === c.id ? "bg-secondary text-foreground ring-2 ring-primary ring-offset-2 ring-offset-background" : "text-foreground hover:bg-secondary"
                 }`}
               >
