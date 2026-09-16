@@ -38,3 +38,10 @@
 - [x] Criar primeiros passos guiados e ação única de upload no painel
 - [x] Reforçar upload com limite visível, resumo do arquivo e limpeza em caso de falha
 - [ ] Modelos reutilizáveis, versionamento, colaboração avançada e planos comerciais
+
+## Canais pessoais de envio
+- [x] Preferências de WhatsApp e provedor de e-mail por conta no perfil
+- [x] WhatsApp com mensagem individual e link exclusivo por signatário
+- [x] Central de envio e cópia manual no envelope do contrato
+- [ ] Habilitar clientes administrativos Gmail e Outlook para conexão OAuth individual
+- [ ] Envio real por Gmail/Outlook após autorização dos clientes

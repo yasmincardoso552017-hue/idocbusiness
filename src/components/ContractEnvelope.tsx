@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Copy, Download, Plus, Send, Trash2, Ban, RefreshCw, ShieldCheck } from "lucide-react";
+import { Copy, Download, Plus, Send, Trash2, Ban, RefreshCw, ShieldCheck, MessageCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -78,6 +78,7 @@ function StageTrack({ stage }: { stage: string }) {
 type SignerDraft = {
   name: string;
   email: string;
+  phone: string;
   cpf: string;
   requireGeo?: boolean;
   requirePhotoId?: boolean;
@@ -105,7 +106,8 @@ export function ContractEnvelopeDialog({
   const [geo, setGeo] = useState(false);
   const [photo, setPhoto] = useState(false);
   const [selfie, setSelfie] = useState(false);
-  const [signers, setSigners] = useState<SignerDraft[]>([{ name: "", email: "", cpf: "" }]);
+  const [signers, setSigners] = useState<SignerDraft[]>([{ name: "", email: "", phone: "", cpf: "" }]);
+  const [deliveryLinks, setDeliveryLinks] = useState<Array<{ name: string; email: string; phone: string | null; url: string }>>([]);
 
   const envelope = useQuery({
     queryKey: ["contract-envelope", contractId],
@@ -134,6 +136,7 @@ export function ContractEnvelopeDialog({
         .map((s) => ({
           name: s.name.trim(),
           email: s.email.trim(),
+          phone: s.phone.trim() || undefined,
           cpf: s.cpf.trim() || undefined,
           requireGeo: s.requireGeo ?? geo,
           requirePhotoId: s.requirePhotoId ?? photo,
@@ -155,7 +158,8 @@ export function ContractEnvelopeDialog({
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      setDeliveryLinks(result.links);
       toast.success("Envelope enviado — links gerados");
       qc.invalidateQueries({ queryKey: ["contract-envelope", contractId] });
       qc.invalidateQueries({ queryKey: ["contracts"] });
@@ -176,7 +180,8 @@ export function ContractEnvelopeDialog({
 
   const resend = useMutation({
     mutationFn: () => resendContractEnvelope({ data: { contractId } }),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      setDeliveryLinks(result.links);
       toast.success("Links renovados");
       qc.invalidateQueries({ queryKey: ["contract-envelope", contractId] });
     },
@@ -185,6 +190,22 @@ export function ContractEnvelopeDialog({
 
   const env = envelope.data;
   const hasEnvelope = !!env?.request;
+  const availableLinks = deliveryLinks.length
+    ? deliveryLinks
+    : (env?.signers ?? [])
+        .filter((s) => s.status !== "signed" && !s.revoked)
+        .map((s) => ({
+          name: s.name,
+          email: s.email,
+          phone: s.phone,
+          url: `${typeof window === "undefined" ? "" : window.location.origin}/sign/${s.token}`,
+        }));
+
+  function whatsappUrl(item: { name: string; phone: string | null; url: string }) {
+    const phone = (item.phone ?? "").replace(/\D/g, "");
+    const text = `Olá, ${item.name}! Você recebeu um documento para assinatura no IDOC BUSINESS. Acesse seu link exclusivo: ${item.url}`;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -243,7 +264,7 @@ export function ContractEnvelopeDialog({
                 <Label className="text-xs">Signatários (destinatários)</Label>
                 {signers.map((s, i) => (
                   <div key={i} className="space-y-2 rounded-lg border border-border p-2">
-                    <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                    <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                       <Input
                         placeholder="Nome"
                         value={s.name}
@@ -266,6 +287,14 @@ export function ContractEnvelopeDialog({
                         <Trash2 className="size-4 text-destructive" />
                       </Button>
                     </div>
+                    <Input
+                      inputMode="tel"
+                      placeholder="WhatsApp com DDD (opcional)"
+                      value={s.phone}
+                      onChange={(e) =>
+                        setSigners((p) => p.map((x, j) => (j === i ? { ...x, phone: e.target.value } : x)))
+                      }
+                    />
                     <div className="grid gap-1 sm:grid-cols-3">
                       {(
                         [
@@ -290,7 +319,7 @@ export function ContractEnvelopeDialog({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setSigners((p) => [...p, { name: "", email: "", cpf: "" }])}
+                  onClick={() => setSigners((p) => [...p, { name: "", email: "", phone: "", cpf: "" }])}
                 >
                   <Plus className="mr-1 size-3.5" /> Adicionar signatário
                 </Button>
@@ -398,6 +427,57 @@ export function ContractEnvelopeDialog({
                   </Button>
                 ) : null}
               </div>
+
+              {availableLinks.length ? (
+                <div className="space-y-2 rounded-lg border border-border p-3">
+                  <div>
+                    <span className="text-xs font-bold">Enviar links aos signatários</span>
+                    <p className="text-[10px] text-muted-foreground">Cada pessoa recebe somente o próprio link.</p>
+                  </div>
+                  {availableLinks.map((item) => (
+                    <div key={item.email} className="flex flex-col gap-2 rounded-md bg-muted p-2 sm:flex-row sm:items-center">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs font-semibold">{item.name}</div>
+                        <div className="truncate text-[10px] text-muted-foreground">{item.email}</div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!item.phone}
+                          asChild={Boolean(item.phone)}
+                        >
+                          {item.phone ? (
+                            <a href={whatsappUrl(item)} target="_blank" rel="noreferrer">
+                              <MessageCircle className="mr-1 size-3.5" /> WhatsApp
+                            </a>
+                          ) : (
+                            <span><MessageCircle className="mr-1 size-3.5" /> Sem número</span>
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toast.info("Conecte Gmail ou Outlook em Perfil → Canais de envio.")}
+                        >
+                          <Mail className="mr-1 size-3.5" /> E-mail
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={`Copiar link de ${item.name}`}
+                          onClick={() => {
+                            navigator.clipboard?.writeText(item.url);
+                            toast.success("Link copiado");
+                          }}
+                        >
+                          <Copy className="size-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               <div className="space-y-1">
                 <span className="text-xs font-bold">Trilha de eventos</span>
