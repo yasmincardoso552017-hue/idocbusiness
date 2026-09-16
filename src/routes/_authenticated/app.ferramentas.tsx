@@ -20,7 +20,6 @@ import {
   PenLine,
   ShieldCheck,
   Gauge,
-  Eye,
   FileSpreadsheet,
   Presentation,
   FileText,
@@ -94,6 +93,7 @@ const CATS = [
     id: "org",
     label: "Organizar",
     icon: Layers,
+    iconClass: "bg-tool-organize",
     tools: [
       { id: "merge", label: "Juntar PDFs" },
       { id: "burst", label: "Dividir em arquivos" },
@@ -109,6 +109,7 @@ const CATS = [
     id: "conv",
     label: "Converter",
     icon: RefreshCw,
+    iconClass: "bg-tool-convert",
     tools: [
       { id: "pdf2word", label: "PDF → Word" },
       { id: "pdf2excel", label: "PDF → Excel" },
@@ -123,6 +124,7 @@ const CATS = [
     id: "edit",
     label: "Editar",
     icon: PencilRuler,
+    iconClass: "bg-tool-edit",
     tools: [
       { id: "editor", label: "Editor completo" },
       { id: "forms", label: "Preencher formulários" },
@@ -132,6 +134,7 @@ const CATS = [
     id: "sig",
     label: "Assinatura",
     icon: PenLine,
+    iconClass: "bg-tool-sign",
     tools: [
       { id: "sign", label: "Assinar PDF" },
       { id: "request", label: "Solicitar assinaturas" },
@@ -141,17 +144,19 @@ const CATS = [
     id: "sec",
     label: "Segurança",
     icon: ShieldCheck,
+    iconClass: "bg-tool-security",
     tools: [
       { id: "protect", label: "Colocar senha" },
       { id: "unlock", label: "Remover senha" },
       { id: "redact", label: "Redigir dados" },
     ],
   },
-  { id: "opt", label: "Otimizar", icon: Gauge, tools: [{ id: "compress", label: "Comprimir PDF" }] },
+  { id: "opt", label: "Otimização", icon: Gauge, iconClass: "bg-tool-optimize", tools: [{ id: "compress", label: "Comprimir PDF" }] },
   {
     id: "ocr",
     label: "OCR",
-    icon: Eye,
+    icon: ScanText,
+    iconClass: "bg-tool-ocr",
     tools: [
       { id: "ocr", label: "PDF pesquisável" },
       { id: "text", label: "Extrair texto" },
@@ -620,37 +625,50 @@ function Tools() {
             </p>
           </div>
 
-          <div className="grid grid-cols-4 gap-1 sm:grid-cols-7">
+          <div className="grid grid-cols-4 gap-x-2 gap-y-4 sm:grid-cols-7 sm:gap-3">
             {CATS.map((c) => (
-              <button
+              <Button
                 key={c.id}
+                type="button"
+                variant="ghost"
                 onClick={() => {
                   setCat(c.id);
                   pickTool(c.tools[0]!.id as ToolId);
                 }}
-                className={`flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold ${
-                  cat === c.id ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+                aria-pressed={cat === c.id}
+                className={`group h-auto min-w-0 flex-col gap-2 whitespace-normal rounded-lg px-1 py-1.5 text-center text-[10px] font-bold [&_svg]:size-8 sm:text-xs sm:[&_svg]:size-10 ${
+                  cat === c.id ? "bg-secondary text-foreground ring-2 ring-primary ring-offset-2 ring-offset-background" : "text-foreground hover:bg-secondary"
                 }`}
               >
-                <c.icon className="size-4" />
-                {c.label}
-              </button>
+                <span className={`flex aspect-square w-full max-w-16 items-center justify-center rounded-lg text-primary-foreground shadow-soft transition-transform group-hover:-translate-y-0.5 sm:max-w-20 ${c.iconClass}`}>
+                  <c.icon className="size-8 stroke-[2.4] sm:size-10" aria-hidden="true" />
+                </span>
+                <span className="min-h-7 leading-tight">{c.label}</span>
+              </Button>
             ))}
           </div>
 
-          <div className="mt-3 flex flex-wrap gap-1">
+          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {activeCat.tools.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => pickTool(t.id as ToolId)}
-                className={`rounded-full border px-3 py-1.5 text-[11px] font-medium ${
-                  tool === t.id
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border text-muted-foreground"
-                }`}
-              >
-                {t.label}
-              </button>
+              (() => {
+                const Icon = ICONS[t.id as ToolId] ?? Wrench;
+                return (
+                  <Button
+                    key={t.id}
+                    type="button"
+                    variant="outline"
+                    onClick={() => pickTool(t.id as ToolId)}
+                    className={`h-auto min-h-11 justify-start gap-2 whitespace-normal px-3 py-2 text-left text-[11px] leading-tight ${
+                      tool === t.id ? "border-primary bg-primary/10 text-primary shadow-sm" : "text-muted-foreground"
+                    }`}
+                  >
+                    <span className={`flex size-7 shrink-0 items-center justify-center rounded-md text-primary-foreground ${activeCat.iconClass}`}>
+                      <Icon className="size-4" aria-hidden="true" />
+                    </span>
+                    <span>{t.label}</span>
+                  </Button>
+                );
+              })()
             ))}
           </div>
 
