@@ -69,6 +69,7 @@ export type PreparedMergeFile = {
   bytes: Bytes;
   pageCount: number;
   recovered: boolean;
+  visuals: PdfPageVisual[];
 };
 
 function detectInput(file: File, bytes: Uint8Array) {
@@ -161,7 +162,7 @@ export async function prepareFileForMerge(file: File): Promise<PreparedMergeFile
   if (kind !== "pdf") {
     const converted = await fileToPdf(file);
     const visuals = await inspectPdfVisuals(converted, 260);
-    return { bytes: converted, pageCount: visuals.length, recovered: false };
+    return { bytes: converted, pageCount: visuals.length, recovered: false, visuals };
   }
 
   const prepared = preparePdfBytes(sourceBytes);
@@ -176,7 +177,7 @@ export async function prepareFileForMerge(file: File): Promise<PreparedMergeFile
     const stagedBytes = await staged.save({ useObjectStreams: false });
     const stagedVisuals = await inspectPdfVisuals(stagedBytes, 260);
     if (!hasVisualRegression(sourceVisuals, stagedVisuals)) {
-      return { bytes: stagedBytes, pageCount: stagedVisuals.length, recovered: false };
+      return { bytes: stagedBytes, pageCount: stagedVisuals.length, recovered: false, visuals: stagedVisuals };
     }
   } catch {
     // A reconstrução visual abaixo é a segunda estratégia para PDFs malformados.
@@ -187,7 +188,29 @@ export async function prepareFileForMerge(file: File): Promise<PreparedMergeFile
   if (hasVisualRegression(sourceVisuals, recoveredVisuals)) {
     throw new Error(`O PDF “${file.name}” perdeu conteúdo durante a recuperação`);
   }
-  return { bytes: rebuilt, pageCount: recoveredVisuals.length, recovered: true };
+  return { bytes: rebuilt, pageCount: recoveredVisuals.length, recovered: true, visuals: recoveredVisuals };
+}
+
+/** Retorna as páginas que perderam conteúdo visível no PDF unido. */
+export async function findMergedVisualRegressions(bytes: Bytes, expected: PdfPageVisual[]) {
+  const actual = await inspectPdfVisuals(bytes, 260);
+  if (actual.length !== expected.length) {
+    return Array.from({ length: Math.max(actual.length, expected.length) }, (_, index) => index);
+  }
+  return expected.flatMap((source, index) => {
+    const merged = actual[index];
+    if (!merged) return [index];
+    return source.inkRatio >= 0.00008 && merged.inkRatio < Math.max(0.00004, source.inkRatio * 0.18)
+      ? [index]
+      : [];
+  });
+}
+
+/** Reconstrução visual de último recurso para um arquivo que perdeu conteúdo ao ser unido. */
+export async function rasterizePdfForMerge(bytes: Bytes) {
+  const rebuilt = await rebuildPdfFromRenderedPages(bytes);
+  const visuals = await inspectPdfVisuals(rebuilt, 260);
+  return { bytes: rebuilt, pageCount: visuals.length, recovered: true, visuals } satisfies PreparedMergeFile;
 }
 
 /** Reconstrói o PDF a partir das páginas rasterizadas (achata tudo: texto vira imagem). */

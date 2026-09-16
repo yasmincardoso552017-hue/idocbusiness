@@ -46,7 +46,7 @@ import { ocrPages } from "@/lib/audit.functions";
 import {
   compressPdf,
   fillFormFields,
-  fileToPdf,
+  findMergedVisualRegressions,
   normalizePdf,
   officeToPdf,
   pdfToDocx,
@@ -54,6 +54,7 @@ import {
   pdfToXlsx,
   prepareFileForMerge,
   protectPdf,
+  rasterizePdfForMerge,
   readFormFields,
   toPdfA,
   unlockPdf,
@@ -222,7 +223,7 @@ function FileField({
   onRemove?: (index: number) => void;
   onClear?: () => void;
   files: File[];
-  statuses?: MergeFileStatus[];
+  statuses?: MergeFileStatus[] | undefined;
 }) {
   return (
     <div className="space-y-2">
@@ -355,18 +356,16 @@ function Tools() {
   const actions: Record<string, () => Promise<string>> = {
     merge: async () => {
       if (files.length < 2) throw new Error("Selecione ao menos 2 arquivos");
-      const out = await PDFDocument.create();
       setMergeStatuses(files.map(() => ({ state: "waiting" })));
       let recoveredCount = 0;
+      const preparedFiles: Awaited<ReturnType<typeof prepareFileForMerge>>[] = [];
       for (const [index, f] of files.entries()) {
         setMergeStatuses((current) => current.map((status, itemIndex) =>
           itemIndex === index ? { state: "processing" } : status,
         ));
         try {
           const prepared = await prepareFileForMerge(f);
-          const src = await PDFDocument.load(prepared.bytes, { ignoreEncryption: true });
-          const copied = await out.copyPages(src, src.getPageIndices());
-          copied.forEach((page) => out.addPage(page));
+          preparedFiles.push(prepared);
           if (prepared.recovered) recoveredCount += 1;
           setMergeStatuses((current) => current.map((status, itemIndex) =>
             itemIndex === index
@@ -381,8 +380,47 @@ function Tools() {
           throw new Error(`Não foi possível adicionar “${f.name}”: ${detail}`);
         }
       }
-      open(await out.save(), "idoc-unido");
-      return `PDF unido com ${out.getPageCount()} páginas${recoveredCount ? `; ${recoveredCount} arquivo(s) recuperado(s)` : ""}`;
+
+      async function buildMerged(items: typeof preparedFiles) {
+        const output = await PDFDocument.create();
+        for (const item of items) {
+          const source = await PDFDocument.load(item.bytes, { ignoreEncryption: true });
+          const copied = await output.copyPages(source, source.getPageIndices());
+          copied.forEach((page) => output.addPage(page));
+        }
+        return { output, bytes: await output.save({ useObjectStreams: false }) };
+      }
+
+      let merged = await buildMerged(preparedFiles);
+      const expected = preparedFiles.flatMap((item) => item.visuals);
+      const regressions = await findMergedVisualRegressions(merged.bytes, expected);
+      if (regressions.length) {
+        let pageOffset = 0;
+        for (let index = 0; index < preparedFiles.length; index++) {
+          const item = preparedFiles[index];
+          if (!item) continue;
+          const end = pageOffset + item.pageCount;
+          const affected = regressions.some((pageIndex) => pageIndex >= pageOffset && pageIndex < end);
+          if (affected && !item.recovered) {
+            preparedFiles[index] = await rasterizePdfForMerge(item.bytes);
+            recoveredCount += 1;
+            setMergeStatuses((current) => current.map((status, itemIndex) =>
+              itemIndex === index ? { state: "recovered", pages: item.pageCount } : status,
+            ));
+          }
+          pageOffset = end;
+        }
+        merged = await buildMerged(preparedFiles);
+        const finalRegressions = await findMergedVisualRegressions(
+          merged.bytes,
+          preparedFiles.flatMap((item) => item.visuals),
+        );
+        if (finalRegressions.length) {
+          throw new Error(`A união foi interrompida porque ${finalRegressions.length} página(s) perderiam conteúdo visual`);
+        }
+      }
+      open(merged.bytes, "idoc-unido");
+      return `PDF unido com ${merged.output.getPageCount()} páginas${recoveredCount ? `; ${recoveredCount} arquivo(s) recuperado(s)` : ""}`;
     },
     burst: async () => {
       const src = await loadPdf(needPdf());
