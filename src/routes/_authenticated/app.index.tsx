@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import {
   Building2,
   FileText,
@@ -19,6 +20,8 @@ import {
   ScanText,
   ArrowRight,
   Upload,
+  FolderPlus,
+  CircleCheck,
 } from "lucide-react";
 
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, Cell } from "recharts";
@@ -29,6 +32,7 @@ import { fmtDateTime, statusClass, STATUS_LABEL } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { PushSetup } from "@/components/PushSetup";
 import { fmtDateTime as fmtDT } from "@/lib/format";
+import { UploadDocumentDialog } from "@/components/UploadDocumentDialog";
 
 export const Route = createFileRoute("/_authenticated/app/")({
   head: () => ({
@@ -63,6 +67,7 @@ const TOOL_GROUPS = [
 
 
 function Dashboard() {
+  const [uploadOpen, setUploadOpen] = useState(false);
   const { data } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
@@ -128,9 +133,40 @@ function Dashboard() {
       .filter((d) => d.status === "sent")
       .map((d) => ({ tone: "primary", text: `"${d.name}" aguardando assinatura` })),
   ].slice(0, 5);
+  const hasCompany = (data?.companies.length ?? 0) > 0;
+  const hasDocument = docs.length > 0;
+  const hasSignature = (data?.signers.length ?? 0) > 0;
+  const completedSteps = [hasCompany, hasDocument, hasSignature].filter(Boolean).length;
 
   return (
     <AppShell title="Visão geral">
+      <UploadDocumentDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+      {!hasSignature && (
+        <section className="mb-4 border-y border-border bg-card px-4 py-4 sm:rounded-lg sm:border" aria-labelledby="getting-started-title">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase text-primary">Primeiros passos</p>
+              <h2 id="getting-started-title" className="mt-1 text-base font-bold">Prepare seu espaço de documentos</h2>
+            </div>
+            <span className="shrink-0 text-xs font-semibold text-muted-foreground">{completedSteps}/3</span>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <Link to="/app/empresas" className="flex items-center gap-3 rounded-md border border-border p-3 hover:bg-secondary">
+              {hasCompany ? <CircleCheck className="size-5 text-success" /> : <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">1</span>}
+              <span><span className="block text-xs font-semibold">Cadastrar empresa</span><span className="block text-[10px] text-muted-foreground">Cria as pastas iniciais</span></span>
+            </Link>
+            <button type="button" disabled={!hasCompany} onClick={() => setUploadOpen(true)} className="flex items-center gap-3 rounded-md border border-border p-3 text-left hover:bg-secondary disabled:opacity-50">
+              {hasDocument ? <CircleCheck className="size-5 text-success" /> : <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">2</span>}
+              <span><span className="block text-xs font-semibold">Enviar documento</span><span className="block text-[10px] text-muted-foreground">Escolha empresa e pasta</span></span>
+            </button>
+            <Link to="/app/contratos" className={`flex items-center gap-3 rounded-md border border-border p-3 hover:bg-secondary ${!hasDocument ? "pointer-events-none opacity-50" : ""}`}>
+              {hasSignature ? <CircleCheck className="size-5 text-success" /> : <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">3</span>}
+              <span><span className="block text-xs font-semibold">Enviar para assinatura</span><span className="block text-[10px] text-muted-foreground">Defina pessoas e campos</span></span>
+            </Link>
+          </div>
+        </section>
+      )}
+
       <section className="card-soft gradient-brand mb-4 p-5 text-primary-foreground">
         <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">Escritório digital</p>
         <h1 className="mt-1 text-lg font-bold leading-snug">
@@ -141,10 +177,8 @@ function Dashboard() {
           auditoria.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button asChild size="sm" variant="secondary">
-            <Link to="/app/empresas">
-              <Upload className="mr-1 size-4" /> Enviar documento
-            </Link>
+          <Button size="sm" variant="secondary" onClick={() => hasCompany ? setUploadOpen(true) : undefined} asChild={!hasCompany}>
+            {hasCompany ? <><Upload className="mr-1 size-4" /> Enviar documento</> : <Link to="/app/empresas"><FolderPlus className="mr-1 size-4" /> Cadastrar empresa</Link>}
           </Button>
           <Button asChild size="sm" variant="outline" className="bg-transparent text-primary-foreground">
             <Link to="/app/ferramentas">Ferramentas de PDF</Link>

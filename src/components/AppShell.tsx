@@ -27,6 +27,24 @@ import { useQuery } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
 const tabs = [
   { to: "/app", label: "Início", icon: Home },
@@ -50,6 +68,61 @@ const menu = [
   { to: "/ajuda", label: "Ajuda", icon: HelpCircle },
 ];
 
+function DesktopSidebar({ items, pathname, onSignOut }: { items: typeof menu; pathname: string; onSignOut: () => void }) {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  const isActive = (to: string) => to === "/app" ? pathname === "/app" : pathname.startsWith(to);
+  return (
+    <Sidebar collapsible="icon" className="hidden md:flex">
+      <SidebarHeader className="h-16 justify-center border-b border-sidebar-border px-3">
+        <Link to="/app" className="flex items-center overflow-hidden">
+          <Brand className={collapsed ? "h-7 max-w-8 object-left" : "h-8"} />
+        </Link>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Área de trabalho</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {tabs.map((item) => (
+                <SidebarMenuItem key={item.to}>
+                  <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
+                    <Link to={item.to}><item.icon /><span>{item.label}</span></Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Mais recursos</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {items.filter((item) => !tabs.some((tab) => tab.to === item.to)).map((item) => (
+                <SidebarMenuItem key={`${item.to}-${item.label}`}>
+                  <SidebarMenuButton asChild isActive={isActive(item.to)} tooltip={item.label}>
+                    <Link to={item.to}><item.icon /><span>{item.label}</span></Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Sair" onClick={onSignOut} className="text-destructive">
+              <LogOut /><span>Sair</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  );
+}
+
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
@@ -66,15 +139,23 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
   const items = isAdmin
     ? [...menu, { to: "/app/admin", label: "Gestão de usuários", icon: Users }]
     : menu;
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
 
   return (
-    <div className="min-h-screen bg-background">
+    <SidebarProvider>
+      <DesktopSidebar items={items} pathname={pathname} onSignOut={signOut} />
+      <SidebarInset className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border bg-card/90 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
-          <Link to="/app" className="flex items-center gap-2">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4">
+          <SidebarTrigger className="hidden md:inline-flex" aria-label="Recolher menu lateral" />
+          <Link to="/app" className="flex items-center gap-2 md:hidden">
             <Brand className="h-7" />
           </Link>
-          <h1 className="ml-1 flex-1 truncate text-sm font-semibold text-muted-foreground">{title}</h1>
+          <h1 className="ml-1 min-w-0 flex-1 truncate text-sm font-semibold text-foreground md:text-base">{title}</h1>
+          <GlobalSearch />
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" aria-label="Menu">
@@ -98,24 +179,18 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
                     <m.icon className="size-4 text-primary" /> {m.label}
                   </Link>
                 ))}
-                <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    navigate({ to: "/auth" });
-                  }}
-                  className="mt-2 flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-destructive hover:bg-destructive/10"
-                >
-                  <LogOut className="size-4" /> Sair
-                </button>
+                 <Button variant="ghost" onClick={signOut} className="mt-2 w-full justify-start gap-3 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                   <LogOut className="size-4" /> Sair
+                 </Button>
               </nav>
             </SheetContent>
           </Sheet>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 pb-28 pt-4">{children}</main>
+      <main className="mx-auto w-full max-w-7xl px-4 pb-28 pt-4 md:px-6 md:pb-8">{children}</main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-5xl">
           {tabs.map((t) => {
             const active = t.to === "/app" ? pathname === "/app" : pathname.startsWith(t.to);
@@ -134,7 +209,8 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
           })}
         </div>
       </nav>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 

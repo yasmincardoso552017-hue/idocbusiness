@@ -9,6 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/app/configuracoes")({
+  head: () => ({ meta: [
+    { title: "Configurações | IDOC BUSINESS" },
+    { name: "description", content: "Preferências, tema e notificações da sua conta IDOC BUSINESS." },
+    { property: "og:title", content: "Configurações | IDOC BUSINESS" },
+    { property: "og:description", content: "Gerencie suas preferências e notificações." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: Settings,
 });
 
