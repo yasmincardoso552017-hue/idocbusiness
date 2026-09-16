@@ -324,15 +324,16 @@ export const dispatchSigningRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ requestId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const db = context.supabase;
-    const { data: req } = await db
+    const { data: ownedRequest } = await context.supabase
       .from("signing_requests")
       .select("*, documents(id, name, owner_id)")
       .eq("id", data.requestId)
       .single();
-    if (!req) throw new Error("Processo não encontrado");
-    const doc = req.documents as unknown as { id: string; name: string; owner_id: string };
+    if (!ownedRequest) throw new Error("Processo não encontrado ou sem acesso");
+    const doc = ownedRequest.documents as unknown as { id: string; name: string; owner_id: string };
     if (doc.owner_id !== context.userId) throw new Error("Processo não encontrado ou sem acesso");
+    const req = ownedRequest;
+    const db = await admin();
     const { data: signers } = await db
       .from("signers")
       .select("id, name, email, token, order_index")

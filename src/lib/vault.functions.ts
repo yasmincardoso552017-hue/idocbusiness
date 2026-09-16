@@ -24,17 +24,3 @@ export const folderFileUrl = createServerFn({ method: "POST" })
     return { url: signed.data?.signedUrl ?? null };
   });
 
-export type PublicFile = {
-  id: string;
-  name: string;
-  size: number | null;
-  folder: string;
-  url: string | null;
-};
-
-/** Consulta pública dos arquivos de uma pasta compartilhada. */
-export const getPublicFolder = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ token: z.string().min(8) }).parse(d))
-  .handler(async () => {
-    return { error: "Link público desativado. Entre na sua conta e ative o SKU da pasta." as const };
-  });
