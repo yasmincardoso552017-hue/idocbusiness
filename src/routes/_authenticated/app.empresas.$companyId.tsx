@@ -238,11 +238,9 @@ function CompanyDetail() {
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
       for (const d of items) {
-        const p = d.signed_storage_path ?? d.storage_path;
-        if (!p) continue;
-        const { data: signed } = await supabase.storage.from("documents").createSignedUrl(p, 600);
-        if (!signed?.signedUrl) continue;
-        const buf = await (await fetch(signed.signedUrl)).arrayBuffer();
+        const signed = await folderFileUrl({ data: { documentId: d.id } });
+        if (!signed.url) continue;
+        const buf = await (await fetch(signed.url)).arrayBuffer();
         zip.folder(paths.get(d.folder_id ?? null) ?? rootName)!.file(d.name, buf);
       }
       const blob = await zip.generateAsync({ type: "blob" });
