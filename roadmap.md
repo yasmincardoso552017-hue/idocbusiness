@@ -30,6 +30,7 @@
 - [x] Reforçar recuperação e pré-visualização de PDFs difíceis, com progresso e falhas claras
 - [x] Atualizar os ícones das ferramentas com identidade visual própria por categoria
 - [x] Permitir vários lotes no Juntar PDF e normalizar PDFs exportados pelo Microsoft Edge
+- [x] Validar visualmente cada PDF antes da união e recuperar páginas que ficariam em branco
 
 ## Evolução geral da plataforma
 - [x] Corrigir acesso autenticado a downloads compartilhados e padronizar exclusão de contratos
