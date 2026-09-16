@@ -53,9 +53,9 @@ export function GlobalSearch() {
           name: item.name,
           detail: companyName(item.companies),
         })),
-        documents: (documents.data ?? []).map((item) => ({
+        documents: (documents.data ?? []).filter((item) => Boolean(item.company_id)).map((item) => ({
           id: item.id,
-          companyId: item.company_id,
+          companyId: item.company_id ?? "",
           folderId: item.folder_id,
           name: item.name,
           detail: companyName(item.companies),
