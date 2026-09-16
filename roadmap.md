@@ -21,6 +21,10 @@
 - [x] Dono vê quem está usando o SKU e pode revogar (usuário perde acesso na hora)
 - [x] Convidado pode ver e trabalhar dentro da pasta (upload/documentos) em tempo real
 - [x] Isolar todos os dados por conta e manter o SKU autenticado como única exceção
+- [x] Bloquear vínculos adulterados entre proprietários em todos os registros relacionados
+- [x] Exibir documentos das subpastas herdadas pelo SKU e permitir upload autorizado nelas
+- [x] Desativar compartilhamento público de pastas sem login
+- [x] Isolar todos os dados por conta e manter o SKU autenticado como única exceção
 - [x] Bloquear vínculos adulterados de proprietário em empresas, pastas, documentos e assinaturas
 - [x] Desativar compartilhamento público de pastas sem login
 

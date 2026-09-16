@@ -52,6 +52,7 @@ type Doc = {
   size_bytes: number | null;
   created_at: string;
 };
+type SharedFolder = { id: string; name: string; parent_id: string | null; company_id: string };
 
 function SharedFolders() {
   const { confirm, dialog } = useDialogs();
@@ -59,14 +60,14 @@ function SharedFolders() {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const uploadTarget = useRef<Share | null>(null);
+  const uploadTarget = useRef<{ share: Share; folderId: string } | null>(null);
 
   const { data, refetch } = useQuery({
     queryKey: ["folder-shares"],
     queryFn: async () => {
       const { data: u } = await supabase.auth.getUser();
       const me = u.user?.id ?? "";
-      const [mine, granted] = await Promise.all([
+      const [mine, granted, visibleFolders, visibleDocs] = await Promise.all([
         supabase
           .from("folder_shares")
           .select("*, folders(id, name, company_id)")
@@ -79,25 +80,27 @@ function SharedFolders() {
           .eq("owner_id", me)
           .is("revoked_at", null)
           .order("created_at", { ascending: false }),
-      ]);
-      const shares = (mine.data ?? []) as unknown as Share[];
-      const ids = shares.map((s) => s.folder_id);
-      let docs: Doc[] = [];
-      if (ids.length) {
-        const res = await supabase
+        supabase.from("folders").select("id, name, parent_id, company_id").order("name"),
+        supabase
           .from("documents")
           .select("id, name, folder_id, size_bytes, created_at")
-          .in("folder_id", ids)
-          .order("created_at", { ascending: false });
-        docs = (res.data ?? []) as Doc[];
-      }
-      return { me, shares, granted: (granted.data ?? []) as unknown as Share[], docs };
+          .order("created_at", { ascending: false }),
+      ]);
+      const shares = (mine.data ?? []) as unknown as Share[];
+      return {
+        me,
+        shares,
+        granted: (granted.data ?? []) as unknown as Share[],
+        folders: (visibleFolders.data ?? []) as SharedFolder[],
+        docs: (visibleDocs.data ?? []) as Doc[],
+      };
     },
   });
 
   const shares = data?.shares ?? [];
   const granted = data?.granted ?? [];
   const docs = data?.docs ?? [];
+  const folders = data?.folders ?? [];
 
   /** Ativa o SKU recebido e passa a ver a pasta do outro usuário. */
   const activate = async () => {
@@ -136,20 +139,22 @@ function SharedFolders() {
     }
   };
 
-  const pickUpload = (s: Share) => {
-    uploadTarget.current = s;
+  const pickUpload = (s: Share, folderId = s.folder_id) => {
+    uploadTarget.current = { share: s, folderId };
     fileRef.current?.click();
   };
 
   /** Envia um arquivo para dentro da pasta compartilhada. */
   const doUpload = async (files: FileList | null) => {
-    const s = uploadTarget.current;
+    const target = uploadTarget.current;
     const file = files?.[0];
-    if (!s || !file) return;
+    if (!target || !file) return;
+    const { share: s, folderId } = target;
     setBusy(true);
     try {
       const { data: u } = await supabase.auth.getUser();
-      const uid = u.user!.id;
+      const uid = u.user?.id;
+      if (!uid) throw new Error("Sessão expirada — entre novamente");
       const path = `${uid}/compartilhado/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]+/g, "_")}`;
       const up = await supabase.storage.from("documents").upload(path, file, { upsert: true });
       if (up.error) throw new Error(up.error.message);
@@ -157,13 +162,16 @@ function SharedFolders() {
         name: file.name,
         owner_id: s.owner_id,
         company_id: s.folders?.company_id ?? null,
-        folder_id: s.folder_id,
+        folder_id: folderId,
         storage_path: path,
         mime_type: file.type || "application/octet-stream",
         size_bytes: file.size,
         status: "draft",
       });
-      if (error) throw new Error(error.message);
+      if (error) {
+        await supabase.storage.from("documents").remove([path]);
+        throw new Error(error.message);
+      }
       toast.success("Documento enviado para a pasta");
       refetch();
     } catch (e) {
@@ -214,7 +222,19 @@ function SharedFolders() {
           </p>
         )}
         {shares.map((s) => {
-          const files = docs.filter((d) => d.folder_id === s.folder_id);
+          const descendantIds = new Set<string>([s.folder_id]);
+          let added = true;
+          while (added) {
+            added = false;
+            for (const folder of folders) {
+              if (folder.parent_id && descendantIds.has(folder.parent_id) && !descendantIds.has(folder.id)) {
+                descendantIds.add(folder.id);
+                added = true;
+              }
+            }
+          }
+          const visible = folders.filter((folder) => descendantIds.has(folder.id));
+          const files = docs.filter((d) => d.folder_id && descendantIds.has(d.folder_id));
           const isOpen = open === s.id;
           return (
             <div key={s.id} className="card-soft p-3">
@@ -246,19 +266,34 @@ function SharedFolders() {
               {isOpen && (
                 <div className="mt-2 space-y-1 border-t border-border pt-2">
                   {!files.length && <p className="text-[11px] text-muted-foreground">Pasta vazia.</p>}
-                  {files.map((d) => (
-                    <div key={d.id} className="flex items-center gap-2 rounded-md bg-muted/40 p-2">
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-xs">{d.name}</span>
-                        <span className="block text-[10px] text-muted-foreground">
-                          {fmtSize(d.size_bytes)} • {fmtDateTime(d.created_at)}
-                        </span>
-                      </span>
-                      <Button size="sm" variant="ghost" onClick={() => download(d.id)}>
-                        <Download className="size-4" />
-                      </Button>
-                    </div>
-                  ))}
+                   {visible.map((folder) => {
+                     const folderFiles = files.filter((d) => d.folder_id === folder.id);
+                     if (folder.id !== s.folder_id && !folderFiles.length) return null;
+                     return (
+                       <div key={folder.id} className="space-y-1">
+                         <div className="flex items-center gap-2 rounded-md bg-muted/50 p-2">
+                           <Folder className="size-4 shrink-0 text-primary" />
+                           <span className="min-w-0 flex-1 truncate text-xs font-semibold">{folder.name}</span>
+                           {s.can_edit && (
+                             <Button size="sm" variant="ghost" aria-label={`Enviar para ${folder.name}`} onClick={() => pickUpload(s, folder.id)}>
+                               <Upload className="size-4" />
+                             </Button>
+                           )}
+                         </div>
+                         {folderFiles.map((d) => (
+                           <div key={d.id} className="ml-4 flex items-center gap-2 rounded-md bg-muted/30 p-2">
+                             <span className="min-w-0 flex-1">
+                               <span className="block truncate text-xs">{d.name}</span>
+                               <span className="block text-[10px] text-muted-foreground">{fmtSize(d.size_bytes)} • {fmtDateTime(d.created_at)}</span>
+                             </span>
+                             <Button size="sm" variant="ghost" aria-label={`Baixar ${d.name}`} onClick={() => download(d.id)}>
+                               <Download className="size-4" />
+                             </Button>
+                           </div>
+                         ))}
+                       </div>
+                     );
+                   })}
                 </div>
               )}
             </div>

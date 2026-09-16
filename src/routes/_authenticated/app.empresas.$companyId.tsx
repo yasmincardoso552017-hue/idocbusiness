@@ -43,6 +43,7 @@ import {
 import { ContractEnvelopeDialog, StageBadge } from "@/components/ContractEnvelope";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime, fmtSize, statusClass, STATUS_LABEL } from "@/lib/format";
+import { folderFileUrl } from "@/lib/vault.functions";
 
 export const Route = createFileRoute("/_authenticated/app/empresas/$companyId")({
   validateSearch: (s: Record<string, unknown>): { folder?: string } =>
@@ -262,10 +263,18 @@ function CompanyDetail() {
   };
 
   const openFile = async (d: Doc, download = false) => {
-    const p = d.signed_storage_path ?? d.storage_path;
-    if (!p) { toast.error("Arquivo indisponível"); return; }
-    const { data: s } = await supabase.storage.from("documents").createSignedUrl(p, 300, { download });
-    if (s?.signedUrl) window.open(s.signedUrl, "_blank");
+    try {
+      const result = await folderFileUrl({ data: { documentId: d.id } });
+      if (!result.url) throw new Error("Arquivo indisponível");
+      if (download) {
+        const anchor = document.createElement("a");
+        anchor.href = result.url;
+        anchor.download = d.name;
+        anchor.click();
+      } else window.open(result.url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Arquivo indisponível");
+    }
   };
 
   const sendToSignature = async (docId: string) => {
