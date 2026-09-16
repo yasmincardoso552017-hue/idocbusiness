@@ -5,7 +5,6 @@ import {
   FolderOpen,
   FolderPlus,
   HardDrive,
-  Link2,
   Pencil,
   Trash2,
   Upload,
@@ -38,7 +37,6 @@ type Props = {
   onRename: (f: TreeFolder) => void;
   onDelete: (f: TreeFolder) => void;
   onUpload: (folderId: string | null) => void;
-  onTogglePublic?: (f: TreeFolder) => void;
 };
 
 /** Árvore de pastas no padrão de explorador de arquivos: abre, fecha e age em cada nó. */
@@ -52,7 +50,6 @@ export function FolderTree({
   onRename,
   onDelete,
   onUpload,
-  onTogglePublic,
 }: Props) {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const childrenOf = (id: string | null) => folders.filter((f) => (f.parent_id ?? null) === id);
@@ -91,7 +88,6 @@ export function FolderTree({
               <Folder className="size-4 shrink-0 text-primary" />
             )}
             <span className="min-w-0 flex-1 truncate text-xs font-medium">{f.name}</span>
-            {f.public_token && <Link2 className="size-3 shrink-0 text-success" />}
             <span className="shrink-0 text-[10px] text-muted-foreground">{docCount(f.id) || ""}</span>
           </button>
           <DropdownMenu>
@@ -113,12 +109,6 @@ export function FolderTree({
               <DropdownMenuItem onClick={() => onRename(f)}>
                 <Pencil className="mr-2 size-4" /> Renomear
               </DropdownMenuItem>
-              {onTogglePublic && (
-                <DropdownMenuItem onClick={() => onTogglePublic(f)}>
-                  <Link2 className="mr-2 size-4" />
-                  {f.public_token ? "Desativar link público" : "Gerar link público"}
-                </DropdownMenuItem>
-              )}
               <DropdownMenuItem className="text-destructive" onClick={() => onDelete(f)}>
                 <Trash2 className="mr-2 size-4" /> Excluir pasta
               </DropdownMenuItem>

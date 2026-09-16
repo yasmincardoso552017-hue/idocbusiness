@@ -14,7 +14,6 @@ import {
   Wrench,
   FolderInput,
   FolderArchive,
-  Link2,
   ChevronLeft,
   Loader2,
   Building2,
@@ -44,7 +43,7 @@ import {
 import { ContractEnvelopeDialog, StageBadge } from "@/components/ContractEnvelope";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtDateTime, fmtSize, statusClass, STATUS_LABEL } from "@/lib/format";
-import { shareFolder } from "@/lib/vault.functions";
+import { folderFileUrl } from "@/lib/vault.functions";
 
 export const Route = createFileRoute("/_authenticated/app/empresas/$companyId")({
   validateSearch: (s: Record<string, unknown>): { folder?: string } =>
@@ -215,20 +214,6 @@ function CompanyDetail() {
     refresh();
   };
 
-  const togglePublic = async (f: FolderRec) => {
-    try {
-      const res = await shareFolder({ data: { folderId: f.id, enabled: !f.public_token } });
-      if (res.token) {
-        const link = `${window.location.origin}/pasta/${res.token}`;
-        await navigator.clipboard?.writeText(link).catch(() => null);
-        toast.success("Link público copiado");
-      } else toast.success("Link público desativado");
-      refresh();
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  };
-
   /** Baixa a pasta (com subpastas) em ZIP organizado. */
   const zipFolder = async (rootId: string | null) => {
     setBusy(true);
@@ -253,11 +238,9 @@ function CompanyDetail() {
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
       for (const d of items) {
-        const p = d.signed_storage_path ?? d.storage_path;
-        if (!p) continue;
-        const { data: signed } = await supabase.storage.from("documents").createSignedUrl(p, 600);
-        if (!signed?.signedUrl) continue;
-        const buf = await (await fetch(signed.signedUrl)).arrayBuffer();
+        const signed = await folderFileUrl({ data: { documentId: d.id } });
+        if (!signed.url) continue;
+        const buf = await (await fetch(signed.url)).arrayBuffer();
         zip.folder(paths.get(d.folder_id ?? null) ?? rootName)!.file(d.name, buf);
       }
       const blob = await zip.generateAsync({ type: "blob" });
@@ -278,10 +261,18 @@ function CompanyDetail() {
   };
 
   const openFile = async (d: Doc, download = false) => {
-    const p = d.signed_storage_path ?? d.storage_path;
-    if (!p) { toast.error("Arquivo indisponível"); return; }
-    const { data: s } = await supabase.storage.from("documents").createSignedUrl(p, 300, { download });
-    if (s?.signedUrl) window.open(s.signedUrl, "_blank");
+    try {
+      const result = await folderFileUrl({ data: { documentId: d.id } });
+      if (!result.url) throw new Error("Arquivo indisponível");
+      if (download) {
+        const anchor = document.createElement("a");
+        anchor.href = result.url;
+        anchor.download = d.name;
+        anchor.click();
+      } else window.open(result.url, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Arquivo indisponível");
+    }
   };
 
   const sendToSignature = async (docId: string) => {
@@ -480,7 +471,6 @@ function CompanyDetail() {
               onRename={(f) => void renameFolder(f)}
               onDelete={(f) => void deleteFolder(f)}
               onUpload={(id) => openUpload(id)}
-              onTogglePublic={(f) => void togglePublic(f)}
             />
 
             <div className="space-y-3">
@@ -525,10 +515,6 @@ function CompanyDetail() {
                     <>
                       <Button size="sm" variant="outline" onClick={() => renameFolder(current)}>
                         <Pencil className="mr-1 size-4" /> Renomear
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => togglePublic(current)}>
-                        <Link2 className={`mr-1 size-4 ${current.public_token ? "text-success" : ""}`} />
-                        {current.public_token ? "Link ativo" : "Link público"}
                       </Button>
                       <Button
                         size="sm"
@@ -594,7 +580,6 @@ function CompanyDetail() {
                         </span>
                       </span>
                     </button>
-                    {f.public_token && <Link2 className="size-3.5 shrink-0 text-success" />}
                     <Button
                       size="icon"
                       variant="ghost"

@@ -437,6 +437,7 @@ export async function finalizeDocument(db: Admin, requestId: string, baseUrl: st
   const { data: linked } = await db
     .from("contracts")
     .select("id, owner_id")
+    .eq("owner_id", doc.owner_id)
     .or(`request_id.eq.${requestId},document_id.eq.${doc.id}`);
   for (const c of linked ?? []) {
     await db
