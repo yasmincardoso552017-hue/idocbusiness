@@ -557,10 +557,21 @@ export async function pdfToXlsx(bytes: Bytes) {
   for (let index = 0; index < pages.length; index++) {
     const page = pages[index];
     if (!page) continue;
+    const maxWidthInches = page.width > page.height ? 11.02 : 7.48;
+    const maxHeightInches = page.width > page.height ? 7.48 : 11.02;
+    const imageRatio = page.width / page.height;
+    let imageWidthInches = maxWidthInches;
+    let imageHeightInches = imageWidthInches / imageRatio;
+    if (imageHeightInches > maxHeightInches) {
+      imageHeightInches = maxHeightInches;
+      imageWidthInches = imageHeightInches * imageRatio;
+    }
+    const imageWidthEmu = Math.round(imageWidthInches * 914400);
+    const imageHeightEmu = Math.round(imageHeightInches * 914400);
     zip.folder("xl/media")?.file(`page-${index + 1}.jpg`, page.blob);
     zip.folder("xl/worksheets")?.file(`sheet${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="110" customWidth="1"/></cols><sheetData><row r="1" ht="409" customHeight="1"><c r="A1"/></row></sheetData><printOptions horizontalCentered="1" verticalCentered="1"/><pageMargins left="0" right="0" top="0" bottom="0" header="0" footer="0"/><pageSetup paperSize="9" orientation="${page.width > page.height ? "landscape" : "portrait"}" fitToWidth="1" fitToHeight="1"/><drawing r:id="rId1"/></worksheet>`);
     zip.folder("xl/worksheets/_rels")?.file(`sheet${index + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${index + 1}.xml"/></Relationships>`);
-    zip.folder("xl/drawings")?.file(`drawing${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${page.width * 9525}" cy="${page.height * 9525}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${index + 1}" name="Página ${index + 1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${page.width * 9525}" cy="${page.height * 9525}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`);
+    zip.folder("xl/drawings")?.file(`drawing${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${index + 1}" name="Página ${index + 1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`);
     zip.folder("xl/drawings/_rels")?.file(`drawing${index + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/page-${index + 1}.jpg"/></Relationships>`);
   }
   return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
