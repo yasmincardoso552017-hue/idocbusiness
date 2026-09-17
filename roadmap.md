@@ -40,6 +40,12 @@
 - [x] Reforçar upload com limite visível, resumo do arquivo e limpeza em caso de falha
 - [ ] Modelos reutilizáveis, versionamento, colaboração avançada e planos comerciais
 
+## Página pública e descoberta no Google
+- [ ] Redesenhar a página inicial para apresentar melhor o produto sem excesso de conteúdo
+- [ ] Criar páginas públicas curtas e específicas para as principais ferramentas de PDF
+- [ ] Adicionar navegação interna, metadados únicos, dados estruturados e sitemap para as páginas públicas
+- [ ] Validar visual, conteúdo, links e indexação técnica em celular e computador
+
 ## Canais pessoais de envio
 - [x] Preferências de WhatsApp e provedor de e-mail por conta no perfil
 - [x] WhatsApp com mensagem individual e link exclusivo por signatário
