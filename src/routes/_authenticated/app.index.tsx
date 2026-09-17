@@ -41,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/app/")({
       {
         name: "description",
         content:
-          "Acompanhe empresas, documentos, contratos e assinaturas, e acesse as ferramentas de PDF: organizar, converter, editar, assinar, proteger, comprimir e OCR.",
+          "Acompanhe empresas, documentos, contratos e assinaturas, e acesse ferramentas para organizar, tratar digitalizações, converter, editar, assinar, proteger, comprimir e aplicar OCR.",
       },
       { property: "og:title", content: "Painel IDOC BUSINESS" },
       {
@@ -61,7 +61,7 @@ const TOOL_GROUPS = [
   { icon: PencilRuler, label: "Editar", desc: "Textos, imagens, formas, desenho, destaques e formulários" },
   { icon: PenLine, label: "Assinatura", desc: "Assinar e solicitar assinaturas com campos posicionados" },
   { icon: ShieldCheck, label: "Segurança", desc: "Senha, criptografia e redação de dados sensíveis" },
-  { icon: Gauge, label: "Otimização", desc: "Comprimir para enviar por e-mail e WhatsApp" },
+  { icon: Gauge, label: "Otimização", desc: "Comprimir e tratar digitalizações para mais nitidez" },
   { icon: ScanText, label: "OCR", desc: "PDF pesquisável e extração de texto de digitalizações" },
 ] as const;
 

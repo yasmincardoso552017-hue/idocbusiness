@@ -1,12 +1,13 @@
 import toolCompress from "@/assets/tool-compress.jpg";
 import toolConvert from "@/assets/tool-convert.jpg";
 import toolEdit from "@/assets/tool-edit.jpg";
+import toolEnhance from "@/assets/tool-enhance-document.jpg";
 import toolOcr from "@/assets/tool-ocr.jpg";
 import toolOrganize from "@/assets/tool-organize.jpg";
 import toolSecurity from "@/assets/tool-security.jpg";
 import toolSign from "@/assets/tool-sign.jpg";
 import type { LucideIcon } from "lucide-react";
-import { Combine, FilePenLine, FileSearch, Gauge, LockKeyhole, RefreshCw, Scissors, Signature } from "lucide-react";
+import { Combine, FilePenLine, FileSearch, Gauge, LockKeyhole, RefreshCw, ScanLine, Scissors, Signature } from "lucide-react";
 
 export type PublicToolSlug =
   | "juntar-pdf"
@@ -16,7 +17,8 @@ export type PublicToolSlug =
   | "converter-pdf"
   | "assinar-pdf"
   | "proteger-pdf"
-  | "pdf-pesquisavel";
+  | "pdf-pesquisavel"
+  | "tratar-documento";
 
 export type PublicTool = {
   slug: PublicToolSlug;
@@ -90,7 +92,7 @@ export const publicTools: Record<PublicToolSlug, PublicTool> = {
       { question: "A compressão reduz a qualidade?", answer: "Quanto maior a compressão, maior pode ser a redução visual. Por isso você escolhe o nível e revisa antes de baixar." },
       { question: "Serve para PDF digitalizado?", answer: "Sim. Documentos com imagens costumam oferecer maior possibilidade de redução." },
       { question: "Consigo usar no celular?", answer: "Sim. A ferramenta funciona pelo navegador em celular, tablet e computador." },
-    ], related: ["juntar-pdf", "converter-pdf", "pdf-pesquisavel"],
+    ], related: ["tratar-documento", "converter-pdf", "pdf-pesquisavel"],
   },
   "editar-pdf": {
     slug: "editar-pdf", appTool: "editor", eyebrow: "Editar documentos", title: "Editar PDF grátis com texto, imagem e desenho", shortTitle: "Editar PDF",
@@ -165,7 +167,30 @@ export const publicTools: Record<PublicToolSlug, PublicTool> = {
       { question: "O que é um PDF pesquisável?", answer: "É um PDF que mantém a aparência das páginas e ganha uma camada de texto reconhecida, permitindo localizar palavras." },
       { question: "O OCR reconhece português?", answer: "Sim. O reconhecimento foi preparado para textos em português, incluindo acentos, embora a qualidade dependa da nitidez da digitalização." },
       { question: "Funciona com fotos tortas ou desfocadas?", answer: "Pode funcionar, mas imagens retas, bem iluminadas e nítidas produzem resultados melhores." },
-    ], related: ["converter-pdf", "comprimir-pdf", "editar-pdf"],
+    ], related: ["tratar-documento", "converter-pdf", "comprimir-pdf"],
+  },
+  "tratar-documento": {
+    slug: "tratar-documento",
+    appTool: "enhance",
+    eyebrow: "Novidade — restauração de digitalizações",
+    title: "Tratar documento escaneado e melhorar a nitidez",
+    shortTitle: "Tratar documento",
+    description: "Limpe manchas, sombras e ruídos de PDFs e imagens escaneadas, melhore a nitidez e preserve textos, imagens e códigos de barras.",
+    intro: "Recupere a legibilidade de contratos, boletos, notas e arquivos antigos. O tratamento limpa o fundo e reforça contornos sem recriar, apagar ou mudar o conteúdo original.",
+    image: toolEnhance,
+    imageAlt: "Comparação antes e depois de documento escaneado tratado, com página limpa e código de barras nítido",
+    icon: ScanLine,
+    iconClass: "bg-tool-optimize",
+    formats: "PDF, JPG, PNG e WEBP, incluindo documentos fotografados ou gerados por scanner.",
+    benefits: ["Limpeza de manchas e sujeiras leves", "Mais nitidez em letras e números", "Reforço cuidadoso de códigos de barras", "Modos conservador, equilibrado e intenso"],
+    steps: ["Envie um PDF ou uma imagem escaneada", "Escolha o nível de tratamento", "Aguarde a limpeza página por página", "Revise, organize e baixe o novo PDF"],
+    useCases: ["Recuperar contratos digitalizados", "Melhorar boletos e códigos de barras", "Limpar fotos de documentos antigos"],
+    faq: [
+      { question: "O tratamento muda o texto do documento?", answer: "Não. A ferramenta não recria nem reescreve conteúdo; ela trabalha contraste, fundo, ruído e contornos para melhorar a leitura." },
+      { question: "A ferramenta apaga manchas escuras?", answer: "Ela reduz sujeiras leves. Marcas escuras que possam ser conteúdo legítimo são preservadas para evitar a perda de informações." },
+      { question: "Posso tratar uma foto e baixar em PDF?", answer: "Sim. Envie JPG, PNG ou WEBP, confira a página tratada e baixe o resultado em PDF." },
+    ],
+    related: ["pdf-pesquisavel", "comprimir-pdf", "converter-pdf"],
   },
 };
 

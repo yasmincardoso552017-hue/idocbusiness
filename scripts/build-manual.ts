@@ -392,6 +392,14 @@ bullets([
   "Remover senha: abre com a senha que você conhece e devolve o arquivo livre.",
   "Redigir dados: cobre trechos sigilosos de forma definitiva — o texto por baixo deixa de existir.",
   "Comprimir PDF: três níveis (leve, média, forte) para caber em e-mail e WhatsApp.",
+  "Tratar documento: envie PDF, JPG, PNG ou WEBP e escolha o modo conservador, equilibrado ou intenso para limpar fundo, sombras, ruídos e manchas leves.",
+  "O tratamento melhora a nitidez de letras, números e códigos de barras sem recriar, apagar ou mudar o conteúdo original.",
+]);
+steps([
+  "Abra Tratar documento na categoria Otimização e selecione o PDF ou a imagem escaneada.",
+  "Escolha o nível de tratamento. Comece pelo modo conservador quando o documento tiver carimbos, assinaturas ou marcas importantes.",
+  "Aguarde o processamento página por página e confira todas as miniaturas na prévia.",
+  "Reorganize ou gire páginas se precisar, defina o nome e baixe o novo PDF tratado.",
 ]);
 tip("Guarde a senha em lugar seguro. Sem ela, nem você nem o suporte conseguem abrir o arquivo protegido.", "Atenção");
 
