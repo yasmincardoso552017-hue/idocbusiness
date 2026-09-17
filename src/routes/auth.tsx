@@ -15,6 +15,10 @@ import { ensureProfile } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>): { next?: string } => {
+    const next = typeof search.next === "string" && /^\/app(?:\/|$)/.test(search.next) ? search.next : undefined;
+    return next ? { next } : {};
+  },
   head: () => ({
     meta: [
       { title: "Entrar no IDOC BUSINESS" },
@@ -28,6 +32,7 @@ export const Route = createFileRoute("/auth")({
 
 function Auth() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,9 +41,9 @@ function Auth() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/app", replace: true });
+      if (data.session) next ? window.location.replace(next) : navigate({ to: "/app", replace: true });
     });
-  }, [navigate]);
+  }, [navigate, next]);
 
   async function signIn() {
     setLoading(true);
@@ -46,7 +51,8 @@ function Auth() {
     setLoading(false);
     if (error) { toast.error(error.message); return; }
     if (data.user) await ensureProfile(data.user);
-    navigate({ to: "/app", replace: true });
+    if (next) window.location.assign(next);
+    else navigate({ to: "/app", replace: true });
   }
 
   async function signUp() {
@@ -64,7 +70,8 @@ function Auth() {
     if (error) { toast.error(error.message); return; }
     if (data.session && data.user) {
       await ensureProfile(data.user);
-      navigate({ to: "/app", replace: true });
+      if (next) window.location.assign(next);
+      else navigate({ to: "/app", replace: true });
     } else {
       toast.success("Conta criada. Confirme o e-mail para acessar.");
     }
@@ -72,13 +79,14 @@ function Auth() {
 
   async function google() {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/auth`,
+      redirect_uri: `${window.location.origin}/auth${next ? `?next=${encodeURIComponent(next)}` : ""}`,
     });
     if (result.error) { toast.error(result.error.message); return; }
     if (result.redirected) return;
     const { data } = await supabase.auth.getSession();
     if (data.session?.user) await ensureProfile(data.session.user);
-    navigate({ to: "/app", replace: true });
+    if (next) window.location.assign(next);
+    else navigate({ to: "/app", replace: true });
   }
 
 

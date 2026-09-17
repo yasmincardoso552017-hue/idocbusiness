@@ -7,18 +7,19 @@ import { ArrowRight, Check, ChevronRight, FileCheck2, ShieldCheck } from "lucide
 export function publicToolHead(slug: PublicToolSlug) {
   const tool = publicTools[slug];
   const url = `https://idoc.business/ferramentas/${slug}`;
+  const seoTitle = `${tool.shortTitle} online grátis | IDOC BUSINESS`;
   const faq = tool.faq.map((item) => ({ "@type": "Question", name: item.question, acceptedAnswer: { "@type": "Answer", text: item.answer } }));
   return {
     meta: [
-      { title: `${tool.title} | IDOC BUSINESS` },
+      { title: seoTitle },
       { name: "description", content: tool.description },
       { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:title", content: `${tool.title} | IDOC BUSINESS` },
+      { property: "og:title", content: seoTitle },
       { property: "og:description", content: tool.description },
       { property: "og:type", content: "website" },
       { property: "og:url", content: url },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: `${tool.title} | IDOC BUSINESS` },
+      { name: "twitter:title", content: seoTitle },
       { name: "twitter:description", content: tool.description },
     ],
     links: [{ rel: "canonical", href: url }],
@@ -54,7 +55,7 @@ export function PublicToolPage({ slug }: { slug: PublicToolSlug }) {
               <h1 className="mt-3 max-w-3xl text-3xl font-extrabold leading-tight sm:text-5xl">{tool.title}</h1>
               <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">{tool.intro}</p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Button asChild size="lg"><Link to="/auth">Usar {tool.shortTitle.toLowerCase()} <ArrowRight /></Link></Button>
+                <Button asChild size="lg"><Link to="/auth" search={{ next: `/app/ferramentas?tool=${tool.appTool}` }}>Usar {tool.shortTitle.toLowerCase()} <ArrowRight /></Link></Button>
                 <Button asChild size="lg" variant="outline"><Link to="/ferramentas">Ver todas as ferramentas</Link></Button>
               </div>
               <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium"><span className="flex items-center gap-1.5"><Check className="size-4 text-success" />Grátis para começar</span><span className="flex items-center gap-1.5"><Check className="size-4 text-success" />Prévia antes de baixar</span><span className="flex items-center gap-1.5"><Check className="size-4 text-success" />Celular e computador</span></div>
