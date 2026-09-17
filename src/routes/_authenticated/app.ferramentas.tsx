@@ -822,7 +822,7 @@ function Tools() {
                   append={tool === "merge"}
                   accept={accept}
                   files={files}
-                   statuses={tool === "merge" ? mergeStatuses : undefined}
+                    {...(tool === "merge" ? { statuses: mergeStatuses } : {})}
                   onPick={(f) => {
                      setFiles((current) => tool === "merge" ? [...current, ...f] : f);
                      setMergeStatuses((current) => tool === "merge"

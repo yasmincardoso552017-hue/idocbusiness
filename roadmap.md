@@ -41,9 +41,9 @@
 - [ ] Modelos reutilizáveis, versionamento, colaboração avançada e planos comerciais
 
 ## Página pública e descoberta no Google
-- [ ] Redesenhar a página inicial para apresentar melhor o produto sem excesso de conteúdo
-- [ ] Criar páginas públicas curtas e específicas para as principais ferramentas de PDF
-- [ ] Adicionar navegação interna, metadados únicos, dados estruturados e sitemap para as páginas públicas
+- [x] Redesenhar a página inicial para apresentar melhor o produto sem excesso de conteúdo
+- [x] Criar páginas públicas curtas e específicas para as principais ferramentas de PDF
+- [x] Adicionar navegação interna, metadados únicos, dados estruturados e sitemap para as páginas públicas
 - [ ] Validar visual, conteúdo, links e indexação técnica em celular e computador
 
 ## Canais pessoais de envio
