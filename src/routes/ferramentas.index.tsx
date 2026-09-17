@@ -10,10 +10,10 @@ export const Route = createFileRoute("/ferramentas/")({
   head: () => ({
     meta: [
       { title: "Ferramentas de PDF grátis e online | IDOC BUSINESS" },
-      { name: "description", content: "Junte, divida, comprima, converta, edite, assine, proteja e aplique OCR em PDFs com prévia antes do download." },
+      { name: "description", content: "Junte, divida, trate digitalizações, comprima, converta, edite, assine, proteja e aplique OCR em PDFs com prévia antes do download." },
       { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: "Ferramentas de PDF grátis e online | IDOC BUSINESS" },
-      { property: "og:description", content: "Uma central profissional para organizar, converter, editar, assinar, proteger e reconhecer texto em PDFs." },
+      { property: "og:description", content: "Uma central profissional para organizar, tratar, converter, editar, assinar, proteger e reconhecer texto em PDFs." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: SITE },
       { name: "twitter:card", content: "summary_large_image" },
@@ -41,7 +41,7 @@ function ToolsDirectory() {
             {publicToolList.map((tool) => { const Icon = tool.icon; return (
               <article key={tool.slug} className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-soft">
                 <div className="aspect-[3/2] overflow-hidden bg-muted"><img src={tool.image} alt={tool.imageAlt} width={900} height={600} loading="lazy" className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" /></div>
-                <div className="flex flex-1 flex-col p-5"><span className={`flex size-10 items-center justify-center rounded-md text-primary-foreground ${tool.iconClass}`}><Icon className="size-5" /></span><h2 className="mt-4 text-lg font-extrabold">{tool.shortTitle}</h2><p className="mt-2 flex-1 text-xs leading-relaxed text-muted-foreground">{tool.description}</p><Link to="/ferramentas/$slug" params={{ slug: tool.slug }} className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary">Conhecer a ferramenta <ArrowRight className="size-4" /></Link></div>
+                <div className="flex flex-1 flex-col p-5"><div className="flex items-center justify-between gap-3"><span className={`flex size-10 items-center justify-center rounded-md text-primary-foreground ${tool.iconClass}`}><Icon className="size-5" /></span>{tool.slug === "tratar-documento" && <span className="rounded-full bg-warning px-2.5 py-1 text-[10px] font-extrabold uppercase text-warning-foreground">Novidade</span>}</div><h2 className="mt-4 text-lg font-extrabold">{tool.shortTitle}</h2><p className="mt-2 flex-1 text-xs leading-relaxed text-muted-foreground">{tool.description}</p><Link to="/ferramentas/$slug" params={{ slug: tool.slug }} className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary">Conhecer a ferramenta <ArrowRight className="size-4" /></Link></div>
               </article>
             ); })}
           </div>
