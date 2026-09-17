@@ -10,6 +10,8 @@ import { ArrowRight, BadgeCheck, BookOpen, Check, Download, FileSignature, Folde
 import { useEffect } from "react";
 
 const SITE = "https://idoc.business";
+const HOME_TITLE = "Juntar PDF Grátis Online | IDOC BUSINESS";
+const HOME_DESCRIPTION = "Junte PDFs grátis e use ferramentas para dividir, comprimir, editar, converter, assinar, proteger e aplicar OCR em documentos online.";
 const faq = [
   { q: "Posso usar as ferramentas de PDF no celular?", a: "Sim. O IDOC BUSINESS funciona no navegador do celular, tablet e computador e também pode ser instalado na tela inicial." },
   { q: "Consigo conferir o arquivo antes de baixar?", a: "Sim. As ferramentas foram organizadas para permitir pré-visualização, seleção de páginas, nome e formato antes do download." },
@@ -20,16 +22,16 @@ const faq = [
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "IDOC BUSINESS | Ferramentas de PDF e Assinatura" },
-      { name: "description", content: "Junte, divida, comprima, converta, edite, proteja e assine PDFs. Gestão de documentos e contratos com evidências. Comece grátis." },
+      { title: HOME_TITLE },
+      { name: "description", content: HOME_DESCRIPTION },
       { name: "robots", content: "index, follow, max-image-preview:large" },
-      { property: "og:title", content: "IDOC BUSINESS | Tudo para seus documentos" },
-      { property: "og:description", content: "Ferramentas de PDF, assinatura eletrônica e gestão documental em um só lugar." },
+      { property: "og:title", content: HOME_TITLE },
+      { property: "og:description", content: HOME_DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:url", content: SITE },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "IDOC BUSINESS | Tudo para seus documentos" },
-      { name: "twitter:description", content: "Organize, converta, edite, assine e proteja PDFs em um só lugar." },
+      { name: "twitter:title", content: HOME_TITLE },
+      { name: "twitter:description", content: HOME_DESCRIPTION },
     ],
     links: [{ rel: "canonical", href: SITE }],
     scripts: [{ type: "application/ld+json", children: JSON.stringify({ "@context": "https://schema.org", "@graph": [
