@@ -30,6 +30,7 @@ import {
   EyeOff,
   FormInput,
   Download,
+  ScanLine,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PDFDocument, degrees, rgb, StandardFonts } from "pdf-lib";
@@ -45,6 +46,7 @@ import { extractPdfText, rasterizePages } from "@/lib/pdf-preview";
 import { ocrPages } from "@/lib/audit.functions";
 import {
   compressPdf,
+  enhanceScannedDocument,
   fillFormFields,
   findMergedVisualRegressions,
   normalizePdf,
@@ -58,6 +60,8 @@ import {
   readFormFields,
   toPdfA,
   unlockPdf,
+  type DocumentTreatmentLevel,
+  type DocumentTreatmentProgress,
 } from "@/lib/pdf-tools";
 
 export const Route = createFileRoute("/_authenticated/app/ferramentas")({
@@ -89,7 +93,7 @@ type ToolId =
   | "editor" | "forms"
   | "sign" | "request"
   | "protect" | "unlock" | "redact"
-  | "compress"
+  | "compress" | "enhance"
   | "ocr" | "text" | "zip";
 
 type MergeFileStatus = {
@@ -161,7 +165,7 @@ const CATS = [
       { id: "redact", label: "Redigir dados" },
     ],
   },
-  { id: "opt", label: "Otimização", icon: Gauge, iconClass: "bg-tool-optimize", tools: [{ id: "compress", label: "Comprimir PDF" }] },
+  { id: "opt", label: "Otimização", icon: Gauge, iconClass: "bg-tool-optimize", tools: [{ id: "compress", label: "Comprimir PDF" }, { id: "enhance", label: "Tratar documento" }] },
   {
     id: "ocr",
     label: "OCR",
@@ -315,6 +319,8 @@ function Tools() {
   const [wmText, setWmText] = useState("CONFIDENCIAL");
   const [password, setPassword] = useState("");
   const [level, setLevel] = useState<"leve" | "media" | "forte">("media");
+  const [treatmentLevel, setTreatmentLevel] = useState<DocumentTreatmentLevel>("equilibrado");
+  const [treatmentProgress, setTreatmentProgress] = useState<DocumentTreatmentProgress | null>(null);
   const [imgFormat, setImgFormat] = useState<"image/jpeg" | "image/png">("image/jpeg");
   const [folderName, setFolderName] = useState("Documentos IDOC");
   const [fields, setFields] = useState<{ name: string; type: string; value: string }[] | null>(null);
@@ -335,6 +341,7 @@ function Tools() {
     setFields(null);
     setTextResult(null);
     setMergeStatuses([]);
+    setTreatmentProgress(null);
   }
 
   function open(bytes: Uint8Array, name: string, format: "pdf" | "pdf-zip" = "pdf") {
@@ -606,6 +613,17 @@ function Tools() {
       open(bytes, f.name.replace(/\.pdf$/i, "-comprimido"));
       return `De ${before.toFixed(1)} MB para ${after.toFixed(1)} MB`;
     },
+    enhance: async () => {
+      if (!first) throw new Error("Selecione um PDF ou uma imagem digitalizada");
+      setTreatmentProgress({ current: 0, total: 0, stage: "preparing" });
+      try {
+        const bytes = await enhanceScannedDocument(first, treatmentLevel, setTreatmentProgress);
+        open(bytes, first.name.replace(/\.[^.]+$/i, "-tratado"));
+        return "Documento tratado — confira todas as páginas antes de baixar";
+      } finally {
+        setTreatmentProgress(null);
+      }
+    },
     ocr: async () => {
       const f = needPdf();
       const bytes = new Uint8Array(await f.arrayBuffer());
@@ -704,7 +722,9 @@ function Tools() {
         ? ".docx,.xlsx,.xls,.csv,.pptx,.html,.htm,.txt"
         : tool === "zip"
           ? "*/*"
-          : ".pdf,application/pdf";
+          : tool === "enhance"
+            ? ".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+            : ".pdf,application/pdf";
 
   const ICONS: Partial<Record<ToolId, typeof Combine>> = {
     merge: Combine,
@@ -729,6 +749,7 @@ function Tools() {
     unlock: Unlock,
     redact: EyeOff,
     compress: Gauge,
+    enhance: ScanLine,
     ocr: ScanText,
     text: FileType2,
     zip: FolderArchive,
@@ -821,7 +842,9 @@ function Tools() {
                           ? "Word, Excel, PowerPoint, HTML ou TXT"
                           : tool === "zip"
                             ? "Arquivos de qualquer formato"
-                            : "Arquivo PDF"
+                            : tool === "enhance"
+                              ? "Documento digitalizado (PDF, JPG, PNG ou WEBP)"
+                              : "Arquivo PDF"
                   }
                   multiple={tool === "merge" || tool === "img2pdf" || tool === "zip"}
                   append={tool === "merge"}
@@ -901,6 +924,50 @@ function Tools() {
                         {l === "media" ? "Média" : l === "leve" ? "Leve" : "Forte"}
                       </Button>
                     ))}
+                  </div>
+                )}
+                {tool === "enhance" && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      {(["conservador", "equilibrado", "intenso"] as const).map((option) => (
+                        <Button
+                          key={option}
+                          type="button"
+                          size="sm"
+                          variant={treatmentLevel === option ? "default" : "outline"}
+                          onClick={() => setTreatmentLevel(option)}
+                          className="h-auto min-h-10 whitespace-normal px-2 py-2 text-xs capitalize"
+                        >
+                          {option}
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="rounded-lg border border-border bg-secondary/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
+                      Limpa fundo, sombras e manchas leves, recupera contraste e reforça bordas de letras, números e códigos de barras. O conteúdo não é recriado nem alterado e o arquivo original permanece intacto.
+                    </div>
+                    {treatmentProgress && (
+                      <div className="space-y-2" role="status" aria-live="polite">
+                        <div className="flex justify-between text-[11px] text-muted-foreground">
+                          <span>
+                            {treatmentProgress.stage === "preparing"
+                              ? "Preparando documento…"
+                              : treatmentProgress.stage === "building"
+                                ? "Montando o novo PDF…"
+                                : `Tratando página ${treatmentProgress.current} de ${treatmentProgress.total}`}
+                          </span>
+                          {treatmentProgress.total > 0 && <span>{Math.round((treatmentProgress.current / treatmentProgress.total) * 100)}%</span>}
+                        </div>
+                        <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+                          <div
+                            className="h-full bg-tool-optimize transition-all"
+                            style={{ width: `${treatmentProgress.total ? (treatmentProgress.current / treatmentProgress.total) * 100 : 8}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-[11px] text-muted-foreground">
+                      Informação totalmente apagada, cortada ou fora de foco não pode ser recuperada. Confira a prévia antes de baixar.
+                    </p>
                   </div>
                 )}
                 {tool === "zip" && (

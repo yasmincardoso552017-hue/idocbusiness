@@ -250,6 +250,162 @@ export async function compressPdf(bytes: Bytes, level: "leve" | "media" | "forte
   return flattenToImages(bytes, cfg.scale, cfg.quality);
 }
 
+export type DocumentTreatmentLevel = "conservador" | "equilibrado" | "intenso";
+
+export type DocumentTreatmentProgress = {
+  current: number;
+  total: number;
+  stage: "preparing" | "cleaning" | "building";
+};
+
+const TREATMENT_CONFIG = {
+  conservador: { background: 0.28, contrast: 1.08, sharpness: 0.34, whiten: 0.12 },
+  equilibrado: { background: 0.48, contrast: 1.16, sharpness: 0.52, whiten: 0.26 },
+  intenso: { background: 0.68, contrast: 1.24, sharpness: 0.7, whiten: 0.42 },
+} satisfies Record<DocumentTreatmentLevel, { background: number; contrast: number; sharpness: number; whiten: number }>;
+
+function luminance(red: number, green: number, blue: number) {
+  return red * 0.299 + green * 0.587 + blue * 0.114;
+}
+
+/**
+ * Melhora uma página digitalizada sem reconstruir seu conteúdo. A correção é
+ * fotométrica: iluminação, fundo, contraste e nitidez de bordas existentes.
+ */
+async function treatRaster(blob: Blob, level: DocumentTreatmentLevel) {
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const context = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
+    if (!context) throw new Error("O navegador não disponibilizou o tratamento de imagem");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0);
+
+    const source = context.getImageData(0, 0, canvas.width, canvas.height);
+    const output = context.createImageData(canvas.width, canvas.height);
+    const src = source.data;
+    const dst = output.data;
+    const cfg = TREATMENT_CONFIG[level];
+
+    // Um mapa de iluminação reduzido permite corrigir sombras de scanner e
+    // fotografia sem suavizar letras, linhas, fotografias ou códigos de barras.
+    const sample = Math.max(4, Math.ceil(Math.max(canvas.width, canvas.height) / 900));
+    const mapWidth = Math.ceil(canvas.width / sample);
+    const mapHeight = Math.ceil(canvas.height / sample);
+    const map = new Float32Array(mapWidth * mapHeight);
+    for (let my = 0; my < mapHeight; my++) {
+      const y = Math.min(canvas.height - 1, my * sample + Math.floor(sample / 2));
+      for (let mx = 0; mx < mapWidth; mx++) {
+        const x = Math.min(canvas.width - 1, mx * sample + Math.floor(sample / 2));
+        const offset = (y * canvas.width + x) * 4;
+        map[my * mapWidth + mx] = luminance(src[offset] ?? 255, src[offset + 1] ?? 255, src[offset + 2] ?? 255);
+      }
+    }
+
+    const integralWidth = mapWidth + 1;
+    const integral = new Float64Array(integralWidth * (mapHeight + 1));
+    for (let y = 0; y < mapHeight; y++) {
+      let row = 0;
+      for (let x = 0; x < mapWidth; x++) {
+        row += map[y * mapWidth + x] ?? 255;
+        integral[(y + 1) * integralWidth + x + 1] = (integral[y * integralWidth + x + 1] ?? 0) + row;
+      }
+    }
+    const radius = Math.max(3, Math.round(Math.min(mapWidth, mapHeight) * 0.045));
+    const localBackground = (x: number, y: number) => {
+      const mx = Math.min(mapWidth - 1, Math.floor(x / sample));
+      const my = Math.min(mapHeight - 1, Math.floor(y / sample));
+      const left = Math.max(0, mx - radius);
+      const top = Math.max(0, my - radius);
+      const right = Math.min(mapWidth, mx + radius + 1);
+      const bottom = Math.min(mapHeight, my + radius + 1);
+      const sum = (integral[bottom * integralWidth + right] ?? 0)
+        - (integral[top * integralWidth + right] ?? 0)
+        - (integral[bottom * integralWidth + left] ?? 0)
+        + (integral[top * integralWidth + left] ?? 0);
+      return sum / Math.max(1, (right - left) * (bottom - top));
+    };
+    const sourceLumaAt = (x: number, y: number) => {
+      const safeX = Math.max(0, Math.min(canvas.width - 1, x));
+      const safeY = Math.max(0, Math.min(canvas.height - 1, y));
+      const offset = (safeY * canvas.width + safeX) * 4;
+      return luminance(src[offset] ?? 255, src[offset + 1] ?? 255, src[offset + 2] ?? 255);
+    };
+
+    for (let y = 0; y < canvas.height; y++) {
+      for (let x = 0; x < canvas.width; x++) {
+        const offset = (y * canvas.width + x) * 4;
+        const red = src[offset] ?? 255;
+        const green = src[offset + 1] ?? 255;
+        const blue = src[offset + 2] ?? 255;
+        const lum = luminance(red, green, blue);
+        const background = Math.max(96, localBackground(x, y));
+        const normalizedLum = Math.min(255, lum + (245 - background) * cfg.background * (0.35 + lum / 390));
+        const contrastedLum = Math.max(0, Math.min(255, (normalizedLum - 128) * cfg.contrast + 128));
+        const neighborAverage = (
+          sourceLumaAt(x - 1, y) + sourceLumaAt(x + 1, y)
+          + sourceLumaAt(x, y - 1) + sourceLumaAt(x, y + 1)
+        ) / 4;
+        const edge = lum - neighborAverage;
+        let targetLum = Math.max(0, Math.min(255, contrastedLum + edge * cfg.sharpness));
+        const saturation = Math.max(red, green, blue) - Math.min(red, green, blue);
+        if (saturation < 24 && targetLum > 175) {
+          const cleanStrength = cfg.whiten * ((targetLum - 175) / 80);
+          targetLum += (255 - targetLum) * cleanStrength;
+        }
+        const ratio = lum > 2 ? targetLum / lum : 1;
+        // Mantém a cor original. Em fundo neutro, remove apenas a dominante
+        // residual que costuma aparecer em papel amarelado ou fotografado.
+        const neutralBlend = saturation < 24 && targetLum > 150 ? cfg.whiten * 0.42 : 0;
+        dst[offset] = Math.max(0, Math.min(255, red * ratio * (1 - neutralBlend) + targetLum * neutralBlend));
+        dst[offset + 1] = Math.max(0, Math.min(255, green * ratio * (1 - neutralBlend) + targetLum * neutralBlend));
+        dst[offset + 2] = Math.max(0, Math.min(255, blue * ratio * (1 - neutralBlend) + targetLum * neutralBlend));
+        dst[offset + 3] = 255;
+      }
+    }
+    context.putImageData(output, 0, 0);
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => result ? resolve(result) : reject(new Error("Falha ao gerar a página tratada")),
+        "image/jpeg",
+        0.96,
+      );
+    });
+  } finally {
+    bitmap.close();
+  }
+}
+
+/** Trata PDF ou imagem digitalizada e gera uma nova cópia PDF. */
+export async function enhanceScannedDocument(
+  file: File,
+  level: DocumentTreatmentLevel,
+  onProgress?: (progress: DocumentTreatmentProgress) => void,
+): Promise<Bytes> {
+  onProgress?.({ current: 0, total: 0, stage: "preparing" });
+  const sourcePdf = await fileToPdf(file);
+  const rasters = await rasterizePages(sourcePdf, undefined, "image/jpeg", 2.5);
+  if (!rasters.length) throw new Error("Nenhuma página pôde ser preparada para tratamento");
+  const PDFDocument = await plain();
+  const output = await PDFDocument.create();
+  for (let index = 0; index < rasters.length; index++) {
+    const raster = rasters[index];
+    if (!raster) continue;
+    onProgress?.({ current: index + 1, total: rasters.length, stage: "cleaning" });
+    const treated = await treatRaster(raster.blob, level);
+    const image = await output.embedJpg(new Uint8Array(await treated.arrayBuffer()));
+    const page = output.addPage([image.width / 2.5, image.height / 2.5]);
+    page.drawImage(image, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() });
+    // Entrega o controle entre páginas para manter a tela responsiva em celulares.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  }
+  onProgress?.({ current: rasters.length, total: rasters.length, stage: "building" });
+  return output.save({ useObjectStreams: false });
+}
+
 /** Aplica senha de abertura e senha de permissões. */
 export async function protectPdf(bytes: Bytes, userPassword: string, ownerPassword?: string) {
   const PDFDocument = await cantoo();
