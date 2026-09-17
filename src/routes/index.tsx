@@ -3,6 +3,7 @@ import { InstallAppButton } from "@/components/InstallAppButton";
 import { PublicSiteFooter } from "@/components/PublicSiteChrome";
 import { Button } from "@/components/ui/button";
 import heroWorkspace from "@/assets/idoc-hero-workspace.jpg";
+import socialShare from "@/assets/idoc-social-share.jpg.asset.json";
 import { publicToolList } from "@/lib/public-tools";
 import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -29,13 +30,15 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: HOME_DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:url", content: SITE },
+      { property: "og:image", content: `${SITE}${socialShare.url}` },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: HOME_TITLE },
       { name: "twitter:description", content: HOME_DESCRIPTION },
+      { name: "twitter:image", content: `${SITE}${socialShare.url}` },
     ],
     links: [{ rel: "canonical", href: SITE }],
     scripts: [{ type: "application/ld+json", children: JSON.stringify({ "@context": "https://schema.org", "@graph": [
-      { "@type": "Organization", name: "IDOC BUSINESS", url: SITE, logo: `${SITE}/icon-512.png` },
+      { "@type": "Organization", name: "IDOC BUSINESS", url: SITE, logo: `${SITE}/icon-idoc-512.png` },
       { "@type": "SoftwareApplication", name: "IDOC BUSINESS", applicationCategory: "BusinessApplication", operatingSystem: "Web, Android, iOS", url: SITE, description: "Ferramentas de PDF, gestão documental e assinatura eletrônica com evidências.", offers: { "@type": "Offer", price: "0", priceCurrency: "BRL" } },
       { "@type": "FAQPage", mainEntity: faq.map((item) => ({ "@type": "Question", name: item.q, acceptedAnswer: { "@type": "Answer", text: item.a } })) },
     ] }) }],

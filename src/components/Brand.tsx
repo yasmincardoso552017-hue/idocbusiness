@@ -1,4 +1,4 @@
-import logo from "@/assets/idoc-business.png.asset.json";
+import logo from "@/assets/idoc-business-logo-2026.png.asset.json";
 
 /** Logotipo oficial IDOC BUSINESS. */
 export function Brand({ className = "h-7" }: { className?: string }) {
