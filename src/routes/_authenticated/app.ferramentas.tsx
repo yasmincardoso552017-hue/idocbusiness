@@ -560,20 +560,20 @@ function Tools() {
     pdf2word: async () => {
       const f = needPdf();
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
-      downloadBlob(await pdfToDocx(bytes), `${f.name.replace(/\.pdf$/i, "")}.doc`);
-      return "Documento do Word gerado";
+      downloadBlob(await pdfToDocx(bytes), `${f.name.replace(/\.pdf$/i, "")}.docx`);
+      return "Word fiel ao PDF gerado";
     },
     pdf2excel: async () => {
       const f = needPdf();
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
       downloadBlob(await pdfToXlsx(bytes), `${f.name.replace(/\.pdf$/i, "")}.xlsx`);
-      return "Planilha do Excel gerada";
+      return "Excel fiel ao PDF gerado";
     },
     pdf2ppt: async () => {
       const f = needPdf();
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
       downloadBlob(await pdfToPptx(bytes), `${f.name.replace(/\.pdf$/i, "")}.pptx`);
-      return "Apresentação gerada";
+      return "PowerPoint fiel ao PDF gerado";
     },
     office2pdf: async () => {
       if (!first) throw new Error("Selecione um arquivo Word, Excel, PowerPoint, HTML ou TXT");
@@ -909,6 +909,11 @@ function Tools() {
                         {f === "image/jpeg" ? "JPG" : "PNG"}
                       </Button>
                     ))}
+                  </div>
+                )}
+                {(tool === "pdf2word" || tool === "pdf2excel" || tool === "pdf2ppt") && (
+                  <div className="rounded-lg border border-border bg-secondary/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
+                    Modo fiel: cada página mantém exatamente textos, imagens, tabelas, posições e proporções do PDF. Para impedir alterações no visual, o conteúdo é inserido como uma imagem integral por página e não fica livremente editável como texto ou células.
                   </div>
                 )}
                 {(tool === "protect" || tool === "unlock") && (
