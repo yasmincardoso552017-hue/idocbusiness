@@ -4,3 +4,5 @@
 - [x] Criar cartaz de novidade na página inicial.
 - [x] Atualizar painel, sitemap e manual.
 - [x] Validar páginas e manual em celular e computador.
+- [ ] Tornar PDF → Word, Excel e PowerPoint visualmente fiel ao original.
+- [ ] Validar os três arquivos gerados e a apresentação da ferramenta.
