@@ -16,6 +16,8 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VerifyRouteImport } from './routes/verify'
+import { Route as FerramentasIndexRouteImport } from './routes/ferramentas.index'
+import { Route as FerramentasSlugRouteImport } from './routes/ferramentas.$slug'
 import { Route as PastaTokenRouteImport } from './routes/pasta.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
@@ -68,6 +70,16 @@ const TermosRoute = TermosRouteImport.update({
 const VerifyRoute = VerifyRouteImport.update({
   id: '/verify',
   path: '/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FerramentasIndexRoute = FerramentasIndexRouteImport.update({
+  id: '/ferramentas/',
+  path: '/ferramentas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FerramentasSlugRoute = FerramentasSlugRouteImport.update({
+  id: '/ferramentas/$slug',
+  path: '/ferramentas/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PastaTokenRoute = PastaTokenRouteImport.update({
@@ -185,8 +197,10 @@ export interface FileRoutesByFullPath {
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/ferramentas/$slug': typeof FerramentasSlugRoute
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
+  '/ferramentas/': typeof FerramentasIndexRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/auditor': typeof AuthenticatedAppAuditorRoute
@@ -212,8 +226,10 @@ export interface FileRoutesByTo {
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/ferramentas/$slug': typeof FerramentasSlugRoute
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
+  '/ferramentas': typeof FerramentasIndexRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/auditor': typeof AuthenticatedAppAuditorRoute
@@ -241,8 +257,10 @@ export interface FileRoutesById {
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/ferramentas/$slug': typeof FerramentasSlugRoute
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
+  '/ferramentas/': typeof FerramentasIndexRoute
   '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/_authenticated/app/auditor': typeof AuthenticatedAppAuditorRoute
@@ -270,8 +288,10 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/ferramentas/$slug'
     | '/pasta/$token'
     | '/sign/$token'
+    | '/ferramentas/'
     | '/app/admin'
     | '/app/assinaturas'
     | '/app/auditor'
@@ -297,8 +317,10 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/ferramentas/$slug'
     | '/pasta/$token'
     | '/sign/$token'
+    | '/ferramentas'
     | '/app/admin'
     | '/app/assinaturas'
     | '/app/auditor'
@@ -325,8 +347,10 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/ferramentas/$slug'
     | '/pasta/$token'
     | '/sign/$token'
+    | '/ferramentas/'
     | '/_authenticated/app/admin'
     | '/_authenticated/app/assinaturas'
     | '/_authenticated/app/auditor'
@@ -354,8 +378,10 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   TermosRoute: typeof TermosRoute
   VerifyRoute: typeof VerifyRoute
+  FerramentasSlugRoute: typeof FerramentasSlugRoute
   PastaTokenRoute: typeof PastaTokenRoute
   SignTokenRoute: typeof SignTokenRoute
+  FerramentasIndexRoute: typeof FerramentasIndexRoute
   ApiPublicCronRemindersRoute: typeof ApiPublicCronRemindersRoute
 }
 
@@ -408,6 +434,20 @@ declare module '@tanstack/react-router' {
       path: '/verify'
       fullPath: '/verify'
       preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ferramentas/': {
+      id: '/ferramentas/'
+      path: '/ferramentas'
+      fullPath: '/ferramentas/'
+      preLoaderRoute: typeof FerramentasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ferramentas/$slug': {
+      id: '/ferramentas/$slug'
+      path: '/ferramentas/$slug'
+      fullPath: '/ferramentas/$slug'
+      preLoaderRoute: typeof FerramentasSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pasta/$token': {
@@ -597,8 +637,10 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,
   VerifyRoute: VerifyRoute,
+  FerramentasSlugRoute: FerramentasSlugRoute,
   PastaTokenRoute: PastaTokenRoute,
   SignTokenRoute: SignTokenRoute,
+  FerramentasIndexRoute: FerramentasIndexRoute,
   ApiPublicCronRemindersRoute: ApiPublicCronRemindersRoute,
 }
 export const routeTree = rootRouteImport

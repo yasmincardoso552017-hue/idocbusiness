@@ -61,6 +61,8 @@ import {
 } from "@/lib/pdf-tools";
 
 export const Route = createFileRoute("/_authenticated/app/ferramentas")({
+  validateSearch: (search: Record<string, unknown>): { tool?: string } =>
+    typeof search["tool"] === "string" ? { tool: search["tool"] } : {},
   head: () => ({
     meta: [
       { title: "Ferramentas de PDF — organizar, converter, editar e proteger | IDOC BUSINESS" },
@@ -300,8 +302,11 @@ function FileField({
 }
 
 function Tools() {
-  const [cat, setCat] = useState<string>("org");
-  const [tool, setTool] = useState<ToolId>("merge");
+  const search = Route.useSearch();
+  const initialCategory = CATS.find((category) => category.tools.some((item) => item.id === search.tool));
+  const initialTool = initialCategory?.tools.find((item) => item.id === search.tool)?.id as ToolId | undefined;
+  const [cat, setCat] = useState<string>(initialCategory?.id ?? "org");
+  const [tool, setTool] = useState<ToolId>(initialTool ?? "merge");
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [range, setRange] = useState("1-2");
@@ -822,7 +827,7 @@ function Tools() {
                   append={tool === "merge"}
                   accept={accept}
                   files={files}
-                   statuses={tool === "merge" ? mergeStatuses : undefined}
+                    {...(tool === "merge" ? { statuses: mergeStatuses } : {})}
                   onPick={(f) => {
                      setFiles((current) => tool === "merge" ? [...current, ...f] : f);
                      setMergeStatuses((current) => tool === "merge"
