@@ -16,7 +16,8 @@ import { ensureProfile } from "@/hooks/useAuth";
 export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>): { next?: string } => {
-    const next = typeof search.next === "string" && /^\/app(?:\/|$)/.test(search.next) ? search.next : undefined;
+    const candidate = search["next"];
+    const next = typeof candidate === "string" && /^\/app(?:\/|$)/.test(candidate) ? candidate : undefined;
     return next ? { next } : {};
   },
   head: () => ({

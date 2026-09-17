@@ -62,7 +62,7 @@ import {
 
 export const Route = createFileRoute("/_authenticated/app/ferramentas")({
   validateSearch: (search: Record<string, unknown>): { tool?: string } =>
-    typeof search.tool === "string" ? { tool: search.tool } : {},
+    typeof search["tool"] === "string" ? { tool: search["tool"] } : {},
   head: () => ({
     meta: [
       { title: "Ferramentas de PDF — organizar, converter, editar e proteger | IDOC BUSINESS" },
