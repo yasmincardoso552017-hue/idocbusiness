@@ -2,7 +2,7 @@
  * Ferramentas de PDF executadas no próprio dispositivo: compressão, senha,
  * PDF/A, redação e conversões entre PDF e formatos do Office.
  */
-import { extractPdfText, inspectPdfVisuals, rasterizePages, type PdfPageVisual } from "@/lib/pdf-preview";
+import { extractPdfEditableLayout, extractPdfText, inspectPdfVisuals, rasterizePages, type PdfEditablePage, type PdfPageVisual } from "@/lib/pdf-preview";
 
 export type Bytes = Uint8Array;
 
@@ -478,6 +478,20 @@ export async function pdfPagesText(bytes: Bytes) {
 }
 
 type FaithfulPage = { index: number; blob: Blob; width: number; height: number };
+export type OfficeConversionMode = "faithful" | "editable";
+
+function xmlEscape(value: string) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+}
+
+function officeFont(value: string) {
+  const clean = value.replace(/^[A-Z]{6}\+/, "").replace(/[^\w .-]/g, "").trim();
+  return clean || "Arial";
+}
+
+async function editableLayout(bytes: Bytes, mode: OfficeConversionMode) {
+  return mode === "editable" ? extractPdfEditableLayout(bytes) : [];
+}
 
 async function faithfulPdfPages(bytes: Bytes): Promise<FaithfulPage[]> {
   const pages = await rasterizePages(bytes, undefined, "image/jpeg", 2.25);
@@ -508,8 +522,9 @@ function wordSection(page: FaithfulPage) {
  * Modo de fidelidade visual: cada página vira uma imagem integral dentro de um
  * DOCX real. Isso preserva posições, fontes, tabelas e imagens sem reconstrução.
  */
-export async function pdfToDocx(bytes: Bytes) {
+export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
   const pages = await faithfulPdfPages(bytes);
+  const layout = await editableLayout(bytes, mode);
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
@@ -526,19 +541,32 @@ export async function pdfToDocx(bytes: Bytes) {
     const cy = size.height * 635;
     zip.folder("word/media")?.file(`page-${index + 1}.jpg`, page.blob);
     relationships.push(`<Relationship Id="${relationId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/page-${index + 1}.jpg"/>`);
-    paragraphs.push(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${index + 1}" name="Página ${index + 1}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${index + 1}" name="Página ${index + 1}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`);
+    const editableTexts = (layout[index]?.texts ?? []).map((text, textIndex) => {
+      const source = layout[index] as PdfEditablePage;
+      const scaleX = size.width / source.width / 20;
+      const scaleY = size.height / source.height / 20;
+      const left = Math.round(text.x * scaleX * 100) / 100;
+      const top = Math.round(text.y * scaleY * 100) / 100;
+      const width = Math.max(4, Math.round(text.width * scaleX * 100) / 100);
+      const height = Math.max(4, Math.round(text.height * scaleY * 100) / 100);
+      const font = xmlEscape(officeFont(text.fontFamily));
+      const fontSize = Math.max(2, Math.round(text.fontSize * 2));
+      return `<w:r><w:pict><v:shape id="editable-${index + 1}-${textIndex + 1}" type="#_x0000_t202" style="position:absolute;margin-left:${left}pt;margin-top:${top}pt;width:${width}pt;height:${height}pt;z-index:2;mso-wrap-style:none" stroked="f" filled="f"><v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t xml:space="preserve">${xmlEscape(text.text)}</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r>`;
+    }).join("");
+    paragraphs.push(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${index + 1}" name="Página ${index + 1}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${index + 1}" name="Página ${index + 1}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>${editableTexts}</w:p>`);
     if (index < pages.length - 1) paragraphs.push(`<w:p><w:pPr>${wordSection(page)}</w:pPr></w:p>`);
   }
   const finalPage = pages[pages.length - 1];
   if (!finalPage) throw new Error("Nenhuma página pôde ser convertida");
   zip.folder("word/_rels")?.file("document.xml.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relationships.join("")}</Relationships>`);
-  zip.folder("word")?.file("document.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${paragraphs.join("")}${wordSection(finalPage)}</w:body></w:document>`);
+  zip.folder("word")?.file("document.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:v="urn:schemas-microsoft-com:vml"><w:body>${paragraphs.join("")}${wordSection(finalPage)}</w:body></w:document>`);
   return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
 }
 
 /** Uma aba por página, com a página integral como imagem e sem grade visível. */
-export async function pdfToXlsx(bytes: Bytes) {
+export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
   const pages = await faithfulPdfPages(bytes);
+  const layout = await editableLayout(bytes, mode);
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   const overrides = pages.flatMap((_, index) => [
@@ -571,14 +599,24 @@ export async function pdfToXlsx(bytes: Bytes) {
     zip.folder("xl/media")?.file(`page-${index + 1}.jpg`, page.blob);
     zip.folder("xl/worksheets")?.file(`sheet${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="110" customWidth="1"/></cols><sheetData><row r="1" ht="409" customHeight="1"><c r="A1"/></row></sheetData><printOptions horizontalCentered="1" verticalCentered="1"/><pageMargins left="0" right="0" top="0" bottom="0" header="0" footer="0"/><pageSetup paperSize="9" orientation="${page.width > page.height ? "landscape" : "portrait"}" fitToWidth="1" fitToHeight="1"/><drawing r:id="rId1"/></worksheet>`);
     zip.folder("xl/worksheets/_rels")?.file(`sheet${index + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${index + 1}.xml"/></Relationships>`);
-    zip.folder("xl/drawings")?.file(`drawing${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${index + 1}" name="Página ${index + 1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>`);
+    const source = layout[index];
+    const shapes = (source?.texts ?? []).map((text, textIndex) => {
+      const x = Math.round(text.x / source!.width * imageWidthEmu);
+      const y = Math.round(text.y / source!.height * imageHeightEmu);
+      const w = Math.max(12000, Math.round(text.width / source!.width * imageWidthEmu));
+      const h = Math.max(12000, Math.round(text.height / source!.height * imageHeightEmu));
+      const size = Math.max(100, Math.round(text.fontSize * 100));
+      return `<xdr:absoluteAnchor><xdr:pos x="${x}" y="${y}"/><xdr:ext cx="${w}" cy="${h}"/><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${textIndex + 100}" name="Texto editável ${textIndex + 1}"/><xdr:cNvSpPr txBox="1"/></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></xdr:spPr><xdr:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0"/><a:lstStyle/><a:p><a:r><a:rPr lang="pt-BR" sz="${size}" typeface="${xmlEscape(officeFont(text.fontFamily))}"/><a:t>${xmlEscape(text.text)}</a:t></a:r></a:p></xdr:txBody></xdr:sp><xdr:clientData/></xdr:absoluteAnchor>`;
+    }).join("");
+    zip.folder("xl/drawings")?.file(`drawing${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${index + 1}" name="Página ${index + 1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>${shapes}</xdr:wsDr>`);
     zip.folder("xl/drawings/_rels")?.file(`drawing${index + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/page-${index + 1}.jpg"/></Relationships>`);
   }
   return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
-export async function pdfToPptx(bytes: Bytes) {
+export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
   const rasters = await faithfulPdfPages(bytes);
+  const layout = await editableLayout(bytes, mode);
   const { default: PptxGenJS } = await import("pptxgenjs");
   const pptx = new PptxGenJS();
   const first = rasters[0];
@@ -587,11 +625,25 @@ export async function pdfToPptx(bytes: Bytes) {
   const slideHeight = slideWidth * first.height / first.width;
   pptx.defineLayout({ name: "PDF_FIEL", width: slideWidth, height: slideHeight });
   pptx.layout = "PDF_FIEL";
-  for (const r of rasters) {
+  for (const [index, r] of rasters.entries()) {
     const slide = pptx.addSlide();
     const data = await blobToDataUrl(r.blob);
     slide.background = { color: "FFFFFF" };
     slide.addImage({ data, x: 0, y: 0, w: slideWidth, h: slideHeight, sizing: { type: "contain", w: slideWidth, h: slideHeight } });
+    const source = layout[index];
+    for (const text of source?.texts ?? []) {
+      slide.addText(text.text, {
+        x: text.x / source.width * slideWidth,
+        y: text.y / source.height * slideHeight,
+        w: Math.max(0.08, text.width / source.width * slideWidth),
+        h: Math.max(0.08, text.height / source.height * slideHeight),
+        fontFace: officeFont(text.fontFamily),
+        fontSize: Math.max(1, text.fontSize * 72 / 96),
+        margin: 0,
+        breakLine: false,
+        transparency: 0,
+      });
+    }
   }
   const out = (await pptx.write({ outputType: "blob" })) as Blob;
   return out;
