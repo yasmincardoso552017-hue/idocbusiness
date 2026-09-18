@@ -273,6 +273,7 @@ export type PdfEditableText = {
   height: number;
   fontSize: number;
   fontFamily: string;
+  background: string;
 };
 
 export type PdfEditablePage = {
@@ -306,6 +307,7 @@ export async function extractPdfEditableLayout(bytes: Uint8Array): Promise<PdfEd
             height,
             fontSize,
             fontFamily: styles[item.fontName]?.fontFamily?.split(",")[0]?.replace(/["']/g, "").trim() || "Arial",
+            background: "FFFFFF",
           });
         }
         pages.push({ width: viewport.width, height: viewport.height, texts });
