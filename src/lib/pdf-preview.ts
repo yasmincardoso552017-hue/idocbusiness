@@ -264,3 +264,59 @@ export async function extractPdfText(bytes: Uint8Array): Promise<string[]> {
   doc.cleanup();
   return pages;
 }
+
+export type PdfEditableText = {
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  fontSize: number;
+  fontFamily: string;
+  background: string;
+};
+
+export type PdfEditablePage = {
+  width: number;
+  height: number;
+  texts: PdfEditableText[];
+};
+
+/** Extrai texto com posição e fonte declarada para reconstrução editável no Office. */
+export async function extractPdfEditableLayout(bytes: Uint8Array): Promise<PdfEditablePage[]> {
+  const doc = await openPdf(bytes);
+  const pages: PdfEditablePage[] = [];
+  try {
+    for (let index = 1; index <= doc.numPages; index++) {
+      const page = await doc.getPage(index);
+      try {
+        const viewport = page.getViewport({ scale: 1 });
+        const content = await page.getTextContent();
+        const styles = content.styles as Record<string, { fontFamily?: string }>;
+        const texts: PdfEditableText[] = [];
+        for (const raw of content.items) {
+          if (!("str" in raw) || !raw.str.trim()) continue;
+          const item = raw as typeof raw & { transform: number[]; width: number; height: number; fontName: string };
+          const fontSize = Math.max(1, Math.hypot(item.transform[2] ?? 0, item.transform[3] ?? 0) || item.height);
+          const height = Math.max(fontSize, item.height || fontSize);
+          texts.push({
+            text: item.str,
+            x: Math.max(0, item.transform[4] ?? 0),
+            y: Math.max(0, viewport.height - (item.transform[5] ?? 0) - height),
+            width: Math.max(item.width || fontSize, 1),
+            height,
+            fontSize,
+            fontFamily: styles[item.fontName]?.fontFamily?.split(",")[0]?.replace(/["']/g, "").trim() || "Arial",
+            background: "FFFFFF",
+          });
+        }
+        pages.push({ width: viewport.width, height: viewport.height, texts });
+      } finally {
+        page.cleanup();
+      }
+    }
+  } finally {
+    doc.cleanup();
+  }
+  return pages;
+}

@@ -62,6 +62,7 @@ import {
   unlockPdf,
   type DocumentTreatmentLevel,
   type DocumentTreatmentProgress,
+  type OfficeConversionMode,
 } from "@/lib/pdf-tools";
 
 export const Route = createFileRoute("/_authenticated/app/ferramentas")({
@@ -322,6 +323,7 @@ function Tools() {
   const [treatmentLevel, setTreatmentLevel] = useState<DocumentTreatmentLevel>("equilibrado");
   const [treatmentProgress, setTreatmentProgress] = useState<DocumentTreatmentProgress | null>(null);
   const [imgFormat, setImgFormat] = useState<"image/jpeg" | "image/png">("image/jpeg");
+  const [conversionMode, setConversionMode] = useState<OfficeConversionMode>("editable");
   const [folderName, setFolderName] = useState("Documentos IDOC");
   const [fields, setFields] = useState<{ name: string; type: string; value: string }[] | null>(null);
   const [textResult, setTextResult] = useState<{ name: string; content: string } | null>(null);
@@ -560,20 +562,20 @@ function Tools() {
     pdf2word: async () => {
       const f = needPdf();
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
-      downloadBlob(await pdfToDocx(bytes), `${f.name.replace(/\.pdf$/i, "")}.docx`);
-      return "Word fiel ao PDF gerado";
+      downloadBlob(await pdfToDocx(bytes, conversionMode), `${f.name.replace(/\.pdf$/i, "")}.docx`);
+      return conversionMode === "editable" ? "Word fiel e editável gerado" : "Word fiel ao PDF gerado";
     },
     pdf2excel: async () => {
       const f = needPdf();
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
-      downloadBlob(await pdfToXlsx(bytes), `${f.name.replace(/\.pdf$/i, "")}.xlsx`);
-      return "Excel fiel ao PDF gerado";
+      downloadBlob(await pdfToXlsx(bytes, conversionMode), `${f.name.replace(/\.pdf$/i, "")}.xlsx`);
+      return conversionMode === "editable" ? "Excel fiel e editável gerado" : "Excel fiel ao PDF gerado";
     },
     pdf2ppt: async () => {
       const f = needPdf();
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
-      downloadBlob(await pdfToPptx(bytes), `${f.name.replace(/\.pdf$/i, "")}.pptx`);
-      return "PowerPoint fiel ao PDF gerado";
+      downloadBlob(await pdfToPptx(bytes, conversionMode), `${f.name.replace(/\.pdf$/i, "")}.pptx`);
+      return conversionMode === "editable" ? "PowerPoint fiel e editável gerado" : "PowerPoint fiel ao PDF gerado";
     },
     office2pdf: async () => {
       if (!first) throw new Error("Selecione um arquivo Word, Excel, PowerPoint, HTML ou TXT");
@@ -912,8 +914,20 @@ function Tools() {
                   </div>
                 )}
                 {(tool === "pdf2word" || tool === "pdf2excel" || tool === "pdf2ppt") && (
-                  <div className="rounded-lg border border-border bg-secondary/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
-                    Modo fiel: cada página mantém exatamente textos, imagens, tabelas, posições e proporções do PDF. Para impedir alterações no visual, o conteúdo é inserido como uma imagem integral por página e não fica livremente editável como texto ou células.
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2" aria-label="Tipo de conversão">
+                      <Button type="button" size="sm" variant={conversionMode === "editable" ? "default" : "outline"} onClick={() => setConversionMode("editable")}>
+                        Fiel e editável
+                      </Button>
+                      <Button type="button" size="sm" variant={conversionMode === "faithful" ? "default" : "outline"} onClick={() => setConversionMode("faithful")}>
+                        Visual idêntico
+                      </Button>
+                    </div>
+                    <div className="rounded-lg border border-border bg-secondary/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
+                      {conversionMode === "editable"
+                        ? "Fiel e editável: mantém a página original como base e adiciona textos detectados em camadas editáveis, nas mesmas posições e com a fonte declarada pelo PDF. A página e suas fotos também permanecem como imagem selecionável. PDFs digitalizados sem camada de texto precisam primeiro do OCR."
+                        : "Visual idêntico: preserva exatamente textos, imagens, tabelas, fontes, posições e proporções como uma imagem integral por página. É a opção mais fiel, mas o conteúdo interno não fica separado para edição."}
+                    </div>
                   </div>
                 )}
                 {(tool === "protect" || tool === "unlock") && (
