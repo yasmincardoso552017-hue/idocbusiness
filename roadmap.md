@@ -6,3 +6,6 @@
 - [x] Validar páginas e manual em celular e computador.
 - [x] Tornar PDF → Word, Excel e PowerPoint visualmente fiel ao original.
 - [x] Validar os três arquivos gerados e a apresentação da ferramenta.
+- [ ] Adicionar conversão híbrida fiel e editável para Word, Excel e PowerPoint.
+- [ ] Preservar fontes quando disponíveis e sinalizar substituições inevitáveis.
+- [ ] Validar edição de textos, imagens e tabelas nos três formatos.
