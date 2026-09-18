@@ -631,7 +631,8 @@ export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "fait
     slide.background = { color: "FFFFFF" };
     slide.addImage({ data, x: 0, y: 0, w: slideWidth, h: slideHeight, sizing: { type: "contain", w: slideWidth, h: slideHeight } });
     const source = layout[index];
-    for (const text of source?.texts ?? []) {
+    if (!source) continue;
+    for (const text of source.texts) {
       slide.addText(text.text, {
         x: text.x / source.width * slideWidth,
         y: text.y / source.height * slideHeight,
