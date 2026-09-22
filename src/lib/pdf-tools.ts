@@ -493,7 +493,8 @@ async function editableLayout(bytes: Bytes, mode: OfficeConversionMode) {
   return mode === "editable" ? extractPdfEditableLayout(bytes) : [];
 }
 
-async function sampleTextBackgrounds(pages: FaithfulPage[], layout: PdfEditablePage[]) {
+async function prepareEditableBackgrounds(pages: FaithfulPage[], layout: PdfEditablePage[]) {
+  const cleaned: FaithfulPage[] = [];
   for (const [index, source] of layout.entries()) {
     const rendered = pages[index];
     if (!rendered) continue;
@@ -504,6 +505,7 @@ async function sampleTextBackgrounds(pages: FaithfulPage[], layout: PdfEditableP
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) {
       bitmap.close();
+      cleaned.push(rendered);
       continue;
     }
     context.drawImage(bitmap, 0, 0);
@@ -521,10 +523,31 @@ async function sampleTextBackgrounds(pages: FaithfulPage[], layout: PdfEditableP
         context.getImageData(Math.min(bitmap.width - 1, x + w - 1), Math.min(bitmap.height - 1, y + h - 1), 1, 1).data,
       ];
       const channel = (position: number) => Math.round(samples.reduce((sum, sample) => sum + (sample[position] ?? 255), 0) / samples.length);
-      text.background = [channel(0), channel(1), channel(2)].map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase();
+      const background = [channel(0), channel(1), channel(2)];
+      text.background = background.map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase();
+      const region = context.getImageData(x, y, w, h).data;
+      let bestDistance = -1;
+      let foreground = [0, 0, 0];
+      const pixelStep = Math.max(4, Math.floor(region.length / 1800 / 4) * 4);
+      for (let offset = 0; offset < region.length; offset += pixelStep) {
+        const candidate = [region[offset] ?? 0, region[offset + 1] ?? 0, region[offset + 2] ?? 0];
+        const distance = Math.abs(candidate[0] - background[0]) + Math.abs(candidate[1] - background[1]) + Math.abs(candidate[2] - background[2]);
+        if (distance > bestDistance) {
+          bestDistance = distance;
+          foreground = candidate;
+        }
+      }
+      text.color = foreground.map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase();
+      context.fillStyle = `#${text.background}`;
+      context.fillRect(Math.max(0, x - 1), Math.max(0, y - 1), Math.min(bitmap.width - x + 1, w + 2), Math.min(bitmap.height - y + 1, h + 2));
     }
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((value) => value ? resolve(value) : reject(new Error("Falha ao separar o conteúdo editável")), "image/jpeg", 0.94),
+    );
+    cleaned.push({ ...rendered, blob });
     bitmap.close();
   }
+  return pages.map((page, index) => cleaned[index] ?? page);
 }
 
 async function faithfulPdfPages(bytes: Bytes): Promise<FaithfulPage[]> {
@@ -557,9 +580,9 @@ function wordSection(page: FaithfulPage) {
  * DOCX real. Isso preserva posições, fontes, tabelas e imagens sem reconstrução.
  */
 export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
-  const pages = await faithfulPdfPages(bytes);
+  const sourcePages = await faithfulPdfPages(bytes);
   const layout = await editableLayout(bytes, mode);
-  await sampleTextBackgrounds(pages, layout);
+  const pages = mode === "editable" ? await prepareEditableBackgrounds(sourcePages, layout) : sourcePages;
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
@@ -586,7 +609,7 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
       const height = Math.max(4, Math.round(text.height * scaleY * 100) / 100);
       const font = xmlEscape(officeFont(text.fontFamily));
       const fontSize = Math.max(2, Math.round(text.fontSize * 2));
-      return `<w:r><w:pict><v:shape id="editable-${index + 1}-${textIndex + 1}" type="#_x0000_t202" style="position:absolute;margin-left:${left}pt;margin-top:${top}pt;width:${width}pt;height:${height}pt;z-index:2;mso-wrap-style:none" stroked="f" filled="t" fillcolor="#${text.background}"><v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t xml:space="preserve">${xmlEscape(text.text)}</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r>`;
+      return `<w:r><w:pict><v:shape id="editable-${index + 1}-${textIndex + 1}" type="#_x0000_t202" style="position:absolute;margin-left:${left}pt;margin-top:${top}pt;width:${width}pt;height:${height}pt;z-index:2;mso-wrap-style:none" stroked="f" filled="t" fillcolor="#${text.background}"><v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/><w:color w:val="${text.color}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t xml:space="preserve">${xmlEscape(text.text)}</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r>`;
     }).join("");
     paragraphs.push(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${index + 1}" name="Página ${index + 1}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${index + 1}" name="Página ${index + 1}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>${editableTexts}</w:p>`);
     if (index < pages.length - 1) paragraphs.push(`<w:p><w:pPr>${wordSection(page)}</w:pPr></w:p>`);
@@ -600,9 +623,9 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
 
 /** Uma aba por página, com a página integral como imagem e sem grade visível. */
 export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
-  const pages = await faithfulPdfPages(bytes);
+  const sourcePages = await faithfulPdfPages(bytes);
   const layout = await editableLayout(bytes, mode);
-  await sampleTextBackgrounds(pages, layout);
+  const pages = mode === "editable" ? await prepareEditableBackgrounds(sourcePages, layout) : sourcePages;
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   const overrides = pages.flatMap((_, index) => [
@@ -642,7 +665,7 @@ export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "fait
       const w = Math.max(12000, Math.round(text.width / source!.width * imageWidthEmu));
       const h = Math.max(12000, Math.round(text.height / source!.height * imageHeightEmu));
       const size = Math.max(100, Math.round(text.fontSize * 100));
-      return `<xdr:absoluteAnchor><xdr:pos x="${x}" y="${y}"/><xdr:ext cx="${w}" cy="${h}"/><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${textIndex + 100}" name="Texto editável ${textIndex + 1}"/><xdr:cNvSpPr txBox="1"/></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${text.background}"/></a:solidFill><a:ln><a:noFill/></a:ln></xdr:spPr><xdr:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0"/><a:lstStyle/><a:p><a:r><a:rPr lang="pt-BR" sz="${size}" typeface="${xmlEscape(officeFont(text.fontFamily))}"/><a:t>${xmlEscape(text.text)}</a:t></a:r></a:p></xdr:txBody></xdr:sp><xdr:clientData/></xdr:absoluteAnchor>`;
+      return `<xdr:absoluteAnchor><xdr:pos x="${x}" y="${y}"/><xdr:ext cx="${w}" cy="${h}"/><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${textIndex + 100}" name="Texto editável ${textIndex + 1}"/><xdr:cNvSpPr txBox="1"/></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${text.background}"/></a:solidFill><a:ln><a:noFill/></a:ln></xdr:spPr><xdr:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0"/><a:lstStyle/><a:p><a:r><a:rPr lang="pt-BR" sz="${size}" typeface="${xmlEscape(officeFont(text.fontFamily))}"><a:solidFill><a:srgbClr val="${text.color}"/></a:solidFill></a:rPr><a:t>${xmlEscape(text.text)}</a:t></a:r></a:p></xdr:txBody></xdr:sp><xdr:clientData/></xdr:absoluteAnchor>`;
     }).join("");
     zip.folder("xl/drawings")?.file(`drawing${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${index + 1}" name="Página ${index + 1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>${shapes}</xdr:wsDr>`);
     zip.folder("xl/drawings/_rels")?.file(`drawing${index + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/page-${index + 1}.jpg"/></Relationships>`);
@@ -651,9 +674,9 @@ export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "fait
 }
 
 export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
-  const rasters = await faithfulPdfPages(bytes);
+  const sourcePages = await faithfulPdfPages(bytes);
   const layout = await editableLayout(bytes, mode);
-  await sampleTextBackgrounds(rasters, layout);
+  const rasters = mode === "editable" ? await prepareEditableBackgrounds(sourcePages, layout) : sourcePages;
   const { default: PptxGenJS } = await import("pptxgenjs");
   const pptx = new PptxGenJS();
   const first = rasters[0];
@@ -677,6 +700,7 @@ export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "fait
         h: Math.max(0.08, text.height / source.height * slideHeight),
         fontFace: officeFont(text.fontFamily),
         fontSize: Math.max(1, text.fontSize * 72 / 96),
+        color: text.color,
         margin: 0,
         fill: { color: text.background },
         breakLine: false,
