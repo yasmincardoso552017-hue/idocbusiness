@@ -563,19 +563,19 @@ function Tools() {
       const f = needPdf();
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
       downloadBlob(await pdfToDocx(bytes, conversionMode), `${f.name.replace(/\.pdf$/i, "")}.docx`);
-      return conversionMode === "editable" ? "Word fiel e editável gerado" : "Word fiel ao PDF gerado";
+      return conversionMode === "editable" ? "Word com textos reais e conteúdo editável gerado" : "Word fiel ao PDF gerado";
     },
     pdf2excel: async () => {
       const f = needPdf();
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
       downloadBlob(await pdfToXlsx(bytes, conversionMode), `${f.name.replace(/\.pdf$/i, "")}.xlsx`);
-      return conversionMode === "editable" ? "Excel fiel e editável gerado" : "Excel fiel ao PDF gerado";
+      return conversionMode === "editable" ? "Excel com textos reais e conteúdo editável gerado" : "Excel fiel ao PDF gerado";
     },
     pdf2ppt: async () => {
       const f = needPdf();
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
       downloadBlob(await pdfToPptx(bytes, conversionMode), `${f.name.replace(/\.pdf$/i, "")}.pptx`);
-      return conversionMode === "editable" ? "PowerPoint fiel e editável gerado" : "PowerPoint fiel ao PDF gerado";
+      return conversionMode === "editable" ? "PowerPoint com textos reais e conteúdo editável gerado" : "PowerPoint fiel ao PDF gerado";
     },
     office2pdf: async () => {
       if (!first) throw new Error("Selecione um arquivo Word, Excel, PowerPoint, HTML ou TXT");
@@ -917,7 +917,7 @@ function Tools() {
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2" aria-label="Tipo de conversão">
                       <Button type="button" size="sm" variant={conversionMode === "editable" ? "default" : "outline"} onClick={() => setConversionMode("editable")}>
-                        Fiel e editável
+                        Conteúdo editável
                       </Button>
                       <Button type="button" size="sm" variant={conversionMode === "faithful" ? "default" : "outline"} onClick={() => setConversionMode("faithful")}>
                         Visual idêntico
@@ -925,7 +925,7 @@ function Tools() {
                     </div>
                     <div className="rounded-lg border border-border bg-secondary/40 p-3 text-[11px] leading-relaxed text-muted-foreground">
                       {conversionMode === "editable"
-                        ? "Fiel e editável: mantém a página original como base e adiciona textos detectados em camadas editáveis, nas mesmas posições e com a fonte declarada pelo PDF. A página e suas fotos também permanecem como imagem selecionável. PDFs digitalizados sem camada de texto precisam primeiro do OCR."
+                        ? "Conteúdo editável: remove o texto da imagem de fundo e o recria como texto real, selecionável e editável, preservando posições, cores e a fonte declarada quando disponível. Fotos, ilustrações e fundos permanecem como elementos visuais. PDFs digitalizados precisam primeiro do OCR."
                         : "Visual idêntico: preserva exatamente textos, imagens, tabelas, fontes, posições e proporções como uma imagem integral por página. É a opção mais fiel, mas o conteúdo interno não fica separado para edição."}
                     </div>
                   </div>

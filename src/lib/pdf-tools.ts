@@ -493,7 +493,7 @@ async function editableLayout(bytes: Bytes, mode: OfficeConversionMode) {
   return mode === "editable" ? extractPdfEditableLayout(bytes) : [];
 }
 
-async function sampleTextBackgrounds(pages: FaithfulPage[], layout: PdfEditablePage[]) {
+async function inspectEditableColors(pages: FaithfulPage[], layout: PdfEditablePage[]) {
   for (const [index, source] of layout.entries()) {
     const rendered = pages[index];
     if (!rendered) continue;
@@ -521,7 +521,23 @@ async function sampleTextBackgrounds(pages: FaithfulPage[], layout: PdfEditableP
         context.getImageData(Math.min(bitmap.width - 1, x + w - 1), Math.min(bitmap.height - 1, y + h - 1), 1, 1).data,
       ];
       const channel = (position: number) => Math.round(samples.reduce((sum, sample) => sum + (sample[position] ?? 255), 0) / samples.length);
-      text.background = [channel(0), channel(1), channel(2)].map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase();
+      const background = [channel(0), channel(1), channel(2)];
+      text.background = background.map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase();
+      const region = context.getImageData(x, y, w, h).data;
+      let bestDistance = -1;
+      let foreground = [0, 0, 0];
+      const pixelStep = Math.max(4, Math.floor(region.length / 1800 / 4) * 4);
+      for (let offset = 0; offset < region.length; offset += pixelStep) {
+        const candidate = [region[offset] ?? 0, region[offset + 1] ?? 0, region[offset + 2] ?? 0];
+        const distance = Math.abs((candidate[0] ?? 0) - (background[0] ?? 255))
+          + Math.abs((candidate[1] ?? 0) - (background[1] ?? 255))
+          + Math.abs((candidate[2] ?? 0) - (background[2] ?? 255));
+        if (distance > bestDistance) {
+          bestDistance = distance;
+          foreground = candidate;
+        }
+      }
+      text.color = foreground.map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase();
     }
     bitmap.close();
   }
@@ -557,12 +573,13 @@ function wordSection(page: FaithfulPage) {
  * DOCX real. Isso preserva posições, fontes, tabelas e imagens sem reconstrução.
  */
 export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
-  const pages = await faithfulPdfPages(bytes);
+  const sourcePages = await faithfulPdfPages(bytes);
   const layout = await editableLayout(bytes, mode);
-  await sampleTextBackgrounds(pages, layout);
+  if (mode === "editable") await inspectEditableColors(sourcePages, layout);
+  const pages = sourcePages;
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
-  zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
+  zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
   zip.folder("_rels")?.file(".rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
 
   const relationships: string[] = [];
@@ -574,8 +591,25 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
     const size = pageDxa(page);
     const cx = size.width * 635;
     const cy = size.height * 635;
-    zip.folder("word/media")?.file(`page-${index + 1}.jpg`, page.blob);
-    relationships.push(`<Relationship Id="${relationId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/page-${index + 1}.jpg"/>`);
+    const media: string[] = [];
+    if (mode === "faithful") {
+      zip.folder("word/media")?.file(`page-${index + 1}.jpg`, page.blob);
+      relationships.push(`<Relationship Id="${relationId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/page-${index + 1}.jpg"/>`);
+      media.push(`<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${index + 1}" name="Página ${index + 1}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${index + 1}" name="Página ${index + 1}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`);
+    } else {
+      const source = layout[index];
+      if (source) {
+        const scaleX = size.width / source.width / 20;
+        const scaleY = size.height / source.height / 20;
+        for (const [imageIndex, image] of source.images.entries()) {
+          const imageRelationId = `rIdEditable${index + 1}_${imageIndex + 1}`;
+          const fileName = `image-${index + 1}-${imageIndex + 1}.png`;
+          zip.folder("word/media")?.file(fileName, image.blob);
+          relationships.push(`<Relationship Id="${imageRelationId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${fileName}"/>`);
+          media.push(`<w:r><w:pict><v:shape id="image-${index + 1}-${imageIndex + 1}" style="position:absolute;margin-left:${image.x * scaleX}pt;margin-top:${image.y * scaleY}pt;width:${image.width * scaleX}pt;height:${image.height * scaleY}pt;z-index:1;mso-wrap-style:none" stroked="f"><v:imagedata r:id="${imageRelationId}"/></v:shape></w:pict></w:r>`);
+        }
+      }
+    }
     const editableTexts = (layout[index]?.texts ?? []).map((text, textIndex) => {
       const source = layout[index] as PdfEditablePage;
       const scaleX = size.width / source.width / 20;
@@ -586,9 +620,9 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
       const height = Math.max(4, Math.round(text.height * scaleY * 100) / 100);
       const font = xmlEscape(officeFont(text.fontFamily));
       const fontSize = Math.max(2, Math.round(text.fontSize * 2));
-      return `<w:r><w:pict><v:shape id="editable-${index + 1}-${textIndex + 1}" type="#_x0000_t202" style="position:absolute;margin-left:${left}pt;margin-top:${top}pt;width:${width}pt;height:${height}pt;z-index:2;mso-wrap-style:none" stroked="f" filled="t" fillcolor="#${text.background}"><v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t xml:space="preserve">${xmlEscape(text.text)}</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r>`;
+      return `<w:r><w:pict><v:shape id="editable-${index + 1}-${textIndex + 1}" type="#_x0000_t202" style="position:absolute;margin-left:${left}pt;margin-top:${top}pt;width:${width}pt;height:${height}pt;z-index:2;mso-wrap-style:none" stroked="f" filled="t" fillcolor="#${text.background}"><v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/><w:color w:val="${text.color}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t xml:space="preserve">${xmlEscape(text.text)}</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r>`;
     }).join("");
-    paragraphs.push(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${index + 1}" name="Página ${index + 1}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${index + 1}" name="Página ${index + 1}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>${editableTexts}</w:p>`);
+    paragraphs.push(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>${media.join("")}${editableTexts}</w:p>`);
     if (index < pages.length - 1) paragraphs.push(`<w:p><w:pPr>${wordSection(page)}</w:pPr></w:p>`);
   }
   const finalPage = pages[pages.length - 1];
@@ -600,16 +634,17 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
 
 /** Uma aba por página, com a página integral como imagem e sem grade visível. */
 export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
-  const pages = await faithfulPdfPages(bytes);
+  const sourcePages = await faithfulPdfPages(bytes);
   const layout = await editableLayout(bytes, mode);
-  await sampleTextBackgrounds(pages, layout);
+  if (mode === "editable") await inspectEditableColors(sourcePages, layout);
+  const pages = sourcePages;
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   const overrides = pages.flatMap((_, index) => [
     `<Override PartName="/xl/worksheets/sheet${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`,
     `<Override PartName="/xl/drawings/drawing${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`,
   ]).join("");
-  zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${overrides}</Types>`);
+  zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${overrides}</Types>`);
   zip.folder("_rels")?.file(".rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
   const sheets = pages.map((_, index) => `<sheet name="Página ${index + 1}" sheetId="${index + 1}" r:id="rId${index + 1}"/>`).join("");
   const printAreas = pages.map((_, index) => `<definedName name="_xlnm.Print_Area" localSheetId="${index}">'Página ${index + 1}'!$A$1:$A$1</definedName>`).join("");
@@ -632,28 +667,47 @@ export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "fait
     }
     const imageWidthEmu = Math.round(imageWidthInches * 914400);
     const imageHeightEmu = Math.round(imageHeightInches * 914400);
-    zip.folder("xl/media")?.file(`page-${index + 1}.jpg`, page.blob);
+    if (mode === "faithful") zip.folder("xl/media")?.file(`page-${index + 1}.jpg`, page.blob);
     zip.folder("xl/worksheets")?.file(`sheet${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1"/><sheetViews><sheetView showGridLines="0" workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols><col min="1" max="1" width="110" customWidth="1"/></cols><sheetData><row r="1" ht="409" customHeight="1"><c r="A1"/></row></sheetData><printOptions horizontalCentered="1" verticalCentered="1"/><pageMargins left="0" right="0" top="0" bottom="0" header="0" footer="0"/><pageSetup paperSize="9" orientation="${page.width > page.height ? "landscape" : "portrait"}" fitToWidth="1" fitToHeight="1"/><drawing r:id="rId1"/></worksheet>`);
     zip.folder("xl/worksheets/_rels")?.file(`sheet${index + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${index + 1}.xml"/></Relationships>`);
     const source = layout[index];
+    const pictures: string[] = [];
+    const drawingRelationships: string[] = [];
+    if (mode === "faithful") {
+      drawingRelationships.push(`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/page-${index + 1}.jpg"/>`);
+      pictures.push(`<xdr:absoluteAnchor><xdr:pos x="0" y="0"/><xdr:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${index + 1}" name="Página ${index + 1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:absoluteAnchor>`);
+    } else if (source) {
+      for (const [imageIndex, image] of source.images.entries()) {
+        const relationshipId = `rId${imageIndex + 1}`;
+        const fileName = `image-${index + 1}-${imageIndex + 1}.png`;
+        const x = Math.round(image.x / source.width * imageWidthEmu);
+        const y = Math.round(image.y / source.height * imageHeightEmu);
+        const width = Math.max(12000, Math.round(image.width / source.width * imageWidthEmu));
+        const height = Math.max(12000, Math.round(image.height / source.height * imageHeightEmu));
+        zip.folder("xl/media")?.file(fileName, image.blob);
+        drawingRelationships.push(`<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${fileName}"/>`);
+        pictures.push(`<xdr:absoluteAnchor><xdr:pos x="${x}" y="${y}"/><xdr:ext cx="${width}" cy="${height}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${imageIndex + 2}" name="Imagem ${imageIndex + 1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:absoluteAnchor>`);
+      }
+    }
     const shapes = (source?.texts ?? []).map((text, textIndex) => {
       const x = Math.round(text.x / source!.width * imageWidthEmu);
       const y = Math.round(text.y / source!.height * imageHeightEmu);
       const w = Math.max(12000, Math.round(text.width / source!.width * imageWidthEmu));
       const h = Math.max(12000, Math.round(text.height / source!.height * imageHeightEmu));
       const size = Math.max(100, Math.round(text.fontSize * 100));
-      return `<xdr:absoluteAnchor><xdr:pos x="${x}" y="${y}"/><xdr:ext cx="${w}" cy="${h}"/><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${textIndex + 100}" name="Texto editável ${textIndex + 1}"/><xdr:cNvSpPr txBox="1"/></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${text.background}"/></a:solidFill><a:ln><a:noFill/></a:ln></xdr:spPr><xdr:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0"/><a:lstStyle/><a:p><a:r><a:rPr lang="pt-BR" sz="${size}" typeface="${xmlEscape(officeFont(text.fontFamily))}"/><a:t>${xmlEscape(text.text)}</a:t></a:r></a:p></xdr:txBody></xdr:sp><xdr:clientData/></xdr:absoluteAnchor>`;
+      return `<xdr:absoluteAnchor><xdr:pos x="${x}" y="${y}"/><xdr:ext cx="${w}" cy="${h}"/><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${textIndex + 100}" name="Texto editável ${textIndex + 1}"/><xdr:cNvSpPr txBox="1"/></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${text.background}"/></a:solidFill><a:ln><a:noFill/></a:ln></xdr:spPr><xdr:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0"/><a:lstStyle/><a:p><a:r><a:rPr lang="pt-BR" sz="${size}" typeface="${xmlEscape(officeFont(text.fontFamily))}"><a:solidFill><a:srgbClr val="${text.color}"/></a:solidFill></a:rPr><a:t>${xmlEscape(text.text)}</a:t></a:r></a:p></xdr:txBody></xdr:sp><xdr:clientData/></xdr:absoluteAnchor>`;
     }).join("");
-    zip.folder("xl/drawings")?.file(`drawing${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><xdr:oneCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${index + 1}" name="Página ${index + 1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor>${shapes}</xdr:wsDr>`);
-    zip.folder("xl/drawings/_rels")?.file(`drawing${index + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/page-${index + 1}.jpg"/></Relationships>`);
+    zip.folder("xl/drawings")?.file(`drawing${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${pictures.join("")}${shapes}</xdr:wsDr>`);
+    zip.folder("xl/drawings/_rels")?.file(`drawing${index + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${drawingRelationships.join("")}</Relationships>`);
   }
   return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
 export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
-  const rasters = await faithfulPdfPages(bytes);
+  const sourcePages = await faithfulPdfPages(bytes);
   const layout = await editableLayout(bytes, mode);
-  await sampleTextBackgrounds(rasters, layout);
+  if (mode === "editable") await inspectEditableColors(sourcePages, layout);
+  const rasters = sourcePages;
   const { default: PptxGenJS } = await import("pptxgenjs");
   const pptx = new PptxGenJS();
   const first = rasters[0];
@@ -664,11 +718,16 @@ export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "fait
   pptx.layout = "PDF_FIEL";
   for (const [index, r] of rasters.entries()) {
     const slide = pptx.addSlide();
-    const data = await blobToDataUrl(r.blob);
     slide.background = { color: "FFFFFF" };
-    slide.addImage({ data, x: 0, y: 0, w: slideWidth, h: slideHeight, sizing: { type: "contain", w: slideWidth, h: slideHeight } });
+    if (mode === "faithful") {
+      const data = await blobToDataUrl(r.blob);
+      slide.addImage({ data, x: 0, y: 0, w: slideWidth, h: slideHeight, sizing: { type: "contain", w: slideWidth, h: slideHeight } });
+    }
     const source = layout[index];
     if (!source) continue;
+    for (const image of source.images) {
+      slide.addImage({ data: await blobToDataUrl(image.blob), x: image.x / source.width * slideWidth, y: image.y / source.height * slideHeight, w: image.width / source.width * slideWidth, h: image.height / source.height * slideHeight });
+    }
     for (const text of source.texts) {
       slide.addText(text.text, {
         x: text.x / source.width * slideWidth,
@@ -677,6 +736,7 @@ export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "fait
         h: Math.max(0.08, text.height / source.height * slideHeight),
         fontFace: officeFont(text.fontFamily),
         fontSize: Math.max(1, text.fontSize * 72 / 96),
+        color: text.color,
         margin: 0,
         fill: { color: text.background },
         breakLine: false,
