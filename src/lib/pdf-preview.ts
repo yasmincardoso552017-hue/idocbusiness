@@ -281,7 +281,116 @@ export type PdfEditablePage = {
   width: number;
   height: number;
   texts: PdfEditableText[];
+  images: PdfEditableImage[];
 };
+
+export type PdfEditableImage = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  blob: Blob;
+};
+
+type Matrix = [number, number, number, number, number, number];
+
+function multiplyMatrix(left: Matrix, right: Matrix): Matrix {
+  return [
+    left[0] * right[0] + left[2] * right[1],
+    left[1] * right[0] + left[3] * right[1],
+    left[0] * right[2] + left[2] * right[3],
+    left[1] * right[2] + left[3] * right[3],
+    left[0] * right[4] + left[2] * right[5] + left[4],
+    left[1] * right[4] + left[3] * right[5] + left[5],
+  ];
+}
+
+function matrixPoint(matrix: Matrix, x: number, y: number) {
+  return { x: matrix[0] * x + matrix[2] * y + matrix[4], y: matrix[1] * x + matrix[3] * y + matrix[5] };
+}
+
+async function imageObjectToBlob(image: { width?: number; height?: number; data?: Uint8Array | Uint8ClampedArray; bitmap?: ImageBitmap }) {
+  const width = image.width ?? image.bitmap?.width ?? 0;
+  const height = image.height ?? image.bitmap?.height ?? 0;
+  if (!width || !height) return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  if (image.bitmap) {
+    context.drawImage(image.bitmap, 0, 0);
+  } else if (image.data) {
+    const rgba = new Uint8ClampedArray(width * height * 4);
+    const channels = image.data.length / (width * height);
+    for (let pixel = 0; pixel < width * height; pixel++) {
+      const source = pixel * channels;
+      const target = pixel * 4;
+      if (channels >= 3) {
+        rgba[target] = image.data[source] ?? 0;
+        rgba[target + 1] = image.data[source + 1] ?? 0;
+        rgba[target + 2] = image.data[source + 2] ?? 0;
+        rgba[target + 3] = channels >= 4 ? (image.data[source + 3] ?? 255) : 255;
+      } else {
+        const value = image.data[source] ?? 0;
+        rgba[target] = value;
+        rgba[target + 1] = value;
+        rgba[target + 2] = value;
+        rgba[target + 3] = 255;
+      }
+    }
+    context.putImageData(new ImageData(rgba, width, height), 0, 0);
+  } else {
+    return null;
+  }
+  return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+}
+
+async function resolvePageObject(page: { objs: { get: (id: string, callback?: (value: unknown) => void) => unknown } }, id: string) {
+  try {
+    const immediate = page.objs.get(id);
+    if (immediate) return immediate;
+  } catch {
+    // O objeto ainda pode estar sendo decodificado; aguarda o callback do PDF.js.
+  }
+  return await new Promise<unknown>((resolve) => page.objs.get(id, resolve));
+}
+
+async function extractPageImages(
+  page: Awaited<ReturnType<Awaited<ReturnType<typeof openPdf>>["getPage"]>>,
+  pageHeight: number,
+) {
+  const lib = await getLib();
+  const operators = await page.getOperatorList();
+  const images: PdfEditableImage[] = [];
+  let matrix: Matrix = [1, 0, 0, 1, 0, 0];
+  const stack: Matrix[] = [];
+  for (let index = 0; index < operators.fnArray.length; index++) {
+    const operation = operators.fnArray[index];
+    const args = operators.argsArray[index] as unknown[] | undefined;
+    if (operation === lib.OPS.save) stack.push([...matrix]);
+    else if (operation === lib.OPS.restore) matrix = stack.pop() ?? [1, 0, 0, 1, 0, 0];
+    else if (operation === lib.OPS.transform && args?.length === 6) matrix = multiplyMatrix(matrix, args.map(Number) as Matrix);
+    else if (operation === lib.OPS.paintImageXObject || operation === lib.OPS.paintInlineImageXObject) {
+      const raw = operation === lib.OPS.paintImageXObject && typeof args?.[0] === "string"
+        ? await resolvePageObject(page as never, args[0])
+        : args?.[0];
+      const image = raw as { width?: number; height?: number; data?: Uint8Array | Uint8ClampedArray; bitmap?: ImageBitmap } | undefined;
+      if (!image) continue;
+      const blob = await imageObjectToBlob(image);
+      if (!blob) continue;
+      const corners = [matrixPoint(matrix, 0, 0), matrixPoint(matrix, 1, 0), matrixPoint(matrix, 0, 1), matrixPoint(matrix, 1, 1)];
+      const xs = corners.map((point) => point.x);
+      const ys = corners.map((point) => point.y);
+      const minX = Math.min(...xs);
+      const maxX = Math.max(...xs);
+      const minY = Math.min(...ys);
+      const maxY = Math.max(...ys);
+      images.push({ x: minX, y: pageHeight - maxY, width: maxX - minX, height: maxY - minY, blob });
+    }
+  }
+  return images;
+}
 
 /** Extrai texto com posição e fonte declarada para reconstrução editável no Office. */
 export async function extractPdfEditableLayout(bytes: Uint8Array): Promise<PdfEditablePage[]> {
@@ -312,7 +421,8 @@ export async function extractPdfEditableLayout(bytes: Uint8Array): Promise<PdfEd
             color: "000000",
           });
         }
-        pages.push({ width: viewport.width, height: viewport.height, texts });
+        const images = await extractPageImages(page, viewport.height);
+        pages.push({ width: viewport.width, height: viewport.height, texts, images });
       } finally {
         page.cleanup();
       }

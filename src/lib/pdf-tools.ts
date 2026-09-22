@@ -493,8 +493,7 @@ async function editableLayout(bytes: Bytes, mode: OfficeConversionMode) {
   return mode === "editable" ? extractPdfEditableLayout(bytes) : [];
 }
 
-async function prepareEditableBackgrounds(pages: FaithfulPage[], layout: PdfEditablePage[]) {
-  const cleaned: FaithfulPage[] = [];
+async function inspectEditableColors(pages: FaithfulPage[], layout: PdfEditablePage[]) {
   for (const [index, source] of layout.entries()) {
     const rendered = pages[index];
     if (!rendered) continue;
@@ -505,7 +504,6 @@ async function prepareEditableBackgrounds(pages: FaithfulPage[], layout: PdfEdit
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) {
       bitmap.close();
-      cleaned.push(rendered);
       continue;
     }
     context.drawImage(bitmap, 0, 0);
@@ -540,16 +538,9 @@ async function prepareEditableBackgrounds(pages: FaithfulPage[], layout: PdfEdit
         }
       }
       text.color = foreground.map((value) => value.toString(16).padStart(2, "0")).join("").toUpperCase();
-      context.fillStyle = `#${text.background}`;
-      context.fillRect(Math.max(0, x - 1), Math.max(0, y - 1), Math.min(bitmap.width - x + 1, w + 2), Math.min(bitmap.height - y + 1, h + 2));
     }
-    const blob = await new Promise<Blob>((resolve, reject) =>
-      canvas.toBlob((value) => value ? resolve(value) : reject(new Error("Falha ao separar o conteúdo editável")), "image/jpeg", 0.94),
-    );
-    cleaned.push({ ...rendered, blob });
     bitmap.close();
   }
-  return pages.map((page, index) => cleaned[index] ?? page);
 }
 
 async function faithfulPdfPages(bytes: Bytes): Promise<FaithfulPage[]> {
@@ -584,7 +575,8 @@ function wordSection(page: FaithfulPage) {
 export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
   const sourcePages = await faithfulPdfPages(bytes);
   const layout = await editableLayout(bytes, mode);
-  const pages = mode === "editable" ? await prepareEditableBackgrounds(sourcePages, layout) : sourcePages;
+  if (mode === "editable") await inspectEditableColors(sourcePages, layout);
+  const pages = sourcePages;
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="jpg" ContentType="image/jpeg"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
@@ -599,8 +591,12 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
     const size = pageDxa(page);
     const cx = size.width * 635;
     const cy = size.height * 635;
-    zip.folder("word/media")?.file(`page-${index + 1}.jpg`, page.blob);
-    relationships.push(`<Relationship Id="${relationId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/page-${index + 1}.jpg"/>`);
+    const media: string[] = [];
+    if (mode === "faithful") {
+      zip.folder("word/media")?.file(`page-${index + 1}.jpg`, page.blob);
+      relationships.push(`<Relationship Id="${relationId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/page-${index + 1}.jpg"/>`);
+      media.push(`<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${index + 1}" name="Página ${index + 1}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${index + 1}" name="Página ${index + 1}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`);
+    }
     const editableTexts = (layout[index]?.texts ?? []).map((text, textIndex) => {
       const source = layout[index] as PdfEditablePage;
       const scaleX = size.width / source.width / 20;
@@ -613,7 +609,7 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
       const fontSize = Math.max(2, Math.round(text.fontSize * 2));
       return `<w:r><w:pict><v:shape id="editable-${index + 1}-${textIndex + 1}" type="#_x0000_t202" style="position:absolute;margin-left:${left}pt;margin-top:${top}pt;width:${width}pt;height:${height}pt;z-index:2;mso-wrap-style:none" stroked="f" filled="t" fillcolor="#${text.background}"><v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/><w:color w:val="${text.color}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t xml:space="preserve">${xmlEscape(text.text)}</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r>`;
     }).join("");
-    paragraphs.push(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${index + 1}" name="Página ${index + 1}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${index + 1}" name="Página ${index + 1}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>${editableTexts}</w:p>`);
+    paragraphs.push(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>${media.join("")}${editableTexts}</w:p>`);
     if (index < pages.length - 1) paragraphs.push(`<w:p><w:pPr>${wordSection(page)}</w:pPr></w:p>`);
   }
   const finalPage = pages[pages.length - 1];
@@ -627,7 +623,8 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
 export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
   const sourcePages = await faithfulPdfPages(bytes);
   const layout = await editableLayout(bytes, mode);
-  const pages = mode === "editable" ? await prepareEditableBackgrounds(sourcePages, layout) : sourcePages;
+  if (mode === "editable") await inspectEditableColors(sourcePages, layout);
+  const pages = sourcePages;
   const { default: JSZip } = await import("jszip");
   const zip = new JSZip();
   const overrides = pages.flatMap((_, index) => [
@@ -678,7 +675,8 @@ export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "fait
 export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "faithful") {
   const sourcePages = await faithfulPdfPages(bytes);
   const layout = await editableLayout(bytes, mode);
-  const rasters = mode === "editable" ? await prepareEditableBackgrounds(sourcePages, layout) : sourcePages;
+  if (mode === "editable") await inspectEditableColors(sourcePages, layout);
+  const rasters = sourcePages;
   const { default: PptxGenJS } = await import("pptxgenjs");
   const pptx = new PptxGenJS();
   const first = rasters[0];
@@ -689,11 +687,16 @@ export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "fait
   pptx.layout = "PDF_FIEL";
   for (const [index, r] of rasters.entries()) {
     const slide = pptx.addSlide();
-    const data = await blobToDataUrl(r.blob);
     slide.background = { color: "FFFFFF" };
-    slide.addImage({ data, x: 0, y: 0, w: slideWidth, h: slideHeight, sizing: { type: "contain", w: slideWidth, h: slideHeight } });
+    if (mode === "faithful") {
+      const data = await blobToDataUrl(r.blob);
+      slide.addImage({ data, x: 0, y: 0, w: slideWidth, h: slideHeight, sizing: { type: "contain", w: slideWidth, h: slideHeight } });
+    }
     const source = layout[index];
     if (!source) continue;
+    for (const image of source.images) {
+      slide.addImage({ data: await blobToDataUrl(image.blob), x: image.x / source.width * slideWidth, y: image.y / source.height * slideHeight, w: image.width / source.width * slideWidth, h: image.height / source.height * slideHeight });
+    }
     for (const text of source.texts) {
       slide.addText(text.text, {
         x: text.x / source.width * slideWidth,
