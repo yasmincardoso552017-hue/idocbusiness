@@ -531,7 +531,9 @@ async function prepareEditableBackgrounds(pages: FaithfulPage[], layout: PdfEdit
       const pixelStep = Math.max(4, Math.floor(region.length / 1800 / 4) * 4);
       for (let offset = 0; offset < region.length; offset += pixelStep) {
         const candidate = [region[offset] ?? 0, region[offset + 1] ?? 0, region[offset + 2] ?? 0];
-        const distance = Math.abs(candidate[0] - background[0]) + Math.abs(candidate[1] - background[1]) + Math.abs(candidate[2] - background[2]);
+        const distance = Math.abs((candidate[0] ?? 0) - (background[0] ?? 255))
+          + Math.abs((candidate[1] ?? 0) - (background[1] ?? 255))
+          + Math.abs((candidate[2] ?? 0) - (background[2] ?? 255));
         if (distance > bestDistance) {
           bestDistance = distance;
           foreground = candidate;
