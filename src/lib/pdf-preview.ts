@@ -275,11 +275,13 @@ export type PdfEditableText = {
   fontFamily: string;
   background: string;
   color: string;
+  rotation: number;
 };
 
 export type PdfEditablePage = {
   width: number;
   height: number;
+  background: string;
   texts: PdfEditableText[];
   images: PdfEditableImage[];
 };
@@ -409,6 +411,7 @@ export async function extractPdfEditableLayout(bytes: Uint8Array): Promise<PdfEd
           const item = raw as typeof raw & { transform: number[]; width: number; height: number; fontName: string };
           const fontSize = Math.max(1, Math.hypot(item.transform[2] ?? 0, item.transform[3] ?? 0) || item.height);
           const height = Math.max(fontSize, item.height || fontSize);
+          const rotation = Math.atan2(item.transform[1] ?? 0, item.transform[0] ?? 1) * 180 / Math.PI;
           texts.push({
             text: item.str,
             x: Math.max(0, item.transform[4] ?? 0),
@@ -419,10 +422,11 @@ export async function extractPdfEditableLayout(bytes: Uint8Array): Promise<PdfEd
             fontFamily: styles[item.fontName]?.fontFamily?.split(",")[0]?.replace(/["']/g, "").trim() || "Arial",
             background: "FFFFFF",
             color: "000000",
+            rotation: Number.isFinite(rotation) ? rotation : 0,
           });
         }
         const images = await extractPageImages(page, viewport.height);
-        pages.push({ width: viewport.width, height: viewport.height, texts, images });
+        pages.push({ width: viewport.width, height: viewport.height, background: "FFFFFF", texts, images });
       } finally {
         page.cleanup();
       }

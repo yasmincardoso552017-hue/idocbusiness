@@ -507,6 +507,17 @@ async function inspectEditableColors(pages: FaithfulPage[], layout: PdfEditableP
       continue;
     }
     context.drawImage(bitmap, 0, 0);
+    const pageSamples = [
+      context.getImageData(0, 0, 1, 1).data,
+      context.getImageData(bitmap.width - 1, 0, 1, 1).data,
+      context.getImageData(0, bitmap.height - 1, 1, 1).data,
+      context.getImageData(bitmap.width - 1, bitmap.height - 1, 1, 1).data,
+    ];
+    const pageChannel = (position: number) => Math.round(pageSamples.reduce((sum, sample) => sum + (sample[position] ?? 255), 0) / pageSamples.length);
+    source.background = [pageChannel(0), pageChannel(1), pageChannel(2)]
+      .map((value) => value.toString(16).padStart(2, "0"))
+      .join("")
+      .toUpperCase();
     const sx = bitmap.width / source.width;
     const sy = bitmap.height / source.height;
     for (const text of source.texts) {
@@ -601,6 +612,7 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
       if (source) {
         const scaleX = size.width / source.width / 20;
         const scaleY = size.height / source.height / 20;
+        media.push(`<w:r><w:pict><v:rect id="background-${index + 1}" style="position:absolute;margin-left:0pt;margin-top:0pt;width:${size.width / 20}pt;height:${size.height / 20}pt;z-index:0;mso-wrap-style:none" stroked="f" fillcolor="#${source.background}"/></w:pict></w:r>`);
         for (const [imageIndex, image] of source.images.entries()) {
           const imageRelationId = `rIdEditable${index + 1}_${imageIndex + 1}`;
           const fileName = `image-${index + 1}-${imageIndex + 1}.png`;
@@ -619,8 +631,9 @@ export async function pdfToDocx(bytes: Bytes, mode: OfficeConversionMode = "fait
       const width = Math.max(4, Math.round(text.width * scaleX * 100) / 100);
       const height = Math.max(4, Math.round(text.height * scaleY * 100) / 100);
       const font = xmlEscape(officeFont(text.fontFamily));
-      const fontSize = Math.max(2, Math.round(text.fontSize * 2));
-      return `<w:r><w:pict><v:shape id="editable-${index + 1}-${textIndex + 1}" type="#_x0000_t202" style="position:absolute;margin-left:${left}pt;margin-top:${top}pt;width:${width}pt;height:${height}pt;z-index:2;mso-wrap-style:none" stroked="f" filled="t" fillcolor="#${text.background}"><v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/><w:color w:val="${text.color}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t xml:space="preserve">${xmlEscape(text.text)}</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r>`;
+      const fontSize = Math.max(2, Math.round(text.fontSize * scaleY * 2));
+      const rotation = Math.abs(text.rotation) > 0.1 ? `;rotation:${Math.round(-text.rotation * 100) / 100}` : "";
+      return `<w:r><w:pict><v:shape id="editable-${index + 1}-${textIndex + 1}" style="position:absolute;margin-left:${left}pt;margin-top:${top}pt;width:${width}pt;height:${height}pt;z-index:2;mso-wrap-style:none${rotation}" coordsize="21600,21600" stroked="f" filled="t" fillcolor="#${text.background}"><v:textbox inset="0,0,0,0"><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/><w:color w:val="${text.color}"/><w:sz w:val="${fontSize}"/></w:rPr><w:t xml:space="preserve">${xmlEscape(text.text)}</w:t></w:r></w:p></w:txbxContent></v:textbox></v:shape></w:pict></w:r>`;
     }).join("");
     paragraphs.push(`<w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr>${media.join("")}${editableTexts}</w:p>`);
     if (index < pages.length - 1) paragraphs.push(`<w:p><w:pPr>${wordSection(page)}</w:pPr></w:p>`);
@@ -677,6 +690,7 @@ export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "fait
       drawingRelationships.push(`<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/page-${index + 1}.jpg"/>`);
       pictures.push(`<xdr:absoluteAnchor><xdr:pos x="0" y="0"/><xdr:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="${index + 1}" name="Página ${index + 1}"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:absoluteAnchor>`);
     } else if (source) {
+      pictures.push(`<xdr:absoluteAnchor><xdr:pos x="0" y="0"/><xdr:ext cx="${imageWidthEmu}" cy="${imageHeightEmu}"/><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="1" name="Fundo da página"/><xdr:cNvSpPr/></xdr:nvSpPr><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${source.background}"/></a:solidFill><a:ln><a:noFill/></a:ln></xdr:spPr></xdr:sp><xdr:clientData/></xdr:absoluteAnchor>`);
       for (const [imageIndex, image] of source.images.entries()) {
         const relationshipId = `rId${imageIndex + 1}`;
         const fileName = `image-${index + 1}-${imageIndex + 1}.png`;
@@ -694,8 +708,10 @@ export async function pdfToXlsx(bytes: Bytes, mode: OfficeConversionMode = "fait
       const y = Math.round(text.y / source!.height * imageHeightEmu);
       const w = Math.max(12000, Math.round(text.width / source!.width * imageWidthEmu));
       const h = Math.max(12000, Math.round(text.height / source!.height * imageHeightEmu));
-      const size = Math.max(100, Math.round(text.fontSize * 100));
-      return `<xdr:absoluteAnchor><xdr:pos x="${x}" y="${y}"/><xdr:ext cx="${w}" cy="${h}"/><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${textIndex + 100}" name="Texto editável ${textIndex + 1}"/><xdr:cNvSpPr txBox="1"/></xdr:nvSpPr><xdr:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${text.background}"/></a:solidFill><a:ln><a:noFill/></a:ln></xdr:spPr><xdr:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0"/><a:lstStyle/><a:p><a:r><a:rPr lang="pt-BR" sz="${size}" typeface="${xmlEscape(officeFont(text.fontFamily))}"><a:solidFill><a:srgbClr val="${text.color}"/></a:solidFill></a:rPr><a:t>${xmlEscape(text.text)}</a:t></a:r></a:p></xdr:txBody></xdr:sp><xdr:clientData/></xdr:absoluteAnchor>`;
+      const pointScale = imageWidthEmu / source!.width / 12700;
+      const size = Math.max(100, Math.round(text.fontSize * pointScale * 100));
+      const rotation = Math.abs(text.rotation) > 0.1 ? ` rot="${Math.round(text.rotation * 60000)}"` : "";
+      return `<xdr:absoluteAnchor><xdr:pos x="${x}" y="${y}"/><xdr:ext cx="${w}" cy="${h}"/><xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="${textIndex + 100}" name="Texto editável ${textIndex + 1}"/><xdr:cNvSpPr txBox="1"/></xdr:nvSpPr><xdr:spPr><a:xfrm${rotation}><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="${text.background}"/></a:solidFill><a:ln><a:noFill/></a:ln></xdr:spPr><xdr:txBody><a:bodyPr wrap="none" lIns="0" tIns="0" rIns="0" bIns="0"/><a:lstStyle/><a:p><a:r><a:rPr lang="pt-BR" sz="${size}" typeface="${xmlEscape(officeFont(text.fontFamily))}"><a:solidFill><a:srgbClr val="${text.color}"/></a:solidFill></a:rPr><a:t>${xmlEscape(text.text)}</a:t></a:r></a:p></xdr:txBody></xdr:sp><xdr:clientData/></xdr:absoluteAnchor>`;
     }).join("");
     zip.folder("xl/drawings")?.file(`drawing${index + 1}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${pictures.join("")}${shapes}</xdr:wsDr>`);
     zip.folder("xl/drawings/_rels")?.file(`drawing${index + 1}.xml.rels`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${drawingRelationships.join("")}</Relationships>`);
@@ -718,30 +734,36 @@ export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "fait
   pptx.layout = "PDF_FIEL";
   for (const [index, r] of rasters.entries()) {
     const slide = pptx.addSlide();
-    slide.background = { color: "FFFFFF" };
+    const pageScale = Math.min(slideWidth / r.width, slideHeight / r.height);
+    const pageWidth = r.width * pageScale;
+    const pageHeight = r.height * pageScale;
+    const pageX = (slideWidth - pageWidth) / 2;
+    const pageY = (slideHeight - pageHeight) / 2;
+    slide.background = { color: layout[index]?.background ?? "FFFFFF" };
     if (mode === "faithful") {
       const data = await blobToDataUrl(r.blob);
-      slide.addImage({ data, x: 0, y: 0, w: slideWidth, h: slideHeight, sizing: { type: "contain", w: slideWidth, h: slideHeight } });
+      slide.addImage({ data, x: pageX, y: pageY, w: pageWidth, h: pageHeight });
     }
     const source = layout[index];
     if (!source) continue;
     for (const image of source.images) {
-      slide.addImage({ data: await blobToDataUrl(image.blob), x: image.x / source.width * slideWidth, y: image.y / source.height * slideHeight, w: image.width / source.width * slideWidth, h: image.height / source.height * slideHeight });
+      slide.addImage({ data: await blobToDataUrl(image.blob), x: pageX + image.x * pageScale, y: pageY + image.y * pageScale, w: image.width * pageScale, h: image.height * pageScale });
     }
     for (const text of source.texts) {
-      slide.addText(text.text, {
-        x: text.x / source.width * slideWidth,
-        y: text.y / source.height * slideHeight,
-        w: Math.max(0.08, text.width / source.width * slideWidth),
-        h: Math.max(0.08, text.height / source.height * slideHeight),
+      const textOptions = {
+        x: pageX + text.x * pageScale,
+        y: pageY + text.y * pageScale,
+        w: Math.max(0.08, text.width * pageScale),
+        h: Math.max(0.08, text.height * pageScale),
         fontFace: officeFont(text.fontFamily),
-        fontSize: Math.max(1, text.fontSize * 72 / 96),
+        fontSize: Math.max(1, text.fontSize * pageScale * 72),
         color: text.color,
         margin: 0,
         fill: { color: text.background },
         breakLine: false,
         transparency: 0,
-      });
+      };
+      slide.addText(text.text, Math.abs(text.rotation) > 0.1 ? { ...textOptions, rotate: text.rotation } : textOptions);
     }
   }
   const out = (await pptx.write({ outputType: "blob" })) as Blob;
