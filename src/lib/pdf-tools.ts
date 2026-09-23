@@ -750,7 +750,7 @@ export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "fait
       slide.addImage({ data: await blobToDataUrl(image.blob), x: pageX + image.x * pageScale, y: pageY + image.y * pageScale, w: image.width * pageScale, h: image.height * pageScale });
     }
     for (const text of source.texts) {
-      slide.addText(text.text, {
+      const textOptions = {
         x: pageX + text.x * pageScale,
         y: pageY + text.y * pageScale,
         w: Math.max(0.08, text.width * pageScale),
@@ -762,8 +762,8 @@ export async function pdfToPptx(bytes: Bytes, mode: OfficeConversionMode = "fait
         fill: { color: text.background },
         breakLine: false,
         transparency: 0,
-        rotate: Math.abs(text.rotation) > 0.1 ? text.rotation : undefined,
-      });
+      };
+      slide.addText(text.text, Math.abs(text.rotation) > 0.1 ? { ...textOptions, rotate: text.rotation } : textOptions);
     }
   }
   const out = (await pptx.write({ outputType: "blob" })) as Blob;
