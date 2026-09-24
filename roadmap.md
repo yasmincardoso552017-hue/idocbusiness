@@ -11,3 +11,4 @@
 - [x] Validar textos editáveis e a base visual selecionável nos três formatos.
 - [ ] Remover o texto rasterizado da base visual no modo editável.
 - [ ] Validar texto real, imagens e fundos em Word, Excel e PowerPoint.
+- [x] Corrigir visualização e download de contratos e documentos assinados.

@@ -131,9 +131,9 @@ function SharedFolders() {
 
   const download = async (docId: string) => {
     try {
-      const res = await folderFileUrl({ data: { documentId: docId } });
+      const res = await folderFileUrl({ data: { documentId: docId, download: true } });
       if (!res.url) throw new Error("Arquivo indisponível");
-      window.open(res.url, "_blank");
+      window.location.assign(res.url);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao baixar");
     }

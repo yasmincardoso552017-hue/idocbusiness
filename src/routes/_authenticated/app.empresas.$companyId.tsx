@@ -238,7 +238,7 @@ function CompanyDetail() {
       const { default: JSZip } = await import("jszip");
       const zip = new JSZip();
       for (const d of items) {
-        const signed = await folderFileUrl({ data: { documentId: d.id } });
+        const signed = await folderFileUrl({ data: { documentId: d.id, download: false } });
         if (!signed.url) continue;
         const buf = await (await fetch(signed.url)).arrayBuffer();
         zip.folder(paths.get(d.folder_id ?? null) ?? rootName)!.file(d.name, buf);
@@ -261,16 +261,20 @@ function CompanyDetail() {
   };
 
   const openFile = async (d: Doc, download = false) => {
+    const previewWindow = download ? null : window.open("", "_blank");
     try {
-      const result = await folderFileUrl({ data: { documentId: d.id } });
+      const result = await folderFileUrl({ data: { documentId: d.id, download } });
       if (!result.url) throw new Error("Arquivo indisponível");
       if (download) {
-        const anchor = document.createElement("a");
-        anchor.href = result.url;
-        anchor.download = d.name;
-        anchor.click();
-      } else window.open(result.url, "_blank", "noopener,noreferrer");
+        window.location.assign(result.url);
+      } else if (previewWindow) {
+        previewWindow.opener = null;
+        previewWindow.location.href = result.url;
+      } else {
+        window.location.assign(result.url);
+      }
     } catch (error) {
+      previewWindow?.close();
       toast.error(error instanceof Error ? error.message : "Arquivo indisponível");
     }
   };
