@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Copy, Download, Plus, Send, Trash2, Ban, RefreshCw, ShieldCheck, MessageCircle, Mail } from "lucide-react";
+import { Copy, Download, Eye, Plus, Send, Trash2, Ban, RefreshCw, ShieldCheck, MessageCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import {
   getContractEnvelope,
+  getContractFileUrl,
   resendContractEnvelope,
   sendContractEnvelope,
   voidContractEnvelope,
@@ -108,6 +109,24 @@ export function ContractEnvelopeDialog({
   const [selfie, setSelfie] = useState(false);
   const [signers, setSigners] = useState<SignerDraft[]>([{ name: "", email: "", phone: "", cpf: "" }]);
   const [deliveryLinks, setDeliveryLinks] = useState<Array<{ name: string; email: string; phone: string | null; url: string }>>([]);
+
+  const openContractFile = async (download: boolean) => {
+    const previewWindow = download ? null : window.open("", "_blank");
+    try {
+      const result = await getContractFileUrl({ data: { contractId, download } });
+      if (download) {
+        window.location.assign(result.url);
+      } else if (previewWindow) {
+        previewWindow.opener = null;
+        previewWindow.location.href = result.url;
+      } else {
+        window.location.assign(result.url);
+      }
+    } catch (error) {
+      previewWindow?.close();
+      toast.error(error instanceof Error ? error.message : "Não foi possível abrir o contrato");
+    }
+  };
 
   const envelope = useQuery({
     queryKey: ["contract-envelope", contractId],
@@ -411,12 +430,15 @@ export function ContractEnvelopeDialog({
               ) : null}
 
               <div className="flex flex-wrap gap-2">
-                {env?.signedUrl ? (
-                  <Button size="sm" variant="outline" asChild>
-                    <a href={env.signedUrl} target="_blank" rel="noreferrer">
-                      <Download className="mr-1 size-3.5" /> Via assinada
-                    </a>
-                  </Button>
+                {env?.document ? (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => void openContractFile(false)}>
+                      <Eye className="mr-1 size-3.5" /> Ver contrato
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => void openContractFile(true)}>
+                      <Download className="mr-1 size-3.5" /> Baixar PDF
+                    </Button>
+                  </>
                 ) : null}
                 <Button size="sm" variant="outline" disabled={resend.isPending} onClick={() => resend.mutate()}>
                   <RefreshCw className="mr-1 size-3.5" /> Reenviar links

@@ -514,3 +514,49 @@ export const myClaimedDocuments = createServerFn({ method: "POST" })
     }
     return { items };
   });
+
+/** Gera um novo link somente para uma via assinada pertencente ao signatário autenticado. */
+export const getMySignedDocumentUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ documentId: z.string().uuid(), download: z.boolean().default(false) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const db = await admin();
+    const email = String((context.claims as { email?: string } | null)?.email ?? "").toLowerCase();
+    const { data: signers, error: signerError } = await db
+      .from("signers")
+      .select("id, email, claimed_by, signing_requests(document_id)")
+      .eq("status", "signed");
+    if (signerError) throw new Error("Não foi possível validar o acesso ao contrato");
+    const signer = (signers ?? []).find((row) => {
+      const relation = row.signing_requests as unknown as { document_id: string } | null;
+      const belongsToDocument = relation?.document_id === data.documentId;
+      const belongsToUser = row.claimed_by === context.userId || (!!email && row.email.toLowerCase() === email);
+      return belongsToDocument && belongsToUser;
+    });
+    if (!signer) throw new Error("Contrato não encontrado ou sem acesso");
+
+    const { data: doc } = await db
+      .from("documents")
+      .select("id, name, signed_storage_path")
+      .eq("id", data.documentId)
+      .maybeSingle();
+    if (!doc?.signed_storage_path) throw new Error("A via assinada ainda não está disponível");
+
+    if (!signer.claimed_by) {
+      await db.from("signers").update({ claimed_by: context.userId }).eq("id", signer.id);
+    }
+    const options = data.download ? { download: pdfFileName(doc.name) } : undefined;
+    const { data: signed, error } = await db.storage
+      .from("documents")
+      .createSignedUrl(doc.signed_storage_path, 900, options);
+    if (error || !signed?.signedUrl) {
+      console.error("[signing] Falha ao criar link da via assinada", {
+        documentId: doc.id,
+        message: error?.message,
+      });
+      throw new Error("Não foi possível abrir a via assinada");
+    }
+    return { url: signed.signedUrl };
+  });

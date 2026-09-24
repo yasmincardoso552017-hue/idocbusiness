@@ -149,6 +149,51 @@ export const sendContractEnvelope = createServerFn({ method: "POST" })
 
 export type ContractEnvelope = Awaited<ReturnType<typeof getContractEnvelope>>;
 
+function signedPdfName(name: string) {
+  const base = name.replace(/\.[A-Za-z0-9]+$/, "").replace(/[^\w.-]+/g, "_") || "contrato";
+  return `assinado-${base}.pdf`;
+}
+
+/** Entrega a via do contrato somente após confirmar o acesso do usuário ao cadastro. */
+export const getContractFileUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ contractId: z.string().uuid(), download: z.boolean().default(false) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: contract, error } = await context.supabase
+      .from("contracts")
+      .select("id, documents(id, name, storage_path, signed_storage_path)")
+      .eq("id", data.contractId)
+      .maybeSingle();
+    if (error || !contract) throw new Error("Contrato não encontrado ou sem acesso");
+
+    const doc = contract.documents as unknown as {
+      id: string;
+      name: string;
+      storage_path: string | null;
+      signed_storage_path: string | null;
+    } | null;
+    if (!doc) throw new Error("Este contrato ainda não possui um documento");
+    const path = doc.signed_storage_path ?? doc.storage_path;
+    if (!path) throw new Error("O arquivo deste contrato não está disponível");
+
+    const db = await import("@/integrations/supabase/client.server").then((m) => m.supabaseAdmin);
+    const options = data.download ? { download: signedPdfName(doc.name) } : undefined;
+    const { data: signed, error: signedError } = await db.storage
+      .from("documents")
+      .createSignedUrl(path, 900, options);
+    if (signedError || !signed?.signedUrl) {
+      console.error("[contracts] Falha ao criar link do arquivo", {
+        contractId: contract.id,
+        documentId: doc.id,
+        message: signedError?.message,
+      });
+      throw new Error("Não foi possível abrir o arquivo deste contrato");
+    }
+    return { url: signed.signedUrl, name: data.download ? signedPdfName(doc.name) : doc.name };
+  });
+
 /** Acompanhamento do envelope: estágio, signatários, evidências e trilha de eventos. */
 export const getContractEnvelope = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -233,11 +278,10 @@ export const getContractEnvelope = createServerFn({ method: "POST" })
 
     let signedUrl: string | null = null;
     if (doc?.signed_storage_path) {
-      const res = await db.storage
+      const storage = await import("@/integrations/supabase/client.server").then((m) => m.supabaseAdmin);
+      const res = await storage.storage
         .from("documents")
-        .createSignedUrl(doc.signed_storage_path, 3600, {
-          download: `assinado-${doc.name.replace(/[^\w.-]+/g, "_")}`,
-        });
+        .createSignedUrl(doc.signed_storage_path, 900);
       signedUrl = res.data?.signedUrl ?? null;
     }
 
