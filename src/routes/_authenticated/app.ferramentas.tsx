@@ -590,9 +590,10 @@ function Tools() {
     forms: async () => {
       const f = needPdf();
       const list = await readFormFields(new Uint8Array(await f.arrayBuffer()));
-      if (!list.length) throw new Error("Este PDF não tem campos de formulário — use o editor completo");
       setFields(list);
-      return `${list.length} campo(s) encontrado(s)`;
+      return list.length
+        ? `${list.length} campo(s) encontrado(s)`
+        : "Sem campos nativos — clique na folha para preencher";
     },
     protect: async () => {
       const f = needPdf();
@@ -1021,7 +1022,21 @@ function Tools() {
                   </Button>
                 )}
 
-                {tool === "forms" && fields && (
+                {tool === "forms" && fields && fields.length === 0 && first && (
+                  <>
+                    <p className="text-[11px] text-muted-foreground">
+                      Este PDF não tem campos nativos. Clique sobre a linha em branco na folha e digite o conteúdo.
+                    </p>
+                    <PdfEditor
+                      key={first.name + first.size + "forms"}
+                      file={first}
+                      suffix="-preenchido"
+                      onResult={(bytes, name) => open(bytes, name)}
+                    />
+                  </>
+                )}
+
+                {tool === "forms" && fields && fields.length > 0 && (
                   <div className="space-y-2 rounded-lg border border-border p-3">
                     {fields.map((f, i) => (
                       <div key={f.name} className="space-y-1">
