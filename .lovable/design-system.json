@@ -1,0 +1,1187 @@
+{
+  "meta": {
+    "name": "SignFlow Documents",
+    "package": "@ws-dd8f753f62b942ae903e/6b73cc70-0820-4dc9-9868-202fd9a12208",
+    "version": "1.0.0",
+    "framework": "react",
+    "css_framework": "tailwind",
+    "starter_template": "custom_design_system_tailwind",
+    "theme_files": [
+      "src/styles.css"
+    ],
+    "source_type": "local",
+    "source_manifest": {
+      "#enrichment": "772f8313336097d21245077f6e481c20e3a4189b716b64ac14b874b3f107907c",
+      ".gitignore": "6d9e901a692b46a83707c245fb03bc91",
+      ".lovable/plan/configurações-pessoais-de-envio-2026-09-16.md": "6f8ab1386491a3a818958dc74aa324d0",
+      ".lovable/plan/conversões-com-fidelidade-visual-ao-pdf-2026-09-17.md": "ef6319b21035932fe847a2c4a29f3e42",
+      ".lovable/plan/corrigir-carregamento-e-ampliar-formatos-nas-ferramentas-2026-09-14.md": "7b4715e3d18a8397a8352f6d7c5830bd",
+      ".lovable/plan/divulgar-a-nova-ferramenta-tratar-documento-2026-09-17.md": "a7ebd46cff8c81b634566d3e4c22d801",
+      ".lovable/plan/e-mail-próprio-da-idoc-business-2026-09-16.md": "00ad72fa00e0cff4f71be8ea0fe3eb3a",
+      ".lovable/plan/evolução-geral-do-idoc-business-2026-09-16.md": "e8b2f96a3d838d0ddc650a7faa84fa7a",
+      ".lovable/plan/página-inicial-e-páginas-de-ferramentas-para-busca-2026-09-17.md": "9c42011e66c33b7c63b285ee6f3e8027",
+      ".lovable/plan/reforçar-compatibilidade-e-pré-visualização-de-pdfs-2026-09-15.md": "36b685c7e1a6970c3ea140a12e472bde",
+      ".lovable/plan/reforçar-o-juntar-pdf-contra-páginas-em-branco-2026-09-16.md": "2566d4a61b33f490c8803301249f6127",
+      ".lovable/plan/tratamento-profissional-de-documentos-digitalizados-2026-09-17.md": "877efca09af1771304cbc8619c69f18d",
+      ".lovable/project.json": "683a7777285ec09604e1030ddf427ac5",
+      ".prettierignore": "7279a476f196a2da5f7edd18db568dc6",
+      ".prettierrc": "185ef0234746ab738ac1ab6cec5e2bd9",
+      "AGENTS.md": "3da3c4cd15b686e79a248c25735d6aaf",
+      "README.md": "15ccc2c959c0bff2136261ce044c418f",
+      "bunfig.toml": "89115995d9de72fdfc894e16b1e75297",
+      "components.json": "30d3d035361ce807021f5c54620962e9",
+      "drizzle.config.ts": "c2b6029fa56b49433380b7263b06e3f7",
+      "drizzle/migrations/0000_docflow_core.sql": "f3f64022e305e65f51516353f4bb54a9",
+      "drizzle/migrations/0001_documents_storage_policies.sql": "2ed27d34043b73abae9af993bb97291b",
+      "drizzle/migrations/0002_company_profile_evidence_audits.sql": "8fc7d8079c6e14a4312146b5e8b70b0f",
+      "drizzle/migrations/0003_contract_envelopes.sql": "93ca7720741a9af93d182c4a72def8f4",
+      "drizzle/migrations/0004_roles_reminders_push.sql": "19d644df81557dee0876e08e4abfca0d",
+      "drizzle/migrations/0005_signers_claimed_by.sql": "c519104d72e1c91e8b9682c01f1b2fab",
+      "drizzle/migrations/0006_signers_scoped_signer_policy.sql": "491ef6aa7b6c8c3e5e5d4dc711e75d6f",
+      "drizzle/migrations/0007_folder_sku_sharing.sql": "ae84026de14d46f905daa250ee79ef8f",
+      "drizzle/migrations/0008_enforce_can_edit_folder_shares.sql": "827b8d37f40b171643dc21c5c3ab0b5f",
+      "drizzle/migrations/0009_signer_requirements.sql": "1e7c105f860a62b6c5700f8ec6b88080",
+      "drizzle/migrations/0010_enforce_account_data_ownership.sql": "8d3faf7504d9fb3591660bedd5008722",
+      "drizzle/migrations/0011_harden_sku_sharing_and_audit_ownership.sql": "ded355cdb6afa8c7354831efb6285e9b",
+      "drizzle/migrations/meta/0000_snapshot.json": "c903e6ed471f257b9e4f39ab15153b21",
+      "drizzle/migrations/meta/0001_snapshot.json": "016d004482817320a6071ff12f8f156e",
+      "drizzle/migrations/meta/0002_snapshot.json": "9fbb07a946391b587026dae71ec386ca",
+      "drizzle/migrations/meta/0003_snapshot.json": "d6181c88303730792cdebea903f4e962",
+      "drizzle/migrations/meta/0004_snapshot.json": "3d85dc9efe9b42de1d72ef6c4ccba815",
+      "drizzle/migrations/meta/0005_snapshot.json": "929679d678b98529d7e1adee3c10cd4c",
+      "drizzle/migrations/meta/0006_snapshot.json": "3472c7fd14da9932710bd98a6ea5e54d",
+      "drizzle/migrations/meta/0007_snapshot.json": "440db3f2ec7f91b32260b7491e5983cf",
+      "drizzle/migrations/meta/0008_snapshot.json": "1275535b5cfed9472595c6cd7d2c1c0e",
+      "drizzle/migrations/meta/0009_snapshot.json": "13ffe4fc10ea06f44d760e75a51fc440",
+      "drizzle/migrations/meta/0010_snapshot.json": "963a339c60bc6dcdfcecf5ae0a005b03",
+      "drizzle/migrations/meta/0011_snapshot.json": "fc067cbae0901444b0a2c29905a51a91",
+      "drizzle/migrations/meta/_journal.json": "e27dbca40e8ab4f7704a0f9de428d635",
+      "drizzle/schema.ts": "a60267d05d7dd11572f02686241f37c6",
+      "eslint.config.js": "345bdd57e188e0e4525edcd00e5003f5",
+      "package.json": "1442ae532bf78b8279998483d59401b7",
+      "public/apple-touch-icon-idoc-2026.png": "e50c91006fc42b98d9cf7291b7d34d19",
+      "public/favicon-idoc-2026.png": "0089fcecaeab5fb6297cc24a627769f7",
+      "public/icon-idoc-192.png": "34ece9a5a85a1bcc865382404830a124",
+      "public/icon-idoc-512.png": "0a8f713c735d128dd609a87787bab28a",
+      "public/manifest.webmanifest": "16ffeffeb2a2675840df929418502780",
+      "public/manual-idoc-business.pdf": "ce3800b5587fb8f6bb731ab24de14fb3",
+      "public/robots.txt": "bf02dc716d4808fffe2511888a070733",
+      "public/sitemap.xml": "a9cc7a628ab768a7fe615c8f9b6dcb8f",
+      "public/sw.js": "b696d7b0a91dc1593f3f0dde727e5ea5",
+      "roadmap.md": "0b87ae6e49d390230159219d83a5bf4e",
+      "scripts/build-manual.ts": "0a822e6c55792e1e752633ead28cc286",
+      "src/assets/idoc-business-logo-2026.png.asset.json": "03e983a51c9a006f0bf88960c4a449cb",
+      "src/assets/idoc-business.png.asset.json": "9c3819accce72a2dd7814e1e9ed7bcc5",
+      "src/assets/idoc-hero-workspace.jpg": "883e0711b3be96c0f7b1b27e5abe0912",
+      "src/assets/idoc-social-share.jpg.asset.json": "eca1d413d21ed753f7bd0dff7ca979ea",
+      "src/assets/tool-compress.jpg": "c2d9db8684f4f3802971bc384dbba4ce",
+      "src/assets/tool-convert.jpg": "99c6f40fb928d5f200442fa057a7d255",
+      "src/assets/tool-edit.jpg": "e601074c9ff26f44f9a318202584a043",
+      "src/assets/tool-enhance-document.jpg": "4c1264ba226c1477829b545306777adf",
+      "src/assets/tool-ocr.jpg": "5ae39c162b2072f194d8acbc9cf53c94",
+      "src/assets/tool-organize.jpg": "a0c210e0238f7d99e593033d492093fd",
+      "src/assets/tool-security.jpg": "a55b082afd8992214c3bbbb548ac7243",
+      "src/assets/tool-sign.jpg": "65e0760d95f3c7bebfcf3ac6a16a26bd",
+      "src/components/AppShell.tsx": "c40175649019526845b73fea21675bd2",
+      "src/components/Brand.tsx": "b993c350c36969ab2bcabb19a3c40586",
+      "src/components/ContractEnvelope.tsx": "1e941986e3ff8c88f5250bc289184a2f",
+      "src/components/Dialogs.tsx": "7647058bff13317f86abdcbbb6bf6eec",
+      "src/components/FolderTree.tsx": "669b0cc50ce5a7e2f8c3049d9b7189f7",
+      "src/components/GlobalSearch.tsx": "12a91c4ccf87040f176fb2ba3e637b18",
+      "src/components/InstallAppButton.tsx": "bc089d82a04c795b261d70be5fe97793",
+      "src/components/PdfEditor.tsx": "7bbbafbb9eec5def0da31df30564265d",
+      "src/components/PdfWorkbench.tsx": "fd68a1f5c3f3c475f39f9122ac7f79f2",
+      "src/components/PublicPage.tsx": "eb9de6a36b8ccd5314e6dc5cf5fb6571",
+      "src/components/PublicSiteChrome.tsx": "4fec64942329b479b586615523316ca7",
+      "src/components/PublicToolPage.tsx": "081d16261b635cbc9c3f76945dad242f",
+      "src/components/PushSetup.tsx": "7ffe1bd7fea526725b5abd832d1012a8",
+      "src/components/UploadDocumentDialog.tsx": "6d3a9aad9287a17c82f3f03b64b23e5a",
+      "src/components/ui/accordion.tsx": "55f9dda62b4e3913c9b23e5015a86aef",
+      "src/components/ui/alert-dialog.tsx": "96350e949e9b7b674545430a410ab89c",
+      "src/components/ui/alert.tsx": "f993d7e96b1e25ce50e68ed97e11d2a8",
+      "src/components/ui/aspect-ratio.tsx": "c5c364545e1b25a94e9e752cd67ad048",
+      "src/components/ui/avatar.tsx": "72989cd32f72c4122802540ef32525a5",
+      "src/components/ui/badge.tsx": "81cade001fc4260f9943e18dcd79449b",
+      "src/components/ui/breadcrumb.tsx": "bb9ac254f12662b20d5d50b84308bf3a",
+      "src/components/ui/button.tsx": "7d07d520f486b12bd47373d694ecd2ee",
+      "src/components/ui/calendar.tsx": "d849cc610e2683271f3f1c47d093cf30",
+      "src/components/ui/card.tsx": "d6c48ea36221b9cdc3576d305d12d5d5",
+      "src/components/ui/carousel.tsx": "e324c68ae00cd5aed49317638abd429a",
+      "src/components/ui/chart.tsx": "6a3baf94f2e89f1f97d4d7a28f3622d2",
+      "src/components/ui/checkbox.tsx": "f78aac270ca482c8c2cb907ef6260462",
+      "src/components/ui/collapsible.tsx": "767631bbc344945c236f185f4078d71d",
+      "src/components/ui/command.tsx": "014782599cc838b021ec68b07ad4ea02",
+      "src/components/ui/context-menu.tsx": "3ba8244ea23df34a1dba92f3a1230dad",
+      "src/components/ui/dialog.tsx": "ef4fe8e7de8675730afe3d633b260e09",
+      "src/components/ui/drawer.tsx": "8be333e8fd8e42576b1b5f72f07f4337",
+      "src/components/ui/dropdown-menu.tsx": "28d6e98d3c7811fc0514bfa69416f087",
+      "src/components/ui/form.tsx": "1b0aa6302b9017ea2a1307c22a1d2983",
+      "src/components/ui/hover-card.tsx": "1442794c5ca2a78d69e4e613b315ed3d",
+      "src/components/ui/input-otp.tsx": "65625f2f1c4d731a760aeed7b54459d1",
+      "src/components/ui/input.tsx": "1d4cc52a4cd8afb3e18e45bda942bb8a",
+      "src/components/ui/label.tsx": "7e35df4ca8edd0835efd97ca7937ef92",
+      "src/components/ui/menubar.tsx": "3c4121a1e78d3f424a7295381a8997d3",
+      "src/components/ui/navigation-menu.tsx": "e85351147a02b29577ff83d188b63c24",
+      "src/components/ui/pagination.tsx": "fac6cdbb4bbf78b273d85cd36d6cbb49",
+      "src/components/ui/popover.tsx": "f18aa1da2144f25ee60795c539c51bcd",
+      "src/components/ui/progress.tsx": "55c462e5c9dd678dcf2c0c510b014ac4",
+      "src/components/ui/radio-group.tsx": "0e1ace237a5da3197e3eb1e6683faba9",
+      "src/components/ui/resizable.tsx": "d9fcb9203c749fcab4e125a99bb12a86",
+      "src/components/ui/scroll-area.tsx": "87b65d3eb26f2b02ff35a7acea585ba5",
+      "src/components/ui/select.tsx": "31ea1bbd6671833b010b2e852c8a55d0",
+      "src/components/ui/separator.tsx": "433d163c4ffa00b59398a0c293198b5e",
+      "src/components/ui/sheet.tsx": "0221fbf97b69611b47fcbc10bb27669a",
+      "src/components/ui/sidebar.tsx": "83c1623eb50ebc370d7b1b84a542e369",
+      "src/components/ui/skeleton.tsx": "41b182e6e2fc3805960d41e767d4a972",
+      "src/components/ui/slider.tsx": "4752f1bfa26426988d325599e01c335b",
+      "src/components/ui/sonner.tsx": "97f59f60be3413196d095fcbf7383216",
+      "src/components/ui/switch.tsx": "82f5d8b0c59bb7ff305caa9f502e79ff",
+      "src/components/ui/table.tsx": "7cc889989d53894b659903c73aded96e",
+      "src/components/ui/tabs.tsx": "56e725558c2ce72c18243bf51717f385",
+      "src/components/ui/textarea.tsx": "c7aad96fb9545210d53135a96c76ed6b",
+      "src/components/ui/toggle-group.tsx": "ac26383acf721d116ca8e3ab5c5355d5",
+      "src/components/ui/toggle.tsx": "ee8c5adac74e7242b85b544db1a8fbad",
+      "src/components/ui/tooltip.tsx": "67d71db5a1ab935695d1def497f5b8a6",
+      "src/hooks/use-mobile.tsx": "c0a0bdd4638c391a1dd06ac82074e60b",
+      "src/hooks/useAuth.ts": "d2f640708f6ab4a4573c2221035bfda7",
+      "src/integrations/lovable/index.ts": "c997b4d5cc51f8fe73119e270709d8f1",
+      "src/integrations/supabase/auth-attacher.ts": "dad043cda134d909e52de0346c16625e",
+      "src/integrations/supabase/auth-middleware.ts": "5d9d831f79177b7c6327cbd794a97367",
+      "src/integrations/supabase/client.server.ts": "23f838ab7633e0a97e695f3c500d91aa",
+      "src/integrations/supabase/client.ts": "b40d27b03f346573ed0f76551e478ffb",
+      "src/integrations/supabase/cron-auth.ts": "6c04781ff98ada5977945fae55d39385",
+      "src/integrations/supabase/previewAuthStorage.ts": "0a2d63e049bc63135b19c8e21cc0b1aa",
+      "src/integrations/supabase/types.ts": "3b11b3fc36731032034d86247492d982",
+      "src/lib/admin.functions.ts": "2028879de3a663cc101bbae9affe4800",
+      "src/lib/audit.functions.ts": "33e2608e9990055430c6e3126cfa2279",
+      "src/lib/contracts.functions.ts": "a8e1e94d764635e11b84f6b56f023b2f",
+      "src/lib/error-capture.ts": "f630d9686a9a989170f22eff4de7b30d",
+      "src/lib/error-page.ts": "8da0ddd7569bac2676b9a5c8edff8a36",
+      "src/lib/format.ts": "7d38f87c849372ce1aa4c58035bf2bab",
+      "src/lib/lovable-error-reporting.ts": "77368331b8ef6e6edcf1a29b24a52d39",
+      "src/lib/pdf-preview.ts": "cfb563acf27db8d4f3141fd2e625ac1e",
+      "src/lib/pdf-tools.ts": "cef5a268148764c8e7262abc354f1d60",
+      "src/lib/public-tools.ts": "7945dd87fcfad6b16bbdaf7813315b08",
+      "src/lib/reminders.functions.ts": "04afa13fc035ee6727585dba88d062d4",
+      "src/lib/reminders.server.ts": "cfaa6ad337937ad45bb959ef1e7d50be",
+      "src/lib/signing.functions.ts": "9f510f3a5afabb67276849d195375c88",
+      "src/lib/signing.server.ts": "1223150c7ce060a3b04fd497d4ebb63a",
+      "src/lib/utils.ts": "d9837f38cc05303254571985e3164050",
+      "src/lib/vault.functions.ts": "de7d97756975b940447791cd8b4112cc",
+      "src/qrcode.d.ts": "577fed616dadf385399448303173186f",
+      "src/routeTree.gen.ts": "3cfa058a11500e9f6e66c76a360327bb",
+      "src/router.tsx": "8f905e713b0eba7fa8148b7995a708c9",
+      "src/routes/README.md": "b3a2f259b66fd1a11f54b6d5ac83bf57",
+      "src/routes/__root.tsx": "0b35cc1b4f9625b6b6f97d3133b2b7be",
+      "src/routes/_authenticated/app.admin.tsx": "eb4d376c94d8fd91570cc9076e78eb84",
+      "src/routes/_authenticated/app.assinaturas.tsx": "67f92a6191297ef893e00b28981b4fc6",
+      "src/routes/_authenticated/app.auditor.tsx": "e41ad7be76f6b933c609bfa56fd6c5ae",
+      "src/routes/_authenticated/app.compartilhadas.tsx": "95f51afab1898db692f242150d3f4196",
+      "src/routes/_authenticated/app.configuracoes.tsx": "62a28d6a0f5ae476a22a19ebd5d77768",
+      "src/routes/_authenticated/app.contratos.tsx": "09616713a81dd41d0f30cb1b6941227a",
+      "src/routes/_authenticated/app.empresas.$companyId.tsx": "e8e22808671e2d6a55e09bc215d3e8da",
+      "src/routes/_authenticated/app.empresas.index.tsx": "f27b8a3fcf136ec868df7d29936d244d",
+      "src/routes/_authenticated/app.ferramentas.tsx": "fe82b59c88da71899bee87eb11a69c2f",
+      "src/routes/_authenticated/app.index.tsx": "682d37def70b8fdb2b2bf8347905d161",
+      "src/routes/_authenticated/app.integracoes.tsx": "6bec2066d7cdb43a539e182c7f957143",
+      "src/routes/_authenticated/app.lembretes.tsx": "55818a9af141b0b88672d944f3190088",
+      "src/routes/_authenticated/app.meus-contratos.tsx": "5c87ce7bb5938c72a3e7decb883ed804",
+      "src/routes/_authenticated/app.perfil.tsx": "14025c375c422d8761e84f3e3a4b610a",
+      "src/routes/_authenticated/app.preparar.$requestId.tsx": "34be001a19d84d31e59f137edacb8492",
+      "src/routes/_authenticated/app.seguranca.tsx": "13af4cd08e2ec4fb3855758f2b210daa",
+      "src/routes/_authenticated/route.tsx": "fd39dd75bf7e6ce8fed9d410648e3d00",
+      "src/routes/ajuda.tsx": "f154075df20cc531398ef52c3b8a2e43",
+      "src/routes/api/public/cron/reminders.tsx": "a6ee94f7faae963d3b960bc85b20ad96",
+      "src/routes/auth.tsx": "c4529e15aa5c16c3cf9a4a052b3880ad",
+      "src/routes/ferramentas.$slug.tsx": "3a94d274c185d77dfec7fca5810f87a9",
+      "src/routes/ferramentas.index.tsx": "343c147df21bb03cbe568593736edbe6",
+      "src/routes/index.tsx": "494deafb411c06ff627df113dc47395e",
+      "src/routes/pasta.$token.tsx": "c9b8757908c4e13f39c0fafbfb95bf77",
+      "src/routes/privacidade.tsx": "0cc076556d296a13fb55d879cd7af304",
+      "src/routes/sign.$token.tsx": "911da340f559703b2fdffb3d966b7f81",
+      "src/routes/termos.tsx": "e43379869b2c26f0aeb81491838f2807",
+      "src/routes/verify.tsx": "b8c21c5e1799f690af2adf1097448bde",
+      "src/server.ts": "c7bbc49bb70e318af618d92775ee0f27",
+      "src/start.ts": "a022391dbd8897d5096c6481dd2482ea",
+      "src/styles.css": "1416fb72936a700d796598ba9a7c2f20",
+      "supabase/config.toml": "47ad7ff7b358cf4c526c3bc80f3dbe30",
+      "tsconfig.json": "e84e5c7fe88e3c5a4d54f55a816d42c1",
+      "vite.config.ts": "d67e8217e5f31b87c276b6357c9aedcf"
+    },
+    "pipeline_version": 8
+  },
+  "tokens": {
+    "color": [
+      {
+        "name": "--background",
+        "raw": "oklch(0.985 0.004 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--foreground",
+        "raw": "oklch(0.22 0.03 255)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--card",
+        "raw": "oklch(1 0 0)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--card-foreground",
+        "raw": "oklch(0.22 0.03 255)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--popover",
+        "raw": "oklch(1 0 0)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--popover-foreground",
+        "raw": "oklch(0.22 0.03 255)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--primary",
+        "raw": "oklch(0.42 0.1 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--primary-foreground",
+        "raw": "oklch(0.99 0.003 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--secondary",
+        "raw": "oklch(0.955 0.008 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--secondary-foreground",
+        "raw": "oklch(0.32 0.05 255)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--muted",
+        "raw": "oklch(0.96 0.006 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--muted-foreground",
+        "raw": "oklch(0.53 0.025 255)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--accent",
+        "raw": "oklch(0.72 0.12 190)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--accent-foreground",
+        "raw": "oklch(0.2 0.04 230)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--destructive",
+        "raw": "oklch(0.58 0.21 25)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--destructive-foreground",
+        "raw": "oklch(0.99 0.003 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--success",
+        "raw": "oklch(0.6 0.13 155)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--success-foreground",
+        "raw": "oklch(0.99 0.003 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--warning",
+        "raw": "oklch(0.75 0.15 75)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--warning-foreground",
+        "raw": "oklch(0.24 0.04 60)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--border",
+        "raw": "oklch(0.9 0.01 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--input",
+        "raw": "oklch(0.9 0.01 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--ring",
+        "raw": "oklch(0.42 0.1 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--chart-1",
+        "raw": "oklch(0.42 0.1 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--chart-2",
+        "raw": "oklch(0.72 0.12 190)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--chart-3",
+        "raw": "oklch(0.6 0.13 155)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--chart-4",
+        "raw": "oklch(0.75 0.15 75)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--chart-5",
+        "raw": "oklch(0.58 0.21 25)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--sidebar",
+        "raw": "oklch(0.99 0.003 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--sidebar-foreground",
+        "raw": "oklch(0.22 0.03 255)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--sidebar-primary",
+        "raw": "oklch(0.42 0.1 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--sidebar-primary-foreground",
+        "raw": "oklch(0.99 0.003 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--sidebar-accent",
+        "raw": "oklch(0.96 0.006 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--sidebar-accent-foreground",
+        "raw": "oklch(0.32 0.05 255)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--sidebar-border",
+        "raw": "oklch(0.9 0.01 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--sidebar-ring",
+        "raw": "oklch(0.42 0.1 250)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--tool-organize",
+        "raw": "oklch(0.53 0.2 255)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--tool-convert",
+        "raw": "oklch(0.61 0.19 145)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--tool-edit",
+        "raw": "oklch(0.52 0.23 294)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--tool-sign",
+        "raw": "oklch(0.61 0.13 190)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--tool-security",
+        "raw": "oklch(0.59 0.22 25)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--tool-optimize",
+        "raw": "oklch(0.72 0.17 70)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--tool-ocr",
+        "raw": "oklch(0.58 0.2 240)",
+        "source": "src/styles.css"
+      }
+    ],
+    "typography": [
+      {
+        "name": "--font-sans",
+        "raw": "\"Plus Jakarta Sans\", ui-sans-serif, system-ui, sans-serif",
+        "source": "src/styles.css"
+      }
+    ],
+    "radius": [
+      {
+        "name": "--radius-sm",
+        "raw": "calc(var(--radius) - 4px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-md",
+        "raw": "calc(var(--radius) - 2px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-xl",
+        "raw": "calc(var(--radius) + 4px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius-2xl",
+        "raw": "calc(var(--radius) + 8px)",
+        "source": "src/styles.css"
+      },
+      {
+        "name": "--radius",
+        "raw": "0.875rem",
+        "source": "src/styles.css"
+      }
+    ],
+    "shadow": [
+      {
+        "name": "--shadow-soft",
+        "raw": "0 1px 2px oklch(0.25 0.05 250 / 6%), 0 8px 24px oklch(0.25 0.05 250 / 6%)",
+        "source": "src/styles.css"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "AppShell",
+      "file": "src/components/AppShell",
+      "import_path": ""
+    },
+    {
+      "name": "StatCard",
+      "file": "src/components/AppShell",
+      "import_path": ""
+    },
+    {
+      "name": "Brand",
+      "file": "src/components/Brand",
+      "import_path": ""
+    },
+    {
+      "name": "StageBadge",
+      "file": "src/components/ContractEnvelope",
+      "import_path": ""
+    },
+    {
+      "name": "ContractEnvelopeDialog",
+      "file": "src/components/ContractEnvelope",
+      "import_path": ""
+    },
+    {
+      "name": "FolderTree",
+      "file": "src/components/FolderTree",
+      "import_path": "",
+      "props": [
+        {
+          "name": "rootLabel",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "folders",
+          "type": "any",
+          "required": true
+        },
+        {
+          "name": "docCount",
+          "type": "function",
+          "required": true
+        },
+        {
+          "name": "selected",
+          "type": "string",
+          "required": true
+        },
+        {
+          "name": "onSelect",
+          "type": "function",
+          "required": true
+        },
+        {
+          "name": "onCreate",
+          "type": "function",
+          "required": true
+        },
+        {
+          "name": "onRename",
+          "type": "function",
+          "required": true
+        },
+        {
+          "name": "onDelete",
+          "type": "function",
+          "required": true
+        },
+        {
+          "name": "onUpload",
+          "type": "function",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "GlobalSearch",
+      "file": "src/components/GlobalSearch",
+      "import_path": ""
+    },
+    {
+      "name": "InstallAppButton",
+      "file": "src/components/InstallAppButton",
+      "import_path": ""
+    },
+    {
+      "name": "PdfEditor",
+      "file": "src/components/PdfEditor",
+      "import_path": ""
+    },
+    {
+      "name": "PdfWorkbench",
+      "file": "src/components/PdfWorkbench",
+      "import_path": ""
+    },
+    {
+      "name": "PublicPage",
+      "file": "src/components/PublicPage",
+      "import_path": ""
+    },
+    {
+      "name": "PublicSiteHeader",
+      "file": "src/components/PublicSiteChrome",
+      "import_path": ""
+    },
+    {
+      "name": "PublicSiteFooter",
+      "file": "src/components/PublicSiteChrome",
+      "import_path": ""
+    },
+    {
+      "name": "PublicSiteLayout",
+      "file": "src/components/PublicSiteChrome",
+      "import_path": ""
+    },
+    {
+      "name": "PublicToolPage",
+      "file": "src/components/PublicToolPage",
+      "import_path": ""
+    },
+    {
+      "name": "PushSetup",
+      "file": "src/components/PushSetup",
+      "import_path": ""
+    },
+    {
+      "name": "UploadDocumentDialog",
+      "file": "src/components/UploadDocumentDialog",
+      "import_path": ""
+    },
+    {
+      "name": "Button",
+      "file": "src/components/ui/button",
+      "import_path": "",
+      "props": [
+        {
+          "name": "variant",
+          "type": "enum",
+          "values": [
+            "default",
+            "destructive",
+            "outline",
+            "secondary",
+            "ghost",
+            "link"
+          ],
+          "default": "default"
+        },
+        {
+          "name": "size",
+          "type": "enum",
+          "values": [
+            "default",
+            "sm",
+            "lg",
+            "icon"
+          ],
+          "default": "default"
+        },
+        {
+          "name": "asChild",
+          "type": "boolean",
+          "default": "false"
+        }
+      ]
+    },
+    {
+      "name": "Command",
+      "file": "src/components/ui/command",
+      "import_path": ""
+    },
+    {
+      "name": "CommandDialog",
+      "file": "src/components/ui/command",
+      "import_path": ""
+    },
+    {
+      "name": "CommandInput",
+      "file": "src/components/ui/command",
+      "import_path": ""
+    },
+    {
+      "name": "CommandList",
+      "file": "src/components/ui/command",
+      "import_path": ""
+    },
+    {
+      "name": "CommandEmpty",
+      "file": "src/components/ui/command",
+      "import_path": ""
+    },
+    {
+      "name": "CommandGroup",
+      "file": "src/components/ui/command",
+      "import_path": ""
+    },
+    {
+      "name": "CommandItem",
+      "file": "src/components/ui/command",
+      "import_path": ""
+    },
+    {
+      "name": "CommandShortcut",
+      "file": "src/components/ui/command",
+      "import_path": ""
+    },
+    {
+      "name": "CommandSeparator",
+      "file": "src/components/ui/command",
+      "import_path": ""
+    },
+    {
+      "name": "Dialog",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogPortal",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogOverlay",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogTrigger",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogClose",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogContent",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogHeader",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogFooter",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogTitle",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DialogDescription",
+      "file": "src/components/ui/dialog",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenu",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuTrigger",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuContent",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuItem",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuCheckboxItem",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuRadioItem",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuLabel",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuSeparator",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuShortcut",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuGroup",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuPortal",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuSub",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuSubContent",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuSubTrigger",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "DropdownMenuRadioGroup",
+      "file": "src/components/ui/dropdown-menu",
+      "import_path": ""
+    },
+    {
+      "name": "Input",
+      "file": "src/components/ui/input",
+      "import_path": ""
+    },
+    {
+      "name": "Label",
+      "file": "src/components/ui/label",
+      "import_path": ""
+    },
+    {
+      "name": "Select",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectGroup",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectValue",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectTrigger",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectContent",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectLabel",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectItem",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectSeparator",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectScrollUpButton",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "SelectScrollDownButton",
+      "file": "src/components/ui/select",
+      "import_path": ""
+    },
+    {
+      "name": "Separator",
+      "file": "src/components/ui/separator",
+      "import_path": ""
+    },
+    {
+      "name": "Sheet",
+      "file": "src/components/ui/sheet",
+      "import_path": "",
+      "props": [
+        {
+          "name": "side",
+          "type": "enum",
+          "values": [
+            "top",
+            "bottom",
+            "left",
+            "right"
+          ],
+          "default": "right"
+        }
+      ]
+    },
+    {
+      "name": "SheetPortal",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetOverlay",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetTrigger",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetClose",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetContent",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetHeader",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetFooter",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetTitle",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "SheetDescription",
+      "file": "src/components/ui/sheet",
+      "import_path": ""
+    },
+    {
+      "name": "Sidebar",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarContent",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarFooter",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarGroup",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarGroupAction",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarGroupContent",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarGroupLabel",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarHeader",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarInput",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarInset",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarMenu",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarMenuAction",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarMenuBadge",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarMenuButton",
+      "file": "src/components/ui/sidebar",
+      "import_path": "",
+      "props": [
+        {
+          "name": "variant",
+          "type": "enum",
+          "values": [
+            "default",
+            "outline"
+          ],
+          "default": "default"
+        },
+        {
+          "name": "size",
+          "type": "enum",
+          "values": [
+            "default",
+            "sm",
+            "lg"
+          ],
+          "default": "default"
+        }
+      ]
+    },
+    {
+      "name": "SidebarMenuItem",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarMenuSkeleton",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarMenuSub",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarMenuSubButton",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarMenuSubItem",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarProvider",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarRail",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarSeparator",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "SidebarTrigger",
+      "file": "src/components/ui/sidebar",
+      "import_path": ""
+    },
+    {
+      "name": "Skeleton",
+      "file": "src/components/ui/skeleton",
+      "import_path": ""
+    },
+    {
+      "name": "Switch",
+      "file": "src/components/ui/switch",
+      "import_path": ""
+    },
+    {
+      "name": "Textarea",
+      "file": "src/components/ui/textarea",
+      "import_path": ""
+    },
+    {
+      "name": "Tooltip",
+      "file": "src/components/ui/tooltip",
+      "import_path": ""
+    },
+    {
+      "name": "TooltipTrigger",
+      "file": "src/components/ui/tooltip",
+      "import_path": ""
+    },
+    {
+      "name": "TooltipContent",
+      "file": "src/components/ui/tooltip",
+      "import_path": ""
+    },
+    {
+      "name": "TooltipProvider",
+      "file": "src/components/ui/tooltip",
+      "import_path": ""
+    },
+    {
+      "name": "Constants",
+      "file": "src/integrations/supabase/types",
+      "import_path": ""
+    },
+    {
+      "name": "PdfPreviewError",
+      "file": "src/lib/pdf-preview",
+      "import_path": ""
+    }
+  ],
+  "assets": [
+    {
+      "file": "src/assets/idoc-business-logo-2026.png.asset.json",
+      "kind": "logo",
+      "format": "png",
+      "pointer": true
+    },
+    {
+      "file": "src/assets/idoc-business.png.asset.json",
+      "kind": "image",
+      "format": "png",
+      "pointer": true
+    },
+    {
+      "file": "src/assets/idoc-hero-workspace.jpg",
+      "kind": "image",
+      "format": "jpg"
+    },
+    {
+      "file": "src/assets/idoc-social-share.jpg.asset.json",
+      "kind": "image",
+      "format": "jpg",
+      "pointer": true
+    },
+    {
+      "file": "src/assets/tool-compress.jpg",
+      "kind": "image",
+      "format": "jpg"
+    },
+    {
+      "file": "src/assets/tool-convert.jpg",
+      "kind": "image",
+      "format": "jpg"
+    },
+    {
+      "file": "src/assets/tool-edit.jpg",
+      "kind": "image",
+      "format": "jpg"
+    },
+    {
+      "file": "src/assets/tool-enhance-document.jpg",
+      "kind": "image",
+      "format": "jpg"
+    },
+    {
+      "file": "src/assets/tool-ocr.jpg",
+      "kind": "image",
+      "format": "jpg"
+    },
+    {
+      "file": "src/assets/tool-organize.jpg",
+      "kind": "image",
+      "format": "jpg"
+    },
+    {
+      "file": "src/assets/tool-security.jpg",
+      "kind": "image",
+      "format": "jpg"
+    },
+    {
+      "file": "src/assets/tool-sign.jpg",
+      "kind": "image",
+      "format": "jpg"
+    }
+  ]
+}
