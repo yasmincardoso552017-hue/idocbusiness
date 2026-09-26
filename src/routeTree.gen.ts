@@ -13,13 +13,16 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as VerifyRouteImport } from './routes/verify'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as FerramentasIndexRouteImport } from './routes/ferramentas.index'
 import { Route as FerramentasSlugRouteImport } from './routes/ferramentas.$slug'
 import { Route as PastaTokenRouteImport } from './routes/pasta.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
 import { Route as AuthenticatedAppAssinaturasRouteImport } from './routes/_authenticated/app.assinaturas'
@@ -57,6 +60,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
@@ -72,6 +80,12 @@ const VerifyRoute = VerifyRouteImport.update({
   path: '/verify',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const FerramentasIndexRoute = FerramentasIndexRouteImport.update({
   id: '/ferramentas/',
   path: '/ferramentas/',
@@ -90,6 +104,11 @@ const PastaTokenRoute = PastaTokenRouteImport.update({
 const SignTokenRoute = SignTokenRouteImport.update({
   id: '/sign/$token',
   path: '/sign/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
@@ -194,13 +213,16 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ferramentas/$slug': typeof FerramentasSlugRoute
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/ferramentas/': typeof FerramentasIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/auditor': typeof AuthenticatedAppAuditorRoute
@@ -223,13 +245,16 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ferramentas/$slug': typeof FerramentasSlugRoute
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/ferramentas': typeof FerramentasIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/auditor': typeof AuthenticatedAppAuditorRoute
@@ -254,13 +279,16 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
   '/privacidade': typeof PrivacidadeRoute
   '/termos': typeof TermosRoute
   '/verify': typeof VerifyRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ferramentas/$slug': typeof FerramentasSlugRoute
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/ferramentas/': typeof FerramentasIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/_authenticated/app/auditor': typeof AuthenticatedAppAuditorRoute
@@ -285,13 +313,16 @@ export interface FileRouteTypes {
     | '/'
     | '/ajuda'
     | '/auth'
+    | '/mcp'
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/.well-known/oauth-protected-resource'
     | '/ferramentas/$slug'
     | '/pasta/$token'
     | '/sign/$token'
     | '/ferramentas/'
+    | '/.lovable/oauth/consent'
     | '/app/admin'
     | '/app/assinaturas'
     | '/app/auditor'
@@ -314,13 +345,16 @@ export interface FileRouteTypes {
     | '/'
     | '/ajuda'
     | '/auth'
+    | '/mcp'
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/.well-known/oauth-protected-resource'
     | '/ferramentas/$slug'
     | '/pasta/$token'
     | '/sign/$token'
     | '/ferramentas'
+    | '/.lovable/oauth/consent'
     | '/app/admin'
     | '/app/assinaturas'
     | '/app/auditor'
@@ -344,13 +378,16 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/ajuda'
     | '/auth'
+    | '/mcp'
     | '/privacidade'
     | '/termos'
     | '/verify'
+    | '/.well-known/oauth-protected-resource'
     | '/ferramentas/$slug'
     | '/pasta/$token'
     | '/sign/$token'
     | '/ferramentas/'
+    | '/.lovable/oauth/consent'
     | '/_authenticated/app/admin'
     | '/_authenticated/app/assinaturas'
     | '/_authenticated/app/auditor'
@@ -375,13 +412,16 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AjudaRoute: typeof AjudaRoute
   AuthRoute: typeof AuthRoute
+  McpRoute: typeof McpRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   TermosRoute: typeof TermosRoute
   VerifyRoute: typeof VerifyRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   FerramentasSlugRoute: typeof FerramentasSlugRoute
   PastaTokenRoute: typeof PastaTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   FerramentasIndexRoute: typeof FerramentasIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicCronRemindersRoute: typeof ApiPublicCronRemindersRoute
 }
 
@@ -415,6 +455,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacidade': {
       id: '/privacidade'
       path: '/privacidade'
@@ -434,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/verify'
       fullPath: '/verify'
       preLoaderRoute: typeof VerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ferramentas/': {
@@ -462,6 +516,13 @@ declare module '@tanstack/react-router' {
       path: '/sign/$token'
       fullPath: '/sign/$token'
       preLoaderRoute: typeof SignTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/': {
@@ -634,13 +695,17 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AjudaRoute: AjudaRoute,
   AuthRoute: AuthRoute,
+  McpRoute: McpRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   TermosRoute: TermosRoute,
   VerifyRoute: VerifyRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   FerramentasSlugRoute: FerramentasSlugRoute,
   PastaTokenRoute: PastaTokenRoute,
   SignTokenRoute: SignTokenRoute,
   FerramentasIndexRoute: FerramentasIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicCronRemindersRoute: ApiPublicCronRemindersRoute,
 }
 export const routeTree = rootRouteImport

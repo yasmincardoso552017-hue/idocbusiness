@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Expose external AI access through the official MCP server at `/mcp`, authenticated with per-user OAuth so database RLS remains authoritative.
