@@ -17,7 +17,10 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   validateSearch: (search: Record<string, unknown>): { next?: string } => {
     const candidate = search["next"];
-    const next = typeof candidate === "string" && /^\/app(?:\/|$)/.test(candidate) ? candidate : undefined;
+    const isSafeDestination =
+      typeof candidate === "string" &&
+      (/^\/app(?:\/|$)/.test(candidate) || /^\/\.lovable\/oauth\/consent\?authorization_id=[^&]+$/.test(candidate));
+    const next = isSafeDestination ? candidate : undefined;
     return next ? { next } : {};
   },
   head: () => ({
@@ -63,7 +66,7 @@ function Auth() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/app`,
+        emailRedirectTo: `${window.location.origin}/auth${next ? `?next=${encodeURIComponent(next)}` : ""}`,
         data: { full_name: name, phone },
       },
     });

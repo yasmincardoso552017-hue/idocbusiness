@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plug, FolderSync, Info } from "lucide-react";
+import { Plug, FolderSync, Info, Bot, Check, Copy, ExternalLink, KeyRound, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
@@ -37,6 +37,12 @@ function Integrations() {
   });
 
   const dropbox = data?.rows.find((r) => r.provider === "dropbox");
+  const mcpUrl = typeof window === "undefined" ? "/mcp" : `${window.location.origin}/mcp`;
+
+  async function copyMcpUrl() {
+    await navigator.clipboard.writeText(mcpUrl);
+    toast.success("Endpoint MCP copiado.");
+  }
 
   async function upsert(patch: Record<string, unknown>) {
     if (!data) return;
@@ -59,6 +65,61 @@ function Integrations() {
   return (
     <AppShell title="Integrações">
       <div className="space-y-4">
+        <div className="card-soft p-4">
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Bot className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="text-sm font-bold">MCP e IA</div>
+                <span className="rounded-md border px-2 py-0.5 text-[10px] font-semibold text-primary">OAuth protegido</span>
+              </div>
+              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                Conecte Gemini e outros assistentes usando sua própria conta IDOC BUSINESS.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <div>
+              <Label htmlFor="mcp-url">Endpoint MCP</Label>
+              <div className="flex gap-2">
+                <Input id="mcp-url" readOnly value={mcpUrl} className="font-mono text-xs" />
+                <Button variant="outline" size="icon" onClick={copyMcpUrl} aria-label="Copiar endpoint MCP">
+                  <Copy className="size-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border p-3">
+              <div className="flex items-center gap-2 text-xs font-semibold">
+                <Search className="size-4 text-primary" /> Ferramentas disponíveis
+              </div>
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <Check className="size-4 text-primary" /> Buscar e listar documentos da conta conectada
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={copyMcpUrl}>
+                <KeyRound className="mr-1 size-4" /> Copiar para o Gemini
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label="Abrir documentação do Gemini"
+                onClick={() => window.open("https://ai.google.dev/gemini-api/docs", "_blank", "noopener,noreferrer")}
+              >
+                <ExternalLink className="size-4" />
+              </Button>
+            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Ao conectar, o Gemini abrirá a autorização do IDOC BUSINESS. Nenhuma chave secreta precisa ser copiada ou exposta.
+            </p>
+          </div>
+        </div>
+
         <div className="card-soft p-4">
           <div className="flex items-center gap-3">
             <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">

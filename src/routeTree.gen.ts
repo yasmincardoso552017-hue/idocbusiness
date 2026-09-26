@@ -20,6 +20,7 @@ import { Route as FerramentasIndexRouteImport } from './routes/ferramentas.index
 import { Route as FerramentasSlugRouteImport } from './routes/ferramentas.$slug'
 import { Route as PastaTokenRouteImport } from './routes/pasta.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAppIndexRouteImport } from './routes/_authenticated/app.index'
 import { Route as AuthenticatedAppAdminRouteImport } from './routes/_authenticated/app.admin'
 import { Route as AuthenticatedAppAssinaturasRouteImport } from './routes/_authenticated/app.assinaturas'
@@ -90,6 +91,11 @@ const PastaTokenRoute = PastaTokenRouteImport.update({
 const SignTokenRoute = SignTokenRouteImport.update({
   id: '/sign/$token',
   path: '/sign/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppIndexRoute = AuthenticatedAppIndexRouteImport.update({
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/ferramentas/': typeof FerramentasIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/auditor': typeof AuthenticatedAppAuditorRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/ferramentas': typeof FerramentasIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/app/admin': typeof AuthenticatedAppAdminRoute
   '/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/app/auditor': typeof AuthenticatedAppAuditorRoute
@@ -261,6 +269,7 @@ export interface FileRoutesById {
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/ferramentas/': typeof FerramentasIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/app/admin': typeof AuthenticatedAppAdminRoute
   '/_authenticated/app/assinaturas': typeof AuthenticatedAppAssinaturasRoute
   '/_authenticated/app/auditor': typeof AuthenticatedAppAuditorRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/pasta/$token'
     | '/sign/$token'
     | '/ferramentas/'
+    | '/.lovable/oauth/consent'
     | '/app/admin'
     | '/app/assinaturas'
     | '/app/auditor'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/pasta/$token'
     | '/sign/$token'
     | '/ferramentas'
+    | '/.lovable/oauth/consent'
     | '/app/admin'
     | '/app/assinaturas'
     | '/app/auditor'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/pasta/$token'
     | '/sign/$token'
     | '/ferramentas/'
+    | '/.lovable/oauth/consent'
     | '/_authenticated/app/admin'
     | '/_authenticated/app/assinaturas'
     | '/_authenticated/app/auditor'
@@ -382,6 +394,7 @@ export interface RootRouteChildren {
   PastaTokenRoute: typeof PastaTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   FerramentasIndexRoute: typeof FerramentasIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicCronRemindersRoute: typeof ApiPublicCronRemindersRoute
 }
 
@@ -462,6 +475,13 @@ declare module '@tanstack/react-router' {
       path: '/sign/$token'
       fullPath: '/sign/$token'
       preLoaderRoute: typeof SignTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/': {
@@ -641,6 +661,7 @@ const rootRouteChildren: RootRouteChildren = {
   PastaTokenRoute: PastaTokenRoute,
   SignTokenRoute: SignTokenRoute,
   FerramentasIndexRoute: FerramentasIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicCronRemindersRoute: ApiPublicCronRemindersRoute,
 }
 export const routeTree = rootRouteImport
