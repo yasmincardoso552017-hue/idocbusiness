@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "sdk_version": "3.0.4",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://prwqljrmzcurrrbqasku.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "signflow-documents",
+      "version": "0.1.0",
+      "title": "SignFlow Documents"
+    },
+    "tools": [
+      {
+        "name": "search_documents",
+        "title": "Buscar documentos",
+        "description": "Busca documentos pertencentes à conta autenticada no IDOC BUSINESS.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Nome ou parte do nome do documento.",
+              "type": "string",
+              "maxLength": 160
+            },
+            "limit": {
+              "default": 20,
+              "description": "Quantidade máxima de resultados.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
