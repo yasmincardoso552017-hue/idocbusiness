@@ -615,7 +615,9 @@ export function PdfTools({ initialTool: requestedTool, isAuthenticated = false }
       const out = await PDFDocument.create();
       const font = await out.embedFont(StandardFonts.Helvetica);
       for (let i = 0; i < rasters.length; i++) {
-        const jpg = await out.embedJpg(new Uint8Array(await rasters[i]?.blob ?? new Blob().arrayBuffer()));
+        const raster = rasters[i];
+        if (!raster) continue;
+        const jpg = await out.embedJpg(new Uint8Array(await raster.blob.arrayBuffer()));
         const page = out.addPage([jpg.width / 2, jpg.height / 2]);
         page.drawImage(jpg, { x: 0, y: 0, width: page.getWidth(), height: page.getHeight() });
         let x = 4;
