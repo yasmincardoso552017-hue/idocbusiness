@@ -10,3 +10,5 @@
 <!-- LOVABLE:END -->
 
 - Expose external AI access through the official MCP server at `/mcp`, authenticated with per-user OAuth so database RLS remains authoritative.
+
+- Keep PDF processing in `PdfTools` shared by public and authenticated routes; persistence-only actions remain behind authentication so visitor files stay ephemeral.
