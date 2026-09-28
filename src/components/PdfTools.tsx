@@ -604,6 +604,7 @@ export function PdfTools({ initialTool: requestedTool, isAuthenticated = false }
       }
     },
     ocr: async () => {
+      if (!isAuthenticated) throw new Error("Entre na sua conta para usar o reconhecimento de texto online");
       const f = needPdf();
       const bytes = new Uint8Array(await f.arrayBuffer());
       const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
@@ -638,6 +639,9 @@ export function PdfTools({ initialTool: requestedTool, isAuthenticated = false }
       const bytes = await normalizePdf(new Uint8Array(await f.arrayBuffer()), f.name);
       let pages = await extractPdfText(bytes);
       if (pages.join("").trim().length < 20) {
+        if (!isAuthenticated) {
+          throw new Error("Este PDF é digitalizado. Entre na sua conta para reconhecer o texto por OCR");
+        }
         const src = await PDFDocument.load(bytes, { ignoreEncryption: true });
         const rasters = await rasterizePages(bytes, src.getPageIndices().slice(0, 20), "image/jpeg", 2);
         const images = await Promise.all(rasters.map((r) => blobToDataUrl(r.blob)));
@@ -743,8 +747,9 @@ export function PdfTools({ initialTool: requestedTool, isAuthenticated = false }
           <div className="mb-3 flex items-start gap-2">
             <Wrench className="mt-0.5 size-4 shrink-0 text-primary" />
             <p className="text-xs text-muted-foreground">
-              Tudo é processado no seu dispositivo — os arquivos não são enviados ao servidor (exceto o
-              reconhecimento de texto). Você visualiza, escolhe as páginas, o nome e o formato antes de baixar.
+              {isAuthenticated
+                ? "Seus arquivos são processados no dispositivo e só são salvos quando você escolhe uma área da conta. O reconhecimento de texto usa processamento seguro online."
+                : "Uso livre, sem cadastro e sem armazenamento: os arquivos permanecem no seu dispositivo. O reconhecimento de texto online exige uma conta."}
             </p>
           </div>
 
@@ -804,9 +809,11 @@ export function PdfTools({ initialTool: requestedTool, isAuthenticated = false }
                   registro de evidências.
                 </p>
                 <Button asChild className="w-full">
-                  <Link to={isAuthenticated ? "/app/empresas" : "/auth"} search={isAuthenticated ? undefined : { next: "/app/empresas" }}>
-                    <PenLine className="mr-1 size-4" /> {isAuthenticated ? "Ir para empresas e enviar" : "Entrar para solicitar assinaturas"}
-                  </Link>
+                  {isAuthenticated ? (
+                    <Link to="/app/empresas"><PenLine className="mr-1 size-4" /> Ir para empresas e enviar</Link>
+                  ) : (
+                    <Link to="/auth" search={{ next: "/app/empresas" }}><PenLine className="mr-1 size-4" /> Entrar para solicitar assinaturas</Link>
+                  )}
                 </Button>
               </div>
             ) : (
