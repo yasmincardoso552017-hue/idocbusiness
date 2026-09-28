@@ -12,6 +12,7 @@
 - [ ] Remover o texto rasterizado da base visual no modo editável.
 - [ ] Validar texto real, imagens e fundos em Word, Excel e PowerPoint.
 - [x] Corrigir visualização e download de contratos e documentos assinados.
+- [x] Liberar ferramentas PDF para visitantes, com processamento temporário e sem salvar arquivos.
 - [ ] Conectar Google Drive e Dropbox por usuário na Central de Integrações.
 - [ ] Permitir copiar pastas e documentos nos dois sentidos com confirmação e histórico.
 - [ ] Aplicar armazenamento híbrido: processamento local, contratos ativos no Cloud e arquivamento externo.
