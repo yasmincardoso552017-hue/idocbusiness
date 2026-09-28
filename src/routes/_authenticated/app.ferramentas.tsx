@@ -20,5 +20,9 @@ export const Route = createFileRoute("/_authenticated/app/ferramentas")({
 
 function AuthenticatedTools() {
   const { tool } = Route.useSearch();
-  return <AppShell title="Ferramentas de PDF"><PdfTools initialTool={tool} isAuthenticated /></AppShell>;
+  return (
+    <AppShell title="Ferramentas de PDF">
+      <PdfTools {...(tool ? { initialTool: tool } : {})} isAuthenticated />
+    </AppShell>
+  );
 }
