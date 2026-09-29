@@ -41,6 +41,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PdfWorkbench } from "@/components/PdfWorkbench";
 import { PdfEditor } from "@/components/PdfEditor";
+import { SelfSignPdf } from "@/components/SelfSignPdf";
 import { extractPdfText, rasterizePages } from "@/lib/pdf-preview";
 import { ocrPages } from "@/lib/audit.functions";
 import {
@@ -984,14 +985,23 @@ export function PdfTools({ initialTool: requestedTool, isAuthenticated = false }
                 {(tool === "editor" || tool === "sign" || tool === "redact") && (
                   <p className="text-[11px] text-muted-foreground">
                     {tool === "sign"
-                      ? "Use a ferramenta Desenhar para assinar à mão, ou Texto para digitar o nome. Depois aplique e baixe."
+                       ? "Escolha o modo de assinatura, posicione na página e gere um PDF final com relatório de evidências."
                       : tool === "redact"
                         ? "Use Forma/Destacar sobre os dados sensíveis com a cor escura e marque “Achatar” para tornar a tarja permanente."
                         : "Adicione textos, imagens, formas, destaques e anotações à mão em qualquer página."}
                   </p>
                 )}
 
-                {tool === "editor" || tool === "sign" || tool === "redact" ? (
+                {tool === "sign" ? (
+                  first ? (
+                    <SelfSignPdf
+                      key={first.name + first.size + "self-sign"}
+                      file={first}
+                      isAuthenticated={isAuthenticated}
+                      onResult={(bytes, name) => open(bytes, name)}
+                    />
+                  ) : null
+                ) : tool === "editor" || tool === "redact" ? (
                   first ? (
                     <PdfEditor
                       key={first.name + first.size + tool}
