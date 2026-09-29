@@ -13,6 +13,10 @@
 - [ ] Validar texto real, imagens e fundos em Word, Excel e PowerPoint.
 - [x] Corrigir visualização e download de contratos e documentos assinados.
 - [x] Liberar ferramentas PDF para visitantes, com processamento temporário e sem salvar arquivos.
+- [ ] Corrigir a inserção de texto no editor em celular e computador.
+- [ ] Criar autoassinatura de PDF local com posicionamento e página adicional de evidências.
+- [ ] Permitir registrar a autoassinatura na conta para verificação pública, sem expor provas sensíveis.
+- [ ] Validar edição e autoassinatura em celular e computador.
 - [ ] Conectar Google Drive e Dropbox por usuário na Central de Integrações.
 - [ ] Permitir copiar pastas e documentos nos dois sentidos com confirmação e histórico.
 - [ ] Aplicar armazenamento híbrido: processamento local, contratos ativos no Cloud e arquivamento externo.
