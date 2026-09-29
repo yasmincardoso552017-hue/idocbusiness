@@ -90,6 +90,32 @@ export function PdfEditor({
   >(null);
   const snapshot = useRef<Item[] | null>(null);
 
+  function addTextAtCenter() {
+    const currentPage = pages.find((candidate) => candidate.index === page);
+    if (!currentPage) {
+      toast.error("Aguarde a página terminar de carregar");
+      return;
+    }
+    const id = crypto.randomUUID();
+    const item: Item = {
+      id,
+      page,
+      type: "text",
+      x: Math.max(16, currentPage.width / 2 - 110),
+      y: Math.max(16, currentPage.height / 2 - fontSize),
+      w: Math.min(220, currentPage.width - 32),
+      h: fontSize * 2,
+      text: "",
+      size: fontSize,
+      font,
+      color,
+    };
+    commit((previous) => [...previous, item]);
+    setTool("text");
+    setActive(id);
+    setEditing(id);
+  }
+
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -427,7 +453,14 @@ export function PdfEditor({
     <div className="mt-4 space-y-3 rounded-xl border border-border p-3">
       <div className="flex flex-wrap items-center gap-1">
         {tools.map(([id, Icon, label]) => (
-          <Button key={id} size="sm" variant={tool === id ? "default" : "outline"} onClick={() => setTool(id)} className="text-[11px]">
+          <Button
+            key={id}
+            type="button"
+            size="sm"
+            variant={tool === id ? "default" : "outline"}
+            onClick={() => id === "text" ? addTextAtCenter() : setTool(id)}
+            className="text-[11px]"
+          >
             <Icon className="mr-1 size-3.5" /> {label}
           </Button>
         ))}
@@ -560,6 +593,7 @@ export function PdfEditor({
                     (editing === it.id ? (
                       <textarea
                         autoFocus
+                        inputMode="text"
                         value={it.text ?? ""}
                         placeholder="Digite aqui"
                         onPointerDown={(e) => e.stopPropagation()}
@@ -606,7 +640,7 @@ export function PdfEditor({
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Dica: com Texto, toque na folha e digite. Use Mover para arrastar, redimensionar pela bolinha e toque duplo para editar o texto.
+        Toque em Texto para criar uma caixa e digitar imediatamente. Depois use Mover para posicionar, redimensionar pela bolinha ou toque duas vezes para editar.
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
