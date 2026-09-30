@@ -14,3 +14,5 @@
 - Keep PDF processing in `PdfTools` shared by public and authenticated routes; persistence-only actions remain behind authentication so visitor files stay ephemeral.
 
 - Keep self-signing local by default; only authenticated users may persist the signed PDF and minimal public verification record, because sensitive evidence must remain private.
+
+- Store PDF placements in visible-page coordinates and transform them using the page rotation only at export, so preview and final output stay aligned.
