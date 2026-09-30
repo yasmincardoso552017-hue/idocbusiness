@@ -90,32 +90,6 @@ export function PdfEditor({
   >(null);
   const snapshot = useRef<Item[] | null>(null);
 
-  function addTextAtCenter() {
-    const currentPage = pages.find((candidate) => candidate.index === page);
-    if (!currentPage) {
-      toast.error("Aguarde a página terminar de carregar");
-      return;
-    }
-    const id = crypto.randomUUID();
-    const item: Item = {
-      id,
-      page,
-      type: "text",
-      x: Math.max(16, currentPage.width / 2 - 110),
-      y: Math.max(16, currentPage.height / 2 - fontSize),
-      w: Math.min(220, currentPage.width - 32),
-      h: fontSize * 2,
-      text: "",
-      size: fontSize,
-      font,
-      color,
-    };
-    commit((previous) => [...previous, item]);
-    setTool("text");
-    setActive(id);
-    setEditing(id);
-  }
-
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -223,7 +197,21 @@ export function PdfEditor({
       return;
     }
     if (tool === "text") {
-      const item: Item = { id, page, type: "text", x, y: y - fontSize * 0.6, w: 220, h: fontSize * 1.5, text: "", size: fontSize, font, color };
+      const width = Math.min(220, Math.max(80, (current?.width ?? 220) - 16));
+      const height = Math.max(32, fontSize * 1.8);
+      const item: Item = {
+        id,
+        page,
+        type: "text",
+        x: Math.max(0, Math.min((current?.width ?? width) - width, x)),
+        y: Math.max(0, Math.min((current?.height ?? height) - height, y - height / 2)),
+        w: width,
+        h: height,
+        text: "",
+        size: fontSize,
+        font,
+        color,
+      };
       commit((p) => [...p, item]);
       setActive(id);
       setEditing(id);
@@ -458,7 +446,10 @@ export function PdfEditor({
             type="button"
             size="sm"
             variant={tool === id ? "default" : "outline"}
-            onClick={() => id === "text" ? addTextAtCenter() : setTool(id)}
+             onClick={() => {
+               setTool(id);
+               if (id !== "text") setEditing(null);
+             }}
             className="text-[11px]"
           >
             <Icon className="mr-1 size-3.5" /> {label}
@@ -586,7 +577,7 @@ export function PdfEditor({
                   key={it.id}
                   onPointerDown={(e) => startMove(e, it)}
                   onDoubleClick={() => it.type === "text" && setEditing(it.id)}
-                  className={`absolute ${tool === "select" ? "cursor-move" : ""} ${active === it.id ? "outline outline-2 outline-primary" : ""}`}
+                  className={`absolute ${tool === "select" ? "cursor-move" : ""} ${active === it.id ? "outline outline-2 outline-primary" : ""} ${it.type === "text" && !(it.text ?? "").trim() ? "bg-background/80" : ""}`}
                   style={box}
                 >
                   {it.type === "text" &&
@@ -608,14 +599,13 @@ export function PdfEditor({
                           snapshot.current = null;
                           if (before) { setPast((h) => [...h, before]); setFuture([]); }
                           setEditing(null);
-                          if (!(it.text ?? "").trim()) setItemsRaw((p) => p.filter((i) => i.id !== it.id));
                         }}
                         className="size-full resize-none border-0 bg-transparent p-0.5 outline-none"
                         style={{ color: it.color, fontSize: (it.size ?? 14) * zoom, lineHeight: 1.15, fontFamily: FONT_CSS[it.font ?? "helvetica"], fontWeight: it.bold ? 700 : 400 }}
                       />
                     ) : (
                       <span className="block size-full whitespace-pre-wrap p-0.5" style={{ color: it.color, fontSize: (it.size ?? 14) * zoom, lineHeight: 1.15, fontFamily: FONT_CSS[it.font ?? "helvetica"], fontWeight: it.bold ? 700 : 400 }}>
-                        {it.text}
+                         {it.text || "Toque duas vezes para digitar"}
                       </span>
                     ))}
                   {it.type === "rect" && <div className="size-full" style={{ border: `${(it.stroke ?? 2) * zoom}px solid ${it.color}`, background: it.fill ? `${it.color}40` : undefined }} />}
@@ -640,7 +630,7 @@ export function PdfEditor({
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Toque em Texto para criar uma caixa e digitar imediatamente. Depois use Mover para posicionar, redimensionar pela bolinha ou toque duas vezes para editar.
+         Escolha Texto e toque no ponto exato da página. A caixa ficará visível para digitar, mover, redimensionar ou excluir.
       </p>
 
       <div className="flex flex-wrap items-center gap-2">

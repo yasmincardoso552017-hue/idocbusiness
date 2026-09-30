@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck, Camera, Eraser, ImagePlus, Loader2, MapPin, PenLine, Type } from "lucide-react";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { BadgeCheck, Camera, Eraser, ImagePlus, Loader2, MapPin, PenLine, RotateCw, Type } from "lucide-react";
+import { degrees, PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { renderPdfPages, type RenderedPage } from "@/lib/pdf-preview";
 import { registerSelfSignedDocument } from "@/lib/self-sign.functions";
 
 type SignatureMode = "draw" | "type" | "upload";
-type Position = { page: number; x: number; y: number; w: number; h: number };
+type Orientation = "horizontal" | "vertical";
+type Position = { page: number; x: number; y: number; w: number; h: number; orientation: Orientation };
 
 const PDF_WIDTH = 595.28;
 const PDF_HEIGHT = 841.89;
@@ -85,6 +86,25 @@ async function embedDataImage(pdf: PDFDocument, dataUrl: string) {
   return dataUrl.startsWith("data:image/png") ? pdf.embedPng(raw) : pdf.embedJpg(raw);
 }
 
+async function rotateDataImage(dataUrl: string, orientation: Orientation) {
+  if (orientation === "horizontal") return dataUrl;
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => reject(new Error("Não foi possível preparar a assinatura vertical"));
+    element.src = dataUrl;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalHeight;
+  canvas.height = image.naturalWidth;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Assinatura vertical indisponível neste navegador");
+  context.translate(canvas.width, 0);
+  context.rotate(Math.PI / 2);
+  context.drawImage(image, 0, 0);
+  return canvas.toDataURL("image/png");
+}
+
 export function SelfSignPdf({ file, isAuthenticated, onResult }: { file: File; isAuthenticated: boolean; onResult: (bytes: Uint8Array, name: string) => void }) {
   const [pages, setPages] = useState<RenderedPage[]>([]);
   const [page, setPage] = useState(0);
@@ -98,6 +118,7 @@ export function SelfSignPdf({ file, isAuthenticated, onResult }: { file: File; i
   const [geo, setGeo] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [register, setRegister] = useState(isAuthenticated);
+  const [orientation, setOrientation] = useState<Orientation>("horizontal");
   const [position, setPosition] = useState<Position | null>(null);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -105,11 +126,11 @@ export function SelfSignPdf({ file, isAuthenticated, onResult }: { file: File; i
   const drawing = useRef(false);
   const drawn = useRef(false);
   const dragging = useRef<{ dx: number; dy: number } | null>(null);
+  const resizing = useRef(false);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    renderPdfPages(new Uint8Array(file.arrayBuffer ? [] : []), 820).catch(() => undefined);
     file.arrayBuffer()
       .then((buffer) => renderPdfPages(new Uint8Array(buffer), 820))
       .then((rendered) => { if (alive) setPages(rendered); })
@@ -169,18 +190,66 @@ export function SelfSignPdf({ file, isAuthenticated, onResult }: { file: File; i
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * (current?.width ?? 1);
     const y = ((event.clientY - rect.top) / rect.height) * (current?.height ?? 1);
-    const width = Math.min(260, (current?.width ?? 400) * 0.38);
-    setPosition({ page, x: Math.max(0, x - width / 2), y: Math.max(0, y - 35), w: width, h: 70 });
+    const pageWidth = current?.width ?? 400;
+    const pageHeight = current?.height ?? 600;
+    const longSide = Math.min(260, pageWidth * 0.38);
+    const shortSide = Math.max(54, Math.min(80, longSide * 0.3));
+    const width = orientation === "horizontal" ? longSide : shortSide;
+    const height = orientation === "horizontal" ? shortSide : longSide;
+    setPosition({
+      page,
+      x: Math.max(0, Math.min(pageWidth - width, x - width / 2)),
+      y: Math.max(0, Math.min(pageHeight - height, y - height / 2)),
+      w: width,
+      h: height,
+      orientation,
+    });
   }
 
   function movePosition(event: React.PointerEvent<HTMLDivElement>) {
-    if (!dragging.current || !position || !current) return;
+    if (resizing.current || !dragging.current || !position || !current) return;
     const host = event.currentTarget.parentElement;
     if (!host) return;
     const rect = host.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * current.width - dragging.current.dx;
     const y = ((event.clientY - rect.top) / rect.height) * current.height - dragging.current.dy;
     setPosition({ ...position, x: Math.max(0, Math.min(current.width - position.w, x)), y: Math.max(0, Math.min(current.height - position.h, y)) });
+  }
+
+  function resizePosition(event: React.PointerEvent<HTMLSpanElement>) {
+    if (!resizing.current || !position || !current) return;
+    const host = event.currentTarget.parentElement?.parentElement;
+    if (!host) return;
+    const rect = host.getBoundingClientRect();
+    const pointerX = ((event.clientX - rect.left) / rect.width) * current.width;
+    const pointerY = ((event.clientY - rect.top) / rect.height) * current.height;
+    const maxWidth = current.width - position.x;
+    const maxHeight = current.height - position.y;
+    setPosition({
+      ...position,
+      w: Math.max(36, Math.min(maxWidth, pointerX - position.x)),
+      h: Math.max(36, Math.min(maxHeight, pointerY - position.y)),
+    });
+  }
+
+  function toggleOrientation() {
+    setOrientation((value) => value === "horizontal" ? "vertical" : "horizontal");
+    setPosition((value) => {
+      if (!value || !current) return value;
+      const nextOrientation: Orientation = value.orientation === "horizontal" ? "vertical" : "horizontal";
+      const centerX = value.x + value.w / 2;
+      const centerY = value.y + value.h / 2;
+      const width = value.h;
+      const height = value.w;
+      return {
+        ...value,
+        orientation: nextOrientation,
+        x: Math.max(0, Math.min(current.width - width, centerX - width / 2)),
+        y: Math.max(0, Math.min(current.height - height, centerY - height / 2)),
+        w: width,
+        h: height,
+      };
+    });
   }
 
   function askLocation() {
@@ -217,20 +286,47 @@ export function SelfSignPdf({ file, isAuthenticated, onResult }: { file: File; i
       const target = pdf.getPages()[position.page];
       const rendered = pages.find((candidate) => candidate.index === position.page);
       if (!target || !rendered) throw new Error("Página escolhida indisponível");
-      const signatureAsset = await embedDataImage(pdf, signature);
+      const placedSignature = await rotateDataImage(signature, position.orientation);
+      const signatureAsset = await embedDataImage(pdf, placedSignature);
       const { width: pageWidth, height: pageHeight } = target.getSize();
-      const scaleX = pageWidth / rendered.width;
-      const scaleY = pageHeight / rendered.height;
-      const boxWidth = position.w * scaleX;
-      const boxHeight = position.h * scaleY;
+      const pageRotation = ((Math.round(target.getRotation().angle) % 360) + 360) % 360;
+      const rotatedPage = pageRotation === 90 || pageRotation === 270;
+      const visibleWidth = rotatedPage ? pageHeight : pageWidth;
+      const visibleHeight = rotatedPage ? pageWidth : pageHeight;
+      const boxX = (position.x / rendered.width) * visibleWidth;
+      const boxY = (position.y / rendered.height) * visibleHeight;
+      const boxWidth = (position.w / rendered.width) * visibleWidth;
+      const boxHeight = (position.h / rendered.height) * visibleHeight;
       const assetScale = Math.min(boxWidth / signatureAsset.width, boxHeight / signatureAsset.height);
       const drawWidth = signatureAsset.width * assetScale;
       const drawHeight = signatureAsset.height * assetScale;
+      const visibleX = boxX + (boxWidth - drawWidth) / 2;
+      const visibleY = boxY + (boxHeight - drawHeight) / 2;
+      const toPdf = (x: number, y: number) => {
+        if (pageRotation === 90) return { x: y, y: x };
+        if (pageRotation === 180) return { x: pageWidth - x, y };
+        if (pageRotation === 270) return { x: pageWidth - y, y: pageHeight - x };
+        return { x, y: pageHeight - y };
+      };
+      const firstCorner = toPdf(visibleX, visibleY);
+      const oppositeCorner = toPdf(visibleX + drawWidth, visibleY + drawHeight);
+      const left = Math.min(firstCorner.x, oppositeCorner.x);
+      const right = Math.max(firstCorner.x, oppositeCorner.x);
+      const bottom = Math.min(firstCorner.y, oppositeCorner.y);
+      const top = Math.max(firstCorner.y, oppositeCorner.y);
+      const origin = pageRotation === 90
+        ? { x: right, y: bottom }
+        : pageRotation === 180
+          ? { x: right, y: top }
+          : pageRotation === 270
+            ? { x: left, y: top }
+            : { x: left, y: bottom };
       target.drawImage(signatureAsset, {
-        x: position.x * scaleX + (boxWidth - drawWidth) / 2,
-        y: pageHeight - (position.y + position.h) * scaleY + (boxHeight - drawHeight) / 2,
+        x: origin.x,
+        y: origin.y,
         width: drawWidth,
         height: drawHeight,
+        rotate: degrees(pageRotation),
       });
       const signedAt = new Date().toISOString();
       const verificationCode = code();
@@ -252,7 +348,8 @@ export function SelfSignPdf({ file, isAuthenticated, onResult }: { file: File; i
       line("Identificador do ato", verificationCode);
       line("Hash SHA-256 do original", originalHash);
       line("Hash do conteudo assinado antes deste relatorio", signedContentHash);
-      line("Pagina e posicao", `${position.page + 1}; x=${Math.round(position.x)}, y=${Math.round(position.y)}`);
+       line("Pagina e posicao", `${position.page + 1}; x=${Math.round(position.x)}, y=${Math.round(position.y)}; largura=${Math.round(position.w)}; altura=${Math.round(position.h)}`);
+       line("Orientacao da assinatura", position.orientation === "horizontal" ? "horizontal" : "vertical");
       y -= 7;
       line("SIGNATARIO", undefined, true);
       line("Nome declarado", cleanName);
@@ -325,6 +422,11 @@ export function SelfSignPdf({ file, isAuthenticated, onResult }: { file: File; i
         {mode === "upload" && <Input type="file" accept="image/png,image/jpeg" onChange={async (event) => { const selected = event.target.files?.[0]; if (selected) setSignatureImage(await fileToDataUrl(selected)); }} />}
       </div>
 
+      <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-secondary/40 p-2">
+        <div><p className="text-xs font-semibold">Orientação no documento</p><p className="text-[11px] text-muted-foreground">A prévia será mantida igual no PDF final.</p></div>
+        <Button type="button" size="sm" variant="outline" onClick={toggleOrientation}><RotateCw className="mr-1 size-4" />{orientation === "horizontal" ? "Horizontal" : "Vertical"}</Button>
+      </div>
+
       <div className="grid gap-2 sm:grid-cols-3">
         <Button type="button" size="sm" variant={geo ? "default" : "outline"} onClick={askLocation}><MapPin className="mr-1 size-4" />{geo ? "Localização adicionada" : "Adicionar localização"}</Button>
         <Label className="flex min-h-9 cursor-pointer items-center justify-center rounded-md border border-border px-3 text-xs font-semibold"><Camera className="mr-1 size-4" />{selfie ? "Selfie adicionada" : "Adicionar selfie"}<Input type="file" accept="image/*" capture="user" className="hidden" onChange={async (event) => { const selected = event.target.files?.[0]; if (selected) setSelfie(await fileToDataUrl(selected)); }} /></Label>
@@ -339,13 +441,16 @@ export function SelfSignPdf({ file, isAuthenticated, onResult }: { file: File; i
 
       <div className="overflow-auto rounded-lg bg-secondary/40 p-2">
         {loading || !current ? <div className="flex h-40 items-center justify-center"><Loader2 className="size-5 animate-spin text-muted-foreground" /></div> : (
-          <div className="relative mx-auto w-full max-w-[820px] touch-none bg-card shadow" style={{ aspectRatio: `${current.width}/${current.height}` }} onPointerDown={place}>
+           <div className="relative mx-auto w-full max-w-[820px] touch-none bg-card shadow" style={{ aspectRatio: `${current.width}/${current.height}` }} onPointerDown={place}>
             <img src={current.url} alt={`Página ${page + 1}`} draggable={false} className="pointer-events-none absolute inset-0 size-full" />
-            {position?.page === page && previewSignature() && <div className="absolute cursor-move border-2 border-primary bg-primary/5" style={{ left: `${(position.x / current.width) * 100}%`, top: `${(position.y / current.height) * 100}%`, width: `${(position.w / current.width) * 100}%`, height: `${(position.h / current.height) * 100}%` }} onPointerDown={(event) => { event.stopPropagation(); const rect = event.currentTarget.parentElement?.getBoundingClientRect(); if (!rect) return; event.currentTarget.setPointerCapture(event.pointerId); dragging.current = { dx: ((event.clientX - rect.left) / rect.width) * current.width - position.x, dy: ((event.clientY - rect.top) / rect.height) * current.height - position.y }; }} onPointerMove={movePosition} onPointerUp={() => { dragging.current = null; }} onPointerCancel={() => { dragging.current = null; }}><img src={previewSignature() ?? ""} alt="Assinatura posicionada" draggable={false} className="pointer-events-none size-full object-contain" /></div>}
+             {position?.page === page && previewSignature() && <div className="absolute cursor-move border-2 border-primary bg-primary/5" style={{ left: `${(position.x / current.width) * 100}%`, top: `${(position.y / current.height) * 100}%`, width: `${(position.w / current.width) * 100}%`, height: `${(position.h / current.height) * 100}%` }} onPointerDown={(event) => { event.stopPropagation(); const rect = event.currentTarget.parentElement?.getBoundingClientRect(); if (!rect) return; event.currentTarget.setPointerCapture(event.pointerId); dragging.current = { dx: ((event.clientX - rect.left) / rect.width) * current.width - position.x, dy: ((event.clientY - rect.top) / rect.height) * current.height - position.y }; }} onPointerMove={movePosition} onPointerUp={() => { dragging.current = null; }} onPointerCancel={() => { dragging.current = null; }}>
+               <img src={previewSignature() ?? ""} alt={`Assinatura ${position.orientation}`} draggable={false} className="pointer-events-none absolute left-1/2 top-1/2 object-contain" style={position.orientation === "vertical" ? { width: `${(position.h / position.w) * 100}%`, height: `${(position.w / position.h) * 100}%`, transform: "translate(-50%, -50%) rotate(90deg)" } : { width: "100%", height: "100%", transform: "translate(-50%, -50%)" }} />
+               <span aria-label="Redimensionar assinatura" className="absolute -bottom-2 -right-2 size-5 cursor-se-resize rounded-full border-2 border-background bg-primary" onPointerDown={(event) => { event.stopPropagation(); resizing.current = true; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={resizePosition} onPointerUp={() => { resizing.current = false; }} onPointerCancel={() => { resizing.current = false; }} />
+             </div>}
           </div>
         )}
       </div>
-      <p className="text-[11px] text-muted-foreground">Toque no documento para posicionar a assinatura. Depois arraste a marcação para ajustar o local.</p>
+      <p className="text-[11px] text-muted-foreground">Toque no ponto exato, arraste a marcação para mover e use a bolinha para ajustar o tamanho. A posição e a orientação serão mantidas no PDF final.</p>
 
       <Label className="flex items-start gap-2 text-xs font-normal"><Checkbox checked={accepted} onCheckedChange={(checked) => setAccepted(checked === true)} /><span>Declaro ser o signatário e concordo em assinar eletronicamente este documento. Autorizo a inclusão das provas opcionais escolhidas na página de evidências.</span></Label>
       {isAuthenticated ? <Label className="flex items-start gap-2 text-xs font-normal"><Checkbox checked={register} onCheckedChange={(checked) => setRegister(checked === true)} /><span>Salvar o PDF assinado na minha conta e ativar o código de verificação pública. Selfie, documento, CPF e localização não serão exibidos publicamente.</span></Label> : <p className="rounded-md border border-border bg-secondary/40 p-3 text-[11px] text-muted-foreground">Modo local: o PDF e as provas não serão enviados nem salvos no IDOC BUSINESS. Para ativar verificação pública, entre em uma conta antes de assinar.</p>}
