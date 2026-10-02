@@ -70,7 +70,10 @@ export function PrintScanConnector({ onScanned }: { onScanned: (file: File) => v
   useEffect(() => { void refresh(); }, []);
 
   async function pair() {
-    if (!pairCode.trim()) return toast.error("Digite o código mostrado pelo Conector IDOC no Windows.");
+    if (!pairCode.trim()) {
+      toast.error("Digite o código mostrado pelo Conector IDOC no Windows.");
+      return;
+    }
     setBusy("connect");
     try {
       const result = await connectorRequest<{ token: string }>("/pair", {
@@ -89,7 +92,10 @@ export function PrintScanConnector({ onScanned }: { onScanned: (file: File) => v
   }
 
   async function print() {
-    if (!printFile || !printer) return toast.error("Escolha o arquivo e a impressora.");
+    if (!printFile || !printer) {
+      toast.error("Escolha o arquivo e a impressora.");
+      return;
+    }
     setBusy("print");
     try {
       await connectorRequest("/print", {
