@@ -17,4 +17,4 @@
 
 - Store PDF placements in visible-page coordinates and transform them using the page rotation only at export, so preview and final output stay aligned.
 
-- Keep printer and scanner access in the opt-in Windows localhost connector; never upload visitor print or scan payloads to the backend.
+- Keep system printing and camera/file scan intake installation-free; the Windows localhost connector is optional for direct hardware access, and visitor payloads never go to the backend.

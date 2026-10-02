@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Download, FileUp, Loader2, Printer, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
+import { useRef, useState } from "react";
+import { Camera, Download, FileUp, Loader2, Printer, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -45,7 +45,8 @@ export function PrintScanConnector({ onScanned }: { onScanned: (file: File) => v
   const [printFile, setPrintFile] = useState<File | null>(null);
   const [copies, setCopies] = useState(1);
   const [busy, setBusy] = useState<"connect" | "print" | "scan" | null>(null);
-  const fallbackInput = useRef<HTMLInputElement>(null);
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const token = typeof window === "undefined" ? "" : window.localStorage.getItem(TOKEN_KEY) ?? "";
 
@@ -66,8 +67,6 @@ export function PrintScanConnector({ onScanned }: { onScanned: (file: File) => v
       setBusy(null);
     }
   }
-
-  useEffect(() => { void refresh(); }, []);
 
   async function pair() {
     if (!pairCode.trim()) {
@@ -116,6 +115,47 @@ export function PrintScanConnector({ onScanned }: { onScanned: (file: File) => v
     }
   }
 
+  function printWithDevice() {
+    if (!printFile) {
+      toast.error("Escolha um PDF, uma imagem ou um arquivo de texto.");
+      return;
+    }
+
+    const fileUrl = URL.createObjectURL(printFile);
+    const popup = window.open("", "_blank");
+    if (!popup) {
+      URL.revokeObjectURL(fileUrl);
+      toast.error("Permita a abertura de janelas para imprimir este arquivo.");
+      return;
+    }
+
+    if (printFile.type.startsWith("image/")) {
+      popup.document.write(`<!doctype html><html><head><title>${printFile.name.replace(/[<>]/g, "")}</title><style>html,body{margin:0}img{display:block;max-width:100%;margin:auto}@media print{img{max-width:100%;max-height:100vh}}</style></head><body><img src="${fileUrl}" alt=""></body></html>`);
+      popup.document.close();
+      const image = popup.document.querySelector("img");
+      image?.addEventListener("load", () => { popup.focus(); popup.print(); }, { once: true });
+    } else if (printFile.type === "text/plain") {
+      void printFile.text().then((content) => {
+        const text = popup.document.createElement("pre");
+        text.style.whiteSpace = "pre-wrap";
+        text.style.overflowWrap = "anywhere";
+        text.textContent = content;
+        popup.document.body.append(text);
+        popup.document.title = printFile.name;
+        popup.focus();
+        popup.print();
+      });
+    } else {
+      popup.location.href = fileUrl;
+      window.setTimeout(() => {
+        try { popup.focus(); popup.print(); } catch { /* The device PDF viewer exposes its own print action. */ }
+      }, 1200);
+    }
+
+    window.setTimeout(() => URL.revokeObjectURL(fileUrl), 60000);
+    toast.success("Arquivo aberto. Escolha a impressora disponível no aparelho.");
+  }
+
   async function scan() {
     setBusy("scan");
     try {
@@ -140,57 +180,41 @@ export function PrintScanConnector({ onScanned }: { onScanned: (file: File) => v
 
   return (
     <div className="space-y-4">
-      <section className="card-soft p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"><Printer className="size-5" /></span>
-            <div><h2 className="font-bold">Conector IDOC para Windows</h2><p className="mt-1 text-xs text-muted-foreground">Impressoras e scanners do computador, sem enviar o arquivo para armazenamento.</p></div>
-          </div>
-          <span className={`rounded-md px-2 py-1 text-xs font-semibold ${connected ? "bg-success/15 text-success" : "bg-warning/20 text-warning-foreground"}`}>
-            {connected ? `Conectado a ${status?.computer}` : status ? "Aguardando pareamento" : "Não instalado"}
-          </span>
-        </div>
-
-        {!status && (
-          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-            <div><p className="text-sm font-semibold">1. Instale no computador Windows 10/11</p><p className="mt-1 text-xs text-muted-foreground">Baixe, extraia a pasta e abra “Instalar Conector IDOC”.</p></div>
-            <Button asChild><a href="/idoc-connector-windows.zip" download><Download className="size-4" /> Baixar conector</a></Button>
-          </div>
-        )}
-
-        {status && !connected && (
-          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-            <div><Label htmlFor="pair-code">Código mostrado no Windows</Label><Input id="pair-code" value={pairCode} onChange={(event) => setPairCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="000000" /></div>
-            <Button onClick={pair} disabled={busy === "connect"}><ShieldCheck className="size-4" /> Parear computador</Button>
-          </div>
-        )}
-
-        <Button variant="ghost" size="sm" className="mt-3" onClick={refresh} disabled={busy === "connect"}><RefreshCw className={busy === "connect" ? "animate-spin" : ""} /> Verificar conexão</Button>
-      </section>
-
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="card-soft p-4 sm:p-5">
-          <div className="flex items-center gap-2"><Printer className="size-5 text-primary" /><h2 className="font-bold">Imprimir</h2></div>
+          <div className="flex items-center gap-2"><Printer className="size-5 text-primary" /><h2 className="font-bold">Imprimir sem instalar</h2></div>
+          <p className="mt-2 text-xs text-muted-foreground">Use as impressoras já disponíveis no celular ou computador, incluindo Wi-Fi e AirPrint.</p>
           <div className="mt-4 space-y-3">
-            <div><Label htmlFor="print-file">Documento ou imagem</Label><Input id="print-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt" onChange={(event) => setPrintFile(event.target.files?.[0] ?? null)} /></div>
-            <div><Label htmlFor="printer">Impressora</Label><select id="printer" value={printer} onChange={(event) => setPrinter(event.target.value)} disabled={!connected} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">{connected ? "Escolha" : "Conecte o computador primeiro"}</option>{printers.map((item) => <option key={item.name} value={item.name}>{item.name}{item.default ? " — padrão" : ""}</option>)}</select></div>
-            <div className="max-w-28"><Label htmlFor="copies">Cópias</Label><Input id="copies" type="number" min={1} max={20} value={copies} onChange={(event) => setCopies(Math.max(1, Math.min(20, Number(event.target.value) || 1)))} /></div>
-            <Button className="w-full" disabled={!connected || !printFile || busy === "print"} onClick={print}>{busy === "print" ? <Loader2 className="animate-spin" /> : <Printer />} Imprimir agora</Button>
-            {!connected && printFile && <Button variant="outline" className="w-full" onClick={() => { const url = URL.createObjectURL(printFile); const popup = window.open(url, "_blank"); popup?.addEventListener("load", () => popup.print(), { once: true }); setTimeout(() => URL.revokeObjectURL(url), 60000); }}>Usar impressão do navegador</Button>}
+            <div><Label htmlFor="print-file">PDF, imagem ou texto</Label><Input id="print-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,application/pdf,image/*,text/plain" onChange={(event) => setPrintFile(event.target.files?.[0] ?? null)} /></div>
+            <Button className="w-full" disabled={!printFile} onClick={printWithDevice}><Printer /> Escolher impressora</Button>
           </div>
         </section>
 
         <section className="card-soft p-4 sm:p-5">
-          <div className="flex items-center gap-2"><ScanLine className="size-5 text-primary" /><h2 className="font-bold">Digitalizar</h2></div>
-          <p className="mt-2 text-xs text-muted-foreground">O Windows abrirá a escolha do scanner e as configurações do equipamento.</p>
+          <div className="flex items-center gap-2"><ScanLine className="size-5 text-primary" /><h2 className="font-bold">Adicionar digitalização</h2></div>
+          <p className="mt-2 text-xs text-muted-foreground">Fotografe pelo celular ou escolha o PDF ou imagem criado pelo scanner.</p>
           <div className="mt-4 space-y-3">
-            <Button className="w-full" disabled={!connected || busy === "scan"} onClick={scan}>{busy === "scan" ? <Loader2 className="animate-spin" /> : <ScanLine />} Buscar imagem do scanner</Button>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />ou<span className="h-px flex-1 bg-border" /></div>
-            <Input ref={fallbackInput} type="file" accept="image/*,.pdf" capture="environment" className="hidden" onChange={(event) => useFallback(event.target.files?.[0])} />
-            <Button variant="outline" className="w-full" onClick={() => fallbackInput.current?.click()}><FileUp /> Usar câmera ou arquivo</Button>
+            <Input ref={cameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => useFallback(event.target.files?.[0])} />
+            <Input ref={fileInput} type="file" accept="image/*,.pdf,application/pdf" className="hidden" onChange={(event) => useFallback(event.target.files?.[0])} />
+            <Button className="w-full" onClick={() => cameraInput.current?.click()}><Camera /> Usar câmera</Button>
+            <Button variant="outline" className="w-full" onClick={() => fileInput.current?.click()}><FileUp /> Escolher arquivo do scanner</Button>
           </div>
         </section>
       </div>
+
+      <details className="card-soft p-4 sm:p-5" onToggle={(event) => { if (event.currentTarget.open) void refresh(); }}>
+        <summary className="cursor-pointer text-sm font-bold">Acesso direto no Windows (opcional)</summary>
+        <p className="mt-2 text-xs text-muted-foreground">O conector permite selecionar uma impressora e acionar scanners compatíveis diretamente.</p>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <span className={`rounded-md px-2 py-1 text-xs font-semibold ${connected ? "bg-success/15 text-success" : "bg-warning/20 text-warning-foreground"}`}>
+            {connected ? `Conectado a ${status?.computer}` : status ? "Aguardando pareamento" : "Não instalado"}
+          </span>
+          {!status && <Button asChild variant="outline"><a href="/idoc-connector-windows.zip" download><Download className="size-4" /> Baixar conector</a></Button>}
+        </div>
+        {status && !connected && <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end"><div><Label htmlFor="pair-code">Código mostrado no Windows</Label><Input id="pair-code" value={pairCode} onChange={(event) => setPairCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="000000" /></div><Button onClick={pair} disabled={busy === "connect"}><ShieldCheck className="size-4" /> Parear</Button></div>}
+        {connected && <div className="mt-4 grid gap-3 sm:grid-cols-2"><div><Label htmlFor="printer">Impressora</Label><select id="printer" value={printer} onChange={(event) => setPrinter(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm">{printers.map((item) => <option key={item.name} value={item.name}>{item.name}{item.default ? " — padrão" : ""}</option>)}</select></div><div className="max-w-28"><Label htmlFor="copies">Cópias</Label><Input id="copies" type="number" min={1} max={20} value={copies} onChange={(event) => setCopies(Math.max(1, Math.min(20, Number(event.target.value) || 1)))} /></div><Button disabled={!printFile || busy === "print"} onClick={print}>{busy === "print" ? <Loader2 className="animate-spin" /> : <Printer />} Imprimir direto</Button><Button variant="outline" disabled={busy === "scan"} onClick={scan}>{busy === "scan" ? <Loader2 className="animate-spin" /> : <ScanLine />} Digitalizar direto</Button></div>}
+        <Button variant="ghost" size="sm" className="mt-3" onClick={refresh} disabled={busy === "connect"}><RefreshCw className={busy === "connect" ? "animate-spin" : ""} /> Verificar conexão</Button>
+      </details>
     </div>
   );
 }
