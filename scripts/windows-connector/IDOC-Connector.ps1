@@ -90,11 +90,10 @@ while ($listener.IsListening) {
     }
     if ($path -eq "/scan" -and $ctx.Request.HttpMethod -eq "POST") {
       $dialog = New-Object -ComObject WIA.CommonDialog
-      $image = $dialog.ShowAcquireImage(1, 2, 0, $null, $true, $true, $false)
+      $jpegFormat = "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}"
+      $image = $dialog.ShowAcquireImage(1, 2, 0, $jpegFormat, $true, $true, $false)
       if (!$image) { Send-Error $ctx 409 "Digitalização cancelada."; continue }
       $extension = ".jpg"; $mime = "image/jpeg"
-      if ($image.FileExtension) { $extension = "." + $image.FileExtension.ToLower() }
-      if ($extension -eq ".png") { $mime = "image/png" } elseif ($extension -in @(".tif", ".tiff")) { $mime = "image/tiff" } elseif ($extension -eq ".bmp") { $mime = "image/bmp" }
       $tempFile = Join-Path $env:TEMP ("digitalizacao-idoc-" + (Get-Date -Format "yyyyMMdd-HHmmss") + $extension)
       $image.SaveFile($tempFile)
       $data = [Convert]::ToBase64String([IO.File]::ReadAllBytes($tempFile))
