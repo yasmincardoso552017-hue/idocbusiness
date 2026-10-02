@@ -271,13 +271,13 @@ export function SelfSignPdf({ file, isAuthenticated, onResult }: { file: File; i
     const cleanName = name.trim();
     const cleanEmail = email.trim().toLowerCase();
     const cpfDigits = cpf.replace(/\D/g, "");
-    if (cleanName.length < 2 || cleanName.length > 150) return toast.error("Informe seu nome completo");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) || cleanEmail.length > 255) return toast.error("Informe um e-mail válido");
-    if (cpfDigits && cpfDigits.length !== 11) return toast.error("Informe um CPF válido com 11 números ou deixe em branco");
+    if (cleanName.length < 2 || cleanName.length > 150) { toast.error("Informe seu nome completo"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) || cleanEmail.length > 255) { toast.error("Informe um e-mail válido"); return; }
+    if (cpfDigits && cpfDigits.length !== 11) { toast.error("Informe um CPF válido com 11 números ou deixe em branco"); return; }
     const signature = previewSignature();
-    if (!signature) return toast.error("Crie ou escolha sua assinatura");
-    if (!position) return toast.error("Toque no documento para posicionar a assinatura");
-    if (!accepted) return toast.error("Confirme a declaração de autoria para assinar");
+    if (!signature) { toast.error("Crie ou escolha sua assinatura"); return; }
+    if (!position) { toast.error("Toque no documento para posicionar a assinatura"); return; }
+    if (!accepted) { toast.error("Confirme a declaração de autoria para assinar"); return; }
     setBusy(true);
     try {
       const originalBytes = new Uint8Array(await file.arrayBuffer());

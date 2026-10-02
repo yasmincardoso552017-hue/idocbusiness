@@ -20,3 +20,6 @@
 - [ ] Conectar Google Drive e Dropbox por usuário na Central de Integrações.
 - [ ] Permitir copiar pastas e documentos nos dois sentidos com confirmação e histórico.
 - [ ] Aplicar armazenamento híbrido: processamento local, contratos ativos no Cloud e arquivamento externo.
+- [x] Criar Central de Impressão e Digitalização para Windows 10/11 com pareamento local.
+- [x] Enviar imagens do scanner diretamente para as ferramentas de tratamento de documentos.
+- [ ] Validar o conector em impressoras e scanners físicos de fabricantes diferentes no Windows.

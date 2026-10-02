@@ -62,7 +62,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
       <div className="card-soft max-w-md p-6 text-center">
         <ShieldCheck className="mx-auto mb-3 size-9 text-destructive" />
         <h1 className="text-lg font-bold">Não foi possível abrir esta autorização</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{error instanceof Error ? error.message : "A autorização não pôde ser carregada."}</p>
       </div>
     </main>
   ),

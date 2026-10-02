@@ -2,7 +2,7 @@ import { PublicSiteLayout } from "@/components/PublicSiteChrome";
 import { Button } from "@/components/ui/button";
 import { publicToolList } from "@/lib/public-tools";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, Printer } from "lucide-react";
 
 const SITE = "https://idoc.business/ferramentas";
 
@@ -44,6 +44,12 @@ function ToolsDirectory() {
                 <div className="flex flex-1 flex-col p-5"><div className="flex items-center justify-between gap-3"><span className={`flex size-10 items-center justify-center rounded-md text-primary-foreground ${tool.iconClass}`}><Icon className="size-5" /></span>{tool.slug === "tratar-documento" && <span className="rounded-full bg-warning px-2.5 py-1 text-[10px] font-extrabold uppercase text-warning-foreground">Novidade</span>}</div><h2 className="mt-4 text-lg font-extrabold">{tool.shortTitle}</h2><p className="mt-2 flex-1 text-xs leading-relaxed text-muted-foreground">{tool.description}</p><Link to="/ferramentas/$slug" params={{ slug: tool.slug }} className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary">Conhecer a ferramenta <ArrowRight className="size-4" /></Link></div>
               </article>
             ); })}
+            <article className="flex flex-col rounded-lg border border-border bg-card p-5 shadow-soft">
+              <span className="flex size-10 items-center justify-center rounded-md bg-tool-ocr text-primary-foreground"><Printer className="size-5" /></span>
+              <h2 className="mt-4 text-lg font-extrabold">Imprimir e digitalizar</h2>
+              <p className="mt-2 flex-1 text-xs leading-relaxed text-muted-foreground">Conecte impressoras e scanners do Windows, imprima documentos e abra digitalizações nas ferramentas.</p>
+              <Link to="/ferramentas/imprimir-digitalizar" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary">Abrir a central <ArrowRight className="size-4" /></Link>
+            </article>
           </div>
         </section>
         <section className="border-t border-border bg-secondary/50"><div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-5 px-4 py-12 sm:px-6 md:flex-row md:items-center"><div><h2 className="text-2xl font-extrabold">Pronto para trabalhar no seu documento?</h2><p className="mt-2 text-sm text-muted-foreground">Crie sua conta e abra a central completa de ferramentas.</p></div><Button asChild size="lg"><Link to="/auth">Começar grátis <ArrowRight /></Link></Button></div></section>
