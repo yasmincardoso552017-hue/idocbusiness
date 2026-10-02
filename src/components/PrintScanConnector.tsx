@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Camera, Download, FileUp, Loader2, Printer, RefreshCw, ScanLine, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -67,12 +67,6 @@ export function PrintScanConnector({ onScanned }: { onScanned: (file: File) => v
       setBusy(null);
     }
   }
-
-  useEffect(() => {
-    return () => {
-      if (printFile) URL.revokeObjectURL(URL.createObjectURL(printFile));
-    };
-  }, [printFile]);
 
   async function pair() {
     if (!pairCode.trim()) {
