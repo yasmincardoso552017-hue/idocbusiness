@@ -22,4 +22,5 @@
 - [ ] Aplicar armazenamento híbrido: processamento local, contratos ativos no Cloud e arquivamento externo.
 - [x] Criar Central de Impressão e Digitalização para Windows 10/11 com pareamento local.
 - [x] Enviar imagens do scanner diretamente para as ferramentas de tratamento de documentos.
+- [x] Permitir impressão pelo sistema e entrada por câmera/arquivo sem instalar o conector.
 - [ ] Validar o conector em impressoras e scanners físicos de fabricantes diferentes no Windows.
