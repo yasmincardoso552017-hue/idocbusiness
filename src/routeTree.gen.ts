@@ -20,6 +20,7 @@ import { Route as VerifyRouteImport } from './routes/verify'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as FerramentasIndexRouteImport } from './routes/ferramentas.index'
 import { Route as FerramentasSlugRouteImport } from './routes/ferramentas.$slug'
+import { Route as FerramentasImprimirDigitalizarRouteImport } from './routes/ferramentas.imprimir-digitalizar'
 import { Route as PastaTokenRouteImport } from './routes/pasta.$token'
 import { Route as SignTokenRouteImport } from './routes/sign.$token'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
@@ -96,6 +97,12 @@ const FerramentasSlugRoute = FerramentasSlugRouteImport.update({
   path: '/ferramentas/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FerramentasImprimirDigitalizarRoute =
+  FerramentasImprimirDigitalizarRouteImport.update({
+    id: '/ferramentas/imprimir-digitalizar',
+    path: '/ferramentas/imprimir-digitalizar',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PastaTokenRoute = PastaTokenRouteImport.update({
   id: '/pasta/$token',
   path: '/pasta/$token',
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/verify': typeof VerifyRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ferramentas/$slug': typeof FerramentasSlugRoute
+  '/ferramentas/imprimir-digitalizar': typeof FerramentasImprimirDigitalizarRoute
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/ferramentas/': typeof FerramentasIndexRoute
@@ -251,6 +259,7 @@ export interface FileRoutesByTo {
   '/verify': typeof VerifyRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ferramentas/$slug': typeof FerramentasSlugRoute
+  '/ferramentas/imprimir-digitalizar': typeof FerramentasImprimirDigitalizarRoute
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/ferramentas': typeof FerramentasIndexRoute
@@ -285,6 +294,7 @@ export interface FileRoutesById {
   '/verify': typeof VerifyRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/ferramentas/$slug': typeof FerramentasSlugRoute
+  '/ferramentas/imprimir-digitalizar': typeof FerramentasImprimirDigitalizarRoute
   '/pasta/$token': typeof PastaTokenRoute
   '/sign/$token': typeof SignTokenRoute
   '/ferramentas/': typeof FerramentasIndexRoute
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/verify'
     | '/.well-known/oauth-protected-resource'
     | '/ferramentas/$slug'
+    | '/ferramentas/imprimir-digitalizar'
     | '/pasta/$token'
     | '/sign/$token'
     | '/ferramentas/'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/verify'
     | '/.well-known/oauth-protected-resource'
     | '/ferramentas/$slug'
+    | '/ferramentas/imprimir-digitalizar'
     | '/pasta/$token'
     | '/sign/$token'
     | '/ferramentas'
@@ -384,6 +396,7 @@ export interface FileRouteTypes {
     | '/verify'
     | '/.well-known/oauth-protected-resource'
     | '/ferramentas/$slug'
+    | '/ferramentas/imprimir-digitalizar'
     | '/pasta/$token'
     | '/sign/$token'
     | '/ferramentas/'
@@ -418,6 +431,7 @@ export interface RootRouteChildren {
   VerifyRoute: typeof VerifyRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   FerramentasSlugRoute: typeof FerramentasSlugRoute
+  FerramentasImprimirDigitalizarRoute: typeof FerramentasImprimirDigitalizarRoute
   PastaTokenRoute: typeof PastaTokenRoute
   SignTokenRoute: typeof SignTokenRoute
   FerramentasIndexRoute: typeof FerramentasIndexRoute
@@ -502,6 +516,13 @@ declare module '@tanstack/react-router' {
       path: '/ferramentas/$slug'
       fullPath: '/ferramentas/$slug'
       preLoaderRoute: typeof FerramentasSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ferramentas/imprimir-digitalizar': {
+      id: '/ferramentas/imprimir-digitalizar'
+      path: '/ferramentas/imprimir-digitalizar'
+      fullPath: '/ferramentas/imprimir-digitalizar'
+      preLoaderRoute: typeof FerramentasImprimirDigitalizarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pasta/$token': {
@@ -702,6 +723,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   FerramentasSlugRoute: FerramentasSlugRoute,
+  FerramentasImprimirDigitalizarRoute: FerramentasImprimirDigitalizarRoute,
   PastaTokenRoute: PastaTokenRoute,
   SignTokenRoute: SignTokenRoute,
   FerramentasIndexRoute: FerramentasIndexRoute,

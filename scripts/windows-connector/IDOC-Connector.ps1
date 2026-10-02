@@ -59,6 +59,7 @@ while ($listener.IsListening) {
     if ($origin) { $ctx.Response.Headers.Add("Access-Control-Allow-Origin", $origin); $ctx.Response.Headers.Add("Vary", "Origin") }
     $ctx.Response.Headers.Add("Access-Control-Allow-Headers", "authorization, content-type")
     $ctx.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+    $ctx.Response.Headers.Add("Access-Control-Allow-Private-Network", "true")
     if ($ctx.Request.HttpMethod -eq "OPTIONS") { $ctx.Response.StatusCode = 204; $ctx.Response.Close(); continue }
 
     $path = $ctx.Request.Url.AbsolutePath
