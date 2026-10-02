@@ -16,3 +16,5 @@
 - Keep self-signing local by default; only authenticated users may persist the signed PDF and minimal public verification record, because sensitive evidence must remain private.
 
 - Store PDF placements in visible-page coordinates and transform them using the page rotation only at export, so preview and final output stay aligned.
+
+- Keep printer and scanner access in the opt-in Windows localhost connector; never upload visitor print or scan payloads to the backend.

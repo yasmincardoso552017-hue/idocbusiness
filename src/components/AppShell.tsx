@@ -19,6 +19,7 @@ import {
   BellRing,
   KeyRound,
   Scale,
+  Printer,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -61,6 +62,7 @@ const menu = [
   { to: "/app/compartilhadas", label: "Pastas compartilhadas (SKU)", icon: KeyRound },
   { to: "/app/lembretes", label: "Lembretes e notificações", icon: BellRing },
   { to: "/app/ferramentas", label: "Ferramentas PDF", icon: Wrench },
+  { to: "/ferramentas/imprimir-digitalizar", label: "Imprimir e digitalizar", icon: Printer },
   { to: "/app/configuracoes", label: "Configurações", icon: Settings },
   { to: "/app/integracoes", label: "Integrações", icon: Plug },
   { to: "/app/seguranca", label: "Segurança", icon: ShieldCheck },

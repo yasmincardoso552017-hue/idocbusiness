@@ -283,12 +283,12 @@ function FileField({
   );
 }
 
-export function PdfTools({ initialTool: requestedTool, isAuthenticated = false }: { initialTool?: string; isAuthenticated?: boolean }) {
+export function PdfTools({ initialTool: requestedTool, initialFiles = [], isAuthenticated = false }: { initialTool?: string; initialFiles?: File[]; isAuthenticated?: boolean }) {
   const initialCategory = CATS.find((category) => category.tools.some((item) => item.id === requestedTool));
   const initialTool = initialCategory?.tools.find((item) => item.id === requestedTool)?.id as ToolId | undefined;
   const [cat, setCat] = useState<string>(initialCategory?.id ?? "org");
   const [tool, setTool] = useState<ToolId>(initialTool ?? "merge");
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>(initialFiles);
   const [busy, setBusy] = useState(false);
   const [range, setRange] = useState("1-2");
   const [removeSpec, setRemoveSpec] = useState("1");
