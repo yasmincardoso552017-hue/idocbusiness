@@ -1,5 +1,9 @@
 # Roadmap
 
+- [ ] Revisar as ferramentas públicas e corrigir falhas reproduzíveis com testes de regressão.
+- [ ] Reorganizar a página inicial com prioridade para acesso direto às ferramentas.
+- [ ] Validar os fluxos corrigidos e a página inicial em celular e computador.
+
 - [x] Adicionar Tratar documento às páginas públicas e ao SEO.
 - [x] Criar cartaz de novidade na página inicial.
 - [x] Atualizar painel, sitemap e manual.
