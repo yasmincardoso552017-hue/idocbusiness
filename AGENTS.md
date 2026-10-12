@@ -18,3 +18,6 @@
 - Store PDF placements in visible-page coordinates and transform them using the page rotation only at export, so preview and final output stay aligned.
 
 - Keep system printing and camera/file scan intake installation-free; the Windows localhost connector is optional for direct hardware access, and visitor payloads never go to the backend.
+
+- Share action-specific tool diagrams through ToolIllustration so public catalogs retain consistent visual explanations without duplicated assets.
+- Use the shared bounded page-range parser and require complete previews before workbench export, because malformed ranges and partial loads must not silently lose pages.
