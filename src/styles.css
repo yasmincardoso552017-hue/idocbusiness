@@ -55,10 +55,12 @@
   --color-tool-security: var(--tool-security);
   --color-tool-optimize: var(--tool-optimize);
   --color-tool-ocr: var(--tool-ocr);
+  --color-paper: var(--paper);
   --shadow-soft: 0 1px 2px oklch(0.25 0.05 250 / 6%), 0 8px 24px oklch(0.25 0.05 250 / 6%);
 }
 
 :root {
+  --paper: oklch(1 0 0);
   --radius: 0.875rem;
   --background: oklch(0.985 0.004 250);
   --foreground: oklch(0.22 0.03 255);
@@ -157,6 +159,16 @@
     -webkit-font-smoothing: antialiased;
   }
 }
+
+.tool-art { color: var(--primary); }
+.tool-art-label { fill: var(--muted-foreground); font: 10px var(--font-sans); }
+.tool-art-organize { color: var(--tool-organize); }
+.tool-art-convert { color: var(--tool-convert); }
+.tool-art-edit { color: var(--tool-edit); }
+.tool-art-sign { color: var(--tool-sign); }
+.tool-art-security { color: var(--tool-security); }
+.tool-art-optimize { color: var(--tool-optimize); }
+.tool-art-ocr { color: var(--tool-ocr); }
 
 @utility card-soft {
   background-color: var(--color-card);
