@@ -3,6 +3,8 @@
 - [ ] Revisar as ferramentas públicas e corrigir falhas reproduzíveis com testes de regressão.
 - [ ] Reorganizar a página inicial com prioridade para acesso direto às ferramentas.
 - [ ] Validar os fluxos corrigidos e a página inicial em celular e computador.
+- [ ] Inventariar todas as ferramentas e rotas; registrar matriz de testes executados e limites.
+- [ ] Criar ilustrações individuais e categorias pesquisáveis na página inicial.
 
 - [x] Adicionar Tratar documento às páginas públicas e ao SEO.
 - [x] Criar cartaz de novidade na página inicial.
