@@ -181,8 +181,7 @@ export const submitSignature = createServerFn({ method: "POST" })
     if (needPhoto && !data.photoId)
       throw new Error("Envie a foto do documento de identificação");
     if (needSelfie && !data.selfie) throw new Error("Envie a selfie de verificação");
-    if (["voided", "cancelled", "declined"].includes(req.status)) return { error: "Solicitação cancelada" as const };
-    if (signer.status !== "signed" && req.expires_at && new Date(req.expires_at) < new Date()) throw new Error("Link expirado");
+    if (req.expires_at && new Date(req.expires_at) < new Date()) throw new Error("Link expirado");
 
     const { data: others } = await db
       .from("signers")
@@ -398,7 +397,7 @@ export const getSignedDocument = createServerFn({ method: "POST" })
       .select("id, name, status, signed_storage_path, storage_path")
       .eq("id", rel.document_id)
       .single();
-    if (!doc) return { ready: false as const };
+    if (!doc) throw new Error("Documento não encontrado");
     const { data: ev } = await db
       .from("document_evidence")
       .select("verification_code, final_hash")

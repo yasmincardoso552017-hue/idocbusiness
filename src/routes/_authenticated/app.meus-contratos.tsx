@@ -1,3 +1,4 @@
+import { SignedPdfActions } from "@/components/PdfFileAccess";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Eye, FileCheck2, Loader2 } from "lucide-react";
@@ -29,30 +30,13 @@ export const Route = createFileRoute("/_authenticated/app/meus-contratos")({
 });
 
 function MyContracts() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["my-claimed-docs"],
     queryFn: () => myClaimedDocuments(),
   });
 
   const items = data?.items ?? [];
 
-  const openSignedDocument = async (documentId: string, download: boolean) => {
-    const previewWindow = download ? null : window.open("", "_blank");
-    try {
-      const result = await getMySignedDocumentUrl({ data: { documentId, download } });
-      if (download) {
-        window.location.assign(result.url);
-      } else if (previewWindow) {
-        previewWindow.opener = null;
-        previewWindow.location.href = result.url;
-      } else {
-        window.location.assign(result.url);
-      }
-    } catch (error) {
-      previewWindow?.close();
-      toast.error(error instanceof Error ? error.message : "Não foi possível abrir a via assinada");
-    }
-  };
 
   return (
     <AppShell title="Meus contratos">
@@ -80,14 +64,7 @@ function MyContracts() {
               </div>
             </div>
             {d.url ? (
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => void openSignedDocument(d.id, false)}>
-                  <Eye className="mr-1 size-3.5" /> Ver contrato
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => void openSignedDocument(d.id, true)}>
-                  <Download className="mr-1 size-3.5" /> Baixar PDF
-                </Button>
-              </div>
+              <SignedPdfActions name={d.name} resolve={(download) => getMySignedDocumentUrl({ data: { documentId: d.id, download } })} />
             ) : (
               <p className="text-[11px] text-muted-foreground">
                 Aguardando as demais assinaturas para gerar o PDF final.
@@ -96,7 +73,8 @@ function MyContracts() {
           </div>
         ))}
 
-        {!isLoading && !items.length ? (
+        {isError && <p role="alert" className="text-sm text-destructive">Não foi possível carregar seus contratos. Tente novamente.</p>}
+        {!isLoading && !isError && !items.length ? (
           <p className="py-8 text-center text-sm text-muted-foreground">
             Você ainda não tem contratos assinados nesta conta.
           </p>
