@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Corrigir visualização e download de vias assinadas pelo link seguro e nas áreas autenticadas, sem acesso global de administrador.
+- [x] Testar regras de acesso autorizado, links revogados e isolamento entre contas; validar prévia e download com PDF sintético.
+- [ ] Validar ponta a ponta com contrato da conta autenticada — bloqueado pela ausência de sessão autorizada; requer login no preview.
+
 - [ ] Revisar as ferramentas públicas e corrigir falhas reproduzíveis com testes de regressão.
 - [ ] Reorganizar a página inicial com prioridade para acesso direto às ferramentas.
 - [ ] Validar os fluxos corrigidos e a página inicial em celular e computador.

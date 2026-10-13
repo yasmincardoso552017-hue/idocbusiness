@@ -1,3 +1,4 @@
+import { usePdfFileAccess } from "@/components/PdfFileAccess";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Copy, Download, Eye, Plus, Send, Trash2, Ban, RefreshCw, ShieldCheck, MessageCircle, Mail } from "lucide-react";
@@ -110,23 +111,10 @@ export function ContractEnvelopeDialog({
   const [signers, setSigners] = useState<SignerDraft[]>([{ name: "", email: "", phone: "", cpf: "" }]);
   const [deliveryLinks, setDeliveryLinks] = useState<Array<{ name: string; email: string; phone: string | null; url: string }>>([]);
 
-  const openContractFile = async (download: boolean) => {
-    const previewWindow = download ? null : window.open("", "_blank");
-    try {
-      const result = await getContractFileUrl({ data: { contractId, download } });
-      if (download) {
-        window.location.assign(result.url);
-      } else if (previewWindow) {
-        previewWindow.opener = null;
-        previewWindow.location.href = result.url;
-      } else {
-        window.location.assign(result.url);
-      }
-    } catch (error) {
-      previewWindow?.close();
-      toast.error(error instanceof Error ? error.message : "Não foi possível abrir o contrato");
-    }
-  };
+  const pdfAccess = usePdfFileAccess();
+  const openContractFile = (download: boolean) => pdfAccess.openFile(
+    (download) => getContractFileUrl({ data: { contractId, download } }), contractName, download,
+  );
 
   const envelope = useQuery({
     queryKey: ["contract-envelope", contractId],
@@ -227,6 +215,8 @@ export function ContractEnvelopeDialog({
   }
 
   return (
+    <>
+    {pdfAccess.viewer}
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[88vh] overflow-y-auto">
         <DialogHeader>
@@ -518,5 +508,6 @@ export function ContractEnvelopeDialog({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

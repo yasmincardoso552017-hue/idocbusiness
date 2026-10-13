@@ -1,3 +1,4 @@
+import { usePdfFileAccess } from "@/components/PdfFileAccess";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -48,6 +49,14 @@ import { folderFileUrl } from "@/lib/vault.functions";
 export const Route = createFileRoute("/_authenticated/app/empresas/$companyId")({
   validateSearch: (s: Record<string, unknown>): { folder?: string } =>
     typeof s['folder'] === "string" && s['folder'] ? { folder: s['folder'] } : {},
+  head: () => ({ meta: [
+    { title: "Documentos da empresa | IDOC BUSINESS" },
+    { name: "description", content: "Organize e consulte documentos e contratos assinados da sua empresa." },
+    { property: "og:title", content: "Documentos da empresa | IDOC BUSINESS" },
+    { property: "og:description", content: "Gestão privada de pastas, documentos e contratos da empresa." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: CompanyDetail,
 });
 
@@ -260,24 +269,10 @@ function CompanyDetail() {
     }
   };
 
-  const openFile = async (d: Doc, download = false) => {
-    const previewWindow = download ? null : window.open("", "_blank");
-    try {
-      const result = await folderFileUrl({ data: { documentId: d.id, download } });
-      if (!result.url) throw new Error("Arquivo indisponível");
-      if (download) {
-        window.location.assign(result.url);
-      } else if (previewWindow) {
-        previewWindow.opener = null;
-        previewWindow.location.href = result.url;
-      } else {
-        window.location.assign(result.url);
-      }
-    } catch (error) {
-      previewWindow?.close();
-      toast.error(error instanceof Error ? error.message : "Arquivo indisponível");
-    }
-  };
+  const pdfAccess = usePdfFileAccess();
+  const openFile = (doc: Doc, download = false) => pdfAccess.openFile(
+    (download) => folderFileUrl({ data: { documentId: doc.id, download } }), doc.name, download,
+  );
 
   const sendToSignature = async (docId: string) => {
     const { data: u } = await supabase.auth.getUser();
@@ -807,6 +802,7 @@ function CompanyDetail() {
           onOpenChange={(o) => !o && setEnvelopeFor(null)}
         />
       )}
+      {pdfAccess.viewer}
       {dialog}
     </AppShell>
   );

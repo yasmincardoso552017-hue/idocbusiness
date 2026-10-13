@@ -21,3 +21,4 @@
 
 - Share action-specific tool diagrams through ToolIllustration so public catalogs retain consistent visual explanations without duplicated assets.
 - Use the shared bounded page-range parser and require complete previews before workbench export, because malformed ranges and partial loads must not silently lose pages.
+- Share signed-PDF viewing and download controls through PdfFileAccess; authorize public copies by signed, non-revoked signer token and account copies by owner or verified signer identity, never by a global admin bypass.
