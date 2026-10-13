@@ -3,6 +3,7 @@ import { getRequest, getRequestHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { canClaimSignedCopy, canReadTokenSignedCopy } from "./signed-copy-access";
 
 import {
   admin,
@@ -49,7 +50,8 @@ export const getSigningSession = createServerFn({ method: "POST" })
         companies: { razao_social: string; nome_fantasia: string | null } | null;
       };
     };
-    if (req.expires_at && new Date(req.expires_at) < new Date())
+    if (["voided", "cancelled", "declined"].includes(req.status)) return { error: "Solicitação cancelada" as const };
+    if (signer.status !== "signed" && req.expires_at && new Date(req.expires_at) < new Date())
       return { error: "Link expirado" as const };
 
     const { data: allSigners } = await db
@@ -179,7 +181,8 @@ export const submitSignature = createServerFn({ method: "POST" })
     if (needPhoto && !data.photoId)
       throw new Error("Envie a foto do documento de identificação");
     if (needSelfie && !data.selfie) throw new Error("Envie a selfie de verificação");
-    if (req.expires_at && new Date(req.expires_at) < new Date()) throw new Error("Link expirado");
+    if (["voided", "cancelled", "declined"].includes(req.status)) return { error: "Solicitação cancelada" as const };
+    if (signer.status !== "signed" && req.expires_at && new Date(req.expires_at) < new Date()) throw new Error("Link expirado");
 
     const { data: others } = await db
       .from("signers")
@@ -379,17 +382,17 @@ export const dispatchSigningRequest = createServerFn({ method: "POST" })
 
 /** Retorna a via assinada do documento para o signatário, após a conclusão. */
 export const getSignedDocument = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ token: z.string().min(8) }).parse(d))
+  .inputValidator((d) => z.object({ token: z.string().min(8), download: z.boolean().default(false) }).parse(d))
   .handler(async ({ data }) => {
     const db = await admin();
     const { data: signer } = await db
       .from("signers")
-      .select("id, status, request_id, signing_requests(document_id)")
+      .select("id, status, revoked, request_id, signing_requests(document_id, status)")
       .eq("token", data.token)
       .maybeSingle();
-    if (!signer) return { ready: false as const };
-    const rel = signer.signing_requests as unknown as { document_id: string } | null;
-    if (!rel) return { ready: false as const };
+    if (!signer) throw new Error("Link inválido ou sem acesso");
+    const rel = signer.signing_requests as unknown as { document_id: string; status: string } | null;
+    if (!rel || !canReadTokenSignedCopy(signer, rel.status)) throw new Error("Link inválido, revogado ou sem acesso à via assinada");
     const { data: doc } = await db
       .from("documents")
       .select("id, name, status, signed_storage_path, storage_path")
@@ -404,10 +407,9 @@ export const getSignedDocument = createServerFn({ method: "POST" })
     const path = doc.signed_storage_path ?? null;
     let url: string | null = null;
     if (path) {
-      const signed = await db.storage.from("documents").createSignedUrl(path, 3600, {
-        download: pdfFileName(doc.name),
-      });
-      url = signed.data?.signedUrl ?? null;
+      const signed = await db.storage.from("documents").createSignedUrl(path, 900, data.download ? { download: pdfFileName(doc.name) } : undefined);
+      if (signed.error || !signed.data?.signedUrl) throw new Error("Não foi possível abrir a via assinada. Tente novamente.");
+      url = signed.data.signedUrl;
     }
     return {
       ready: !!path,
@@ -428,10 +430,12 @@ export const claimSignedCopy = createServerFn({ method: "POST" })
     const db = await admin();
     const { data: signer } = await db
       .from("signers")
-      .select("id, name, email, status, request_id, signing_requests(document_id)")
+      .select("id, name, email, status, revoked, claimed_by, request_id, signing_requests(document_id)")
       .eq("token", data.token)
       .maybeSingle();
     if (!signer) return { ready: false as const, error: "Link inválido" };
+    const email = String((context.claims as { email?: string } | null)?.email ?? "");
+    if (!canClaimSignedCopy(signer, context.userId, email)) return { ready: false as const, error: "Entre com a conta do signatário para vincular este contrato." };
     const rel = signer.signing_requests as unknown as { document_id: string } | null;
     if (!rel) return { ready: false as const, error: "Documento não encontrado" };
     const { data: doc } = await db
@@ -469,12 +473,14 @@ export const myClaimedDocuments = createServerFn({ method: "POST" })
     const email = String((context.claims as { email?: string } | null)?.email ?? "").toLowerCase();
     let query = db
       .from("signers")
-      .select("id, name, email, status, signed_at, claimed_by, request_id, signing_requests(document_id)")
+      .select("id, name, email, status, revoked, signed_at, claimed_by, request_id, signing_requests(document_id)")
       .eq("status", "signed");
     query = email
       ? query.or(`claimed_by.eq.${context.userId},email.ilike.${email}`)
       : query.eq("claimed_by", context.userId);
-    const { data: rows } = await query;
+    const { data: candidates, error } = await query;
+    if (error) throw new Error("Não foi possível carregar seus contratos");
+    const rows = (candidates ?? []).filter((row) => canClaimSignedCopy(row, context.userId, email));
     const docIds = Array.from(
       new Set(
         (rows ?? [])
@@ -526,13 +532,13 @@ export const getMySignedDocumentUrl = createServerFn({ method: "POST" })
     const email = String((context.claims as { email?: string } | null)?.email ?? "").toLowerCase();
     const { data: signers, error: signerError } = await db
       .from("signers")
-      .select("id, email, claimed_by, signing_requests(document_id)")
+      .select("id, status, revoked, email, claimed_by, signing_requests(document_id)")
       .eq("status", "signed");
     if (signerError) throw new Error("Não foi possível validar o acesso ao contrato");
     const signer = (signers ?? []).find((row) => {
       const relation = row.signing_requests as unknown as { document_id: string } | null;
       const belongsToDocument = relation?.document_id === data.documentId;
-      const belongsToUser = row.claimed_by === context.userId || (!!email && row.email.toLowerCase() === email);
+      const belongsToUser = canClaimSignedCopy(row, context.userId, email);
       return belongsToDocument && belongsToUser;
     });
     if (!signer) throw new Error("Contrato não encontrado ou sem acesso");

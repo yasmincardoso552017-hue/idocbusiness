@@ -1,3 +1,5 @@
+import { SignedPdfActions } from "@/components/PdfFileAccess";
+import { folderFileUrl } from "@/lib/vault.functions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -28,13 +30,14 @@ function Signatures() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
 
-  const { data } = useQuery({
+  const { data, isPending, isError } = useQuery({
     queryKey: ["requests"],
     queryFn: async () => {
-      const { data: reqs } = await supabase
+      const { data: reqs, error } = await supabase
         .from("signing_requests")
         .select("*, documents(id, name, status, signed_storage_path)")
         .order("created_at", { ascending: false });
+      if (error) throw new Error("Não foi possível carregar as assinaturas");
       const ids = (reqs ?? []).map((r) => r.id);
       const { data: signers } = ids.length
         ? await supabase.from("signers").select("*").in("request_id", ids).order("order_index")
@@ -54,18 +57,6 @@ function Signatures() {
   const pending = (data?.reqs ?? []).filter((r) => ["sent", "partially_signed"].includes(r.status)).length;
   const done = (data?.reqs ?? []).filter((r) => r.status === "completed").length;
 
-  async function download(path: string, name: string) {
-    const { data: file, error } = await supabase.storage.from("documents").download(path);
-    if (error || !file) { toast.error("Não foi possível baixar o arquivo"); return; }
-    const url = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
 
   return (
     <AppShell title="Assinaturas">
@@ -147,13 +138,7 @@ function Signatures() {
                     </Button>
                   )}
                   {doc?.signed_storage_path && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                     onClick={() => doc.signed_storage_path && download(doc.signed_storage_path, `assinado-${doc.name}`)}
-                    >
-                      <Download className="mr-1 size-3.5" /> PDF assinado
-                    </Button>
+                    <SignedPdfActions name={doc.name} resolve={(download) => folderFileUrl({ data: { documentId: doc.id, download } })} />
                   )}
                   {ev && (
                     <Button size="sm" variant="ghost" asChild>
@@ -166,7 +151,9 @@ function Signatures() {
               </div>
             );
           })}
-          {reqs.length === 0 && (
+          {isPending && <p role="status" className="py-8 text-center text-sm text-muted-foreground">Carregando assinaturas…</p>}
+          {isError && <p role="alert" className="py-8 text-center text-sm text-destructive">Não foi possível carregar as assinaturas. Tente novamente.</p>}
+          {!isPending && !isError && reqs.length === 0 && (
             <p className="py-8 text-center text-sm text-muted-foreground">
                Nenhum processo de assinatura. Abra uma empresa, escolha um documento e envie para assinatura.
             </p>

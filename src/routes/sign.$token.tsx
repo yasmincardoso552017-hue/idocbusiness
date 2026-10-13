@@ -1,3 +1,4 @@
+import { SignedPdfActions } from "@/components/PdfFileAccess";
 import { Brand } from "@/components/Brand";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -39,6 +40,8 @@ export const Route = createFileRoute("/sign/$token")({
         content: "Assinatura eletrônica segura com evidências e verificação pública.",
       },
       { name: "robots", content: "noindex" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SignPage,
@@ -565,116 +568,54 @@ function CaptureRow({
   );
 }
 
-/** Tela pós-assinatura: via assinada com login Google para acesso do signatário. */
+/** Via assinada acessível pelo link seguro; vínculo à conta é opcional. */
 function AfterSign({ token }: { token: string }) {
   const [authed, setAuthed] = useState(false);
-  const [claimUrl, setClaimUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
   const signed = useQuery({
     queryKey: ["signed-doc", token],
     queryFn: () => getSignedDocument({ data: { token } }),
-    refetchInterval: (q) => (q.state.data?.ready ? false : 5000),
+    retry: false,
+    refetchInterval: (query) => query.state.error || query.state.data?.ready ? false : 5000,
   });
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setAuthed(!!s));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => setAuthed(!!session));
     return () => sub.subscription.unsubscribe();
   }, []);
-
-  async function claim() {
-    setBusy(true);
-    try {
-      const res = await claimSignedCopy({ data: { token } });
-      if (res.error) toast.error(res.error);
-      else if (!res.url) toast.info("A via assinada estará disponível ao concluir todas as assinaturas.");
-      else setClaimUrl(res.url);
-    } catch {
-      toast.error("Não foi possível liberar o download");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  useEffect(() => {
-    if (authed && !claimUrl) void claim();
-  }, [authed]);
-
-  /** Leva o signatário ao app: entra com Google e cai direto nos contratos dele. */
-  async function openApp() {
-    if (authed) {
-      window.location.href = "/app/meus-contratos";
+  async function saveToAccount() {
+    if (!authed) {
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.href });
+      if (result.error) toast.error("Falha ao entrar com Google");
       return;
     }
-    const res = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/app/meus-contratos`,
-    });
-    if (res.error) toast.error("Falha ao entrar com Google");
+    setBusy(true);
+    try {
+      const result = await claimSignedCopy({ data: { token } });
+      if (result.error) toast.error(result.error);
+      else window.location.assign("/app/meus-contratos");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Não foi possível vincular o contrato");
+    } finally { setBusy(false); }
   }
-
-  async function google() {
-    const res = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.href,
-    });
-    if (res.error) toast.error("Falha ao entrar com Google");
-  }
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
-      <div className="card-soft w-full max-w-sm space-y-3 p-6 text-center">
-        <CheckCircle2 className="mx-auto size-10 text-primary" />
-        <h1 className="text-base font-bold">Assinatura concluída</h1>
-        <p className="text-xs text-muted-foreground">
-          {signed.data?.ready
-            ? "Sua via assinada está pronta."
-            : "Estamos finalizando o documento com as evidências. Você poderá baixar aqui mesmo."}
-        </p>
-        {signed.data?.code ? (
-          <p className="rounded-md bg-muted p-2 text-[11px] text-muted-foreground">
-            Código de verificação: <strong>{signed.data.code}</strong>
-          </p>
-        ) : null}
-
-        {authed ? (
-          claimUrl ? (
-            <Button asChild className="w-full">
-              <a href={claimUrl}>
-                <Download className="mr-2 size-4" /> Baixar minha via assinada
-              </a>
-            </Button>
-          ) : (
-            <Button className="w-full" onClick={() => void claim()} disabled={busy}>
-              {busy ? "Preparando…" : "Liberar download"}
-            </Button>
-          )
-        ) : (
-          <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">
-              Entre com sua conta Google para baixar a sua versão do contrato assinado.
-            </p>
-            <Button className="w-full" onClick={() => void google()}>
-              Entrar com conta Google
-            </Button>
-          </div>
-        )}
-
-        <div className="space-y-2 rounded-lg border border-border bg-muted/60 p-3 text-left">
-          <p className="text-[11px] text-muted-foreground">
-            Acesse seu contrato também pelo aplicativo: entre com sua conta Google e veja apenas os
-            seus documentos assinados, com download em PDF a qualquer momento.
-          </p>
-          <Button variant="outline" size="sm" className="w-full" onClick={() => void openApp()}>
-            Acessar meus contratos no app
-          </Button>
-        </div>
-
-        <Link to="/" className="inline-block pt-1 text-xs font-semibold text-primary">
-          Ir para o IDOC BUSINESS
-        </Link>
+  return <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
+    <div className="w-full max-w-lg space-y-4 text-center">
+      <CheckCircle2 className="mx-auto size-10 text-primary" />
+      <h1 className="text-xl font-bold">Assinatura concluída</h1>
+      {signed.isPending ? <p role="status" className="text-sm text-muted-foreground">Consultando sua via assinada…</p>
+        : signed.isError ? <div role="alert" className="space-y-2"><p className="text-sm text-destructive">{signed.error instanceof Error ? signed.error.message : "Não foi possível consultar o PDF."}</p><Button variant="outline" onClick={() => void signed.refetch()}>Tentar novamente</Button></div>
+        : signed.data?.ready ? <>
+          <p className="break-words text-sm font-semibold">{signed.data.name}</p>
+          <div className="flex justify-center"><SignedPdfActions name={signed.data.name} resolve={(download) => getSignedDocument({ data: { token, download } })} /></div>
+          {signed.data.code && <p className="text-xs text-muted-foreground">Código de verificação: <strong>{signed.data.code}</strong></p>}
+        </> : <p role="status" className="text-sm text-muted-foreground">Aguardando as demais assinaturas e a geração do PDF final. Volte a este link para consultar sua via.</p>}
+      <div className="space-y-2 border-t border-border pt-4">
+        <Button variant="outline" disabled={busy} onClick={() => void saveToAccount()}>{busy ? "Vinculando…" : authed ? "Guardar em meus contratos" : "Entrar com Google para guardar na conta"}</Button>
+        <p className="text-xs text-muted-foreground">Visualização e download pelo link seguro não exigem login.</p>
       </div>
+      <Link to="/" className="inline-block text-xs font-semibold text-primary">Ir para o IDOC BUSINESS</Link>
     </div>
-  );
+  </div>;
 }
 
 function Centered({ title, text, icon }: { title: string; text: string; icon?: boolean }) {
